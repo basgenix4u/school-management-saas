@@ -32,7 +32,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Workspace onboarding launch flow
 - Premium login and role-based access matrix
 - Audit trail and trust center experience
-- Student management screen
+- Student 360 directory and profile experience
 - Teacher management screen
 - Attendance overview
 - Results overview
@@ -137,7 +137,8 @@ Open http://localhost:3000.
 /dashboard/audit        Audit trail and sensitive action monitoring
 /dashboard/trust        Trust center and security posture
 /login                  Premium login experience
-/dashboard/students     Student management
+/dashboard/students     Student 360 directory
+/dashboard/students/[id]  Student 360 profile
 /dashboard/teachers     Teacher management
 /dashboard/attendance   Attendance overview
 /dashboard/results      Results overview
