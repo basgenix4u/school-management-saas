@@ -451,3 +451,19 @@ kbd { font-family: inherit; border-radius: 10px; padding: 6px 9px; background: #
 .achievement-path { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 12px; margin-top: 16px; }
 .achievement-path span { padding: 16px; border-radius: 18px; background: linear-gradient(135deg,#eff6ff,#f5f3ff); color: #1d4ed8; font-weight: 950; border: 1px solid #dbeafe; }
 @media (max-width: 900px) { .portal-hero { grid-template-columns: 1fr; } .portal-child-list article, .portal-invoice-list article, .subject-progress-list article { grid-template-columns: 1fr; } .achievement-path { grid-template-columns: 1fr; } }
+
+.communications-center { display: grid; gap: 22px; }
+.communications-hero { display: grid; grid-template-columns: 1fr 320px; gap: 24px; align-items: center; }
+.communications-hero h1 { font-size: clamp(38px,6vw,72px); line-height: .94; letter-spacing: -.07em; margin: 16px 0; }
+.communications-hero p { color: rgba(255,255,255,.75); font-size: 18px; line-height: 1.75; }
+.communications-hero-card { position: relative; z-index: 1; border: 1px solid rgba(255,255,255,.14); background: rgba(255,255,255,.09); border-radius: 30px; padding: 24px; color: white; display: grid; gap: 8px; }
+.communications-hero-card strong { font-size: 58px; letter-spacing: -.07em; }
+.communications-hero-card span { color: #bfdbfe; font-weight: 950; }
+.communications-hero-card small { color: rgba(255,255,255,.75); font-weight: 850; }
+.campaign-list, .template-list { display: grid; gap: 12px; margin-top: 16px; }
+.campaign-list article { display: grid; grid-template-columns: 1fr auto; gap: 14px; align-items: center; padding: 16px; border-radius: 20px; border: 1px solid #e2e8f0; background: #f8fafc; }
+.campaign-list strong, .template-list strong { display: block; }
+.campaign-list span:not(.status) { display: block; color: #64748b; font-weight: 850; margin-top: 4px; }
+.template-list article { padding: 16px; border-radius: 20px; border: 1px solid #e2e8f0; background: #f8fafc; }
+.template-list p { color: #64748b; line-height: 1.65; margin: 8px 0 0; }
+@media (max-width: 920px) { .communications-hero, .campaign-list article { grid-template-columns: 1fr; } }

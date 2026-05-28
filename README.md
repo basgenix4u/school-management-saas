@@ -134,6 +134,8 @@ Open http://localhost:3000.
 /dashboard              Executive command center
 /dashboard/intelligence Intelligence center and AI-style copilot
 /dashboard/onboarding   Workspace launch onboarding
+/dashboard/communications Communication center
+/dashboard/communications/campaigns Campaign manager
 /dashboard/access       Role-based access control matrix
 /dashboard/audit        Audit trail and sensitive action monitoring
 /dashboard/trust        Trust center and security posture
@@ -178,6 +180,7 @@ See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
 - Smart attendance marking workflow
 - Report card PDF generation
 - Fee payment integration with Paystack
+- Communication center and campaign manager
 - Email/SMS reminders
 - Audit logs
 - Real command palette and keyboard shortcuts

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BrainCircuit, BriefcaseBusiness, CalendarCheck, ClipboardCheck, CreditCard, GraduationCap, History, KeyRound, LayoutDashboard, LockKeyhole, Rocket, Search, UsersRound, X } from "lucide-react";
+import { BrainCircuit, BriefcaseBusiness, CalendarCheck, ClipboardCheck, CreditCard, GraduationCap, History, KeyRound, LayoutDashboard, LockKeyhole, Megaphone, Rocket, Search, UsersRound, X } from "lucide-react";
 
 const actions = [
   { href: "/dashboard", title: "Open Command Center", hint: "Executive overview", icon: LayoutDashboard, tags: "home overview dashboard health" },
@@ -19,6 +19,8 @@ const actions = [
   { href: "/dashboard/results", title: "Publish Results", hint: "Scores and report cards", icon: GraduationCap, History, tags: "result scores report card" },
   { href: "/dashboard/fees", title: "Open Finance Command Center", hint: "Fees, payments and finance intelligence", icon: CreditCard, tags: "fees payment invoices finance" },
   { href: "/dashboard/fees/invoices", title: "Open Invoice Board", hint: "All invoices and payment probabilities", icon: CreditCard, tags: "invoice board balances collection" },
+  { href: "/dashboard/communications", title: "Open Communication Center", hint: "Announcements, reminders and parent campaigns", icon: Megaphone, tags: "communication messages announcements campaigns" },
+  { href: "/dashboard/communications/campaigns", title: "Open Campaign Manager", hint: "Parent campaign board", icon: Megaphone, tags: "campaign manager parent messages" },
   { href: "/portal/parent", title: "Open Parent Portal", hint: "Guardian view for fees, results and messages", icon: UsersRound, tags: "parent guardian portal invoices messages" },
   { href: "/portal/student", title: "Open Student Portal", hint: "Student learning progress dashboard", icon: GraduationCap, tags: "student portal progress tasks" },
 ];

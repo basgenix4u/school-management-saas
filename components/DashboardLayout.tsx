@@ -1,11 +1,12 @@
 import Link from "next/link";
 import { CommandPalette } from "@/components/premium/CommandPalette";
-import { BarChart3, BookOpenCheck, BriefcaseBusiness, BrainCircuit, CalendarCheck, ClipboardCheck, KeyRound, CreditCard, GraduationCap, History, LayoutDashboard, LockKeyhole, Rocket, UsersRound } from "lucide-react";
+import { BarChart3, BookOpenCheck, BriefcaseBusiness, BrainCircuit, CalendarCheck, ClipboardCheck, KeyRound, CreditCard, GraduationCap, History, LayoutDashboard, LockKeyhole, Megaphone, Rocket, UsersRound } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Command Center", icon: LayoutDashboard },
   { href: "/dashboard/intelligence", label: "Intelligence", icon: BrainCircuit },
   { href: "/dashboard/onboarding", label: "Onboarding", icon: Rocket },
+  { href: "/dashboard/communications", label: "Communications", icon: Megaphone },
   { href: "/dashboard/access", label: "Access Control", icon: KeyRound },
   { href: "/dashboard/audit", label: "Audit Trail", icon: History },
   { href: "/dashboard/trust", label: "Trust Center", icon: LockKeyhole },
