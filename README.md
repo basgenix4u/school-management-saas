@@ -39,6 +39,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Premium finance command center and invoice intelligence
 - Health API endpoint at `/api/health`
 - Prisma/PostgreSQL schema for SaaS school operations
+- Supabase production schema migration and demo seed data
 - Seed script foundation
 - CI workflow
 - Security, contribution and architecture documentation
@@ -159,6 +160,8 @@ Open http://localhost:3000.
 See `docs/UX_STRATEGY.md` for the product experience direction and high-end UX roadmap.
 
 See `docs/AUTH_RBAC.md` for authentication and role-based access architecture.
+
+See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
 
 ---
 
