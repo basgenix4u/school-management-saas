@@ -138,6 +138,8 @@ Open http://localhost:3000.
 /dashboard/audit        Audit trail and sensitive action monitoring
 /dashboard/trust        Trust center and security posture
 /login                  Premium login experience
+/portal/parent          Parent portal
+/portal/student         Student portal
 /dashboard/students     Student 360 directory
 /dashboard/students/[id]  Student 360 profile
 /dashboard/teachers     Teacher management
@@ -171,7 +173,7 @@ See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
 - Authentication and role-based access control
 - Multi-school workspace onboarding
 - Student enrollment forms
-- Parent and student portals
+- Premium parent and student portals
 - Premium score entry and report card designer
 - Smart attendance marking workflow
 - Report card PDF generation

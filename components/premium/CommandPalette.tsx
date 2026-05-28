@@ -19,6 +19,8 @@ const actions = [
   { href: "/dashboard/results", title: "Publish Results", hint: "Scores and report cards", icon: GraduationCap, History, tags: "result scores report card" },
   { href: "/dashboard/fees", title: "Open Finance Command Center", hint: "Fees, payments and finance intelligence", icon: CreditCard, tags: "fees payment invoices finance" },
   { href: "/dashboard/fees/invoices", title: "Open Invoice Board", hint: "All invoices and payment probabilities", icon: CreditCard, tags: "invoice board balances collection" },
+  { href: "/portal/parent", title: "Open Parent Portal", hint: "Guardian view for fees, results and messages", icon: UsersRound, tags: "parent guardian portal invoices messages" },
+  { href: "/portal/student", title: "Open Student Portal", hint: "Student learning progress dashboard", icon: GraduationCap, tags: "student portal progress tasks" },
 ];
 
 export function CommandPalette() {
