@@ -17,7 +17,8 @@ const actions = [
   { href: "/dashboard/attendance", title: "View Attendance", hint: "Daily attendance overview", icon: CalendarCheck, tags: "attendance class register" },
   { href: "/dashboard/attendance/mark", title: "Mark Attendance", hint: "Smart attendance register", icon: ClipboardCheck, tags: "mark attendance present absent late excused" },
   { href: "/dashboard/results", title: "Publish Results", hint: "Scores and report cards", icon: GraduationCap, History, tags: "result scores report card" },
-  { href: "/dashboard/fees", title: "Open Fees & Invoices", hint: "Payments, invoices and balances", icon: CreditCard, tags: "fees payment invoices finance" },
+  { href: "/dashboard/fees", title: "Open Finance Command Center", hint: "Fees, payments and finance intelligence", icon: CreditCard, tags: "fees payment invoices finance" },
+  { href: "/dashboard/fees/invoices", title: "Open Invoice Board", hint: "All invoices and payment probabilities", icon: CreditCard, tags: "invoice board balances collection" },
 ];
 
 export function CommandPalette() {

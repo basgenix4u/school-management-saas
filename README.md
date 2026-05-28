@@ -36,7 +36,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Teacher daily workspace and smart attendance marking
 - Attendance overview
 - Results overview
-- Fees/invoice overview
+- Premium finance command center and invoice intelligence
 - Health API endpoint at `/api/health`
 - Prisma/PostgreSQL schema for SaaS school operations
 - Seed script foundation
@@ -144,7 +144,9 @@ Open http://localhost:3000.
 /dashboard/attendance/mark Smart attendance marking
 /dashboard/attendance   Attendance overview
 /dashboard/results      Results overview
-/dashboard/fees         Fees/invoices overview
+/dashboard/fees         Finance command center
+/dashboard/fees/invoices Invoice intelligence board
+/dashboard/fees/[invoice] Invoice detail workspace
 /api/health             Health check API
 ```
 
