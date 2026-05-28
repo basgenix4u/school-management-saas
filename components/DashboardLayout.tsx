@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { CommandPalette } from "@/components/premium/CommandPalette";
 import { BarChart3, BookOpenCheck, BrainCircuit, CalendarCheck, CreditCard, GraduationCap, LayoutDashboard, Rocket, UsersRound } from "lucide-react";
 
 const nav = [
@@ -39,7 +40,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <p>Greenfield International School</p>
         </div>
       </aside>
-      <main className="main premium-main">{children}</main>
+      <main className="main premium-main"><div className="top-command-row"><CommandPalette /></div>{children}</main>
     </div>
   );
 }
