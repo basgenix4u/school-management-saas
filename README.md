@@ -33,7 +33,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Premium login and role-based access matrix
 - Audit trail and trust center experience
 - Student 360 directory and profile experience
-- Teacher management screen
+- Teacher daily workspace and smart attendance marking
 - Attendance overview
 - Results overview
 - Fees/invoice overview
@@ -140,6 +140,8 @@ Open http://localhost:3000.
 /dashboard/students     Student 360 directory
 /dashboard/students/[id]  Student 360 profile
 /dashboard/teachers     Teacher management
+/dashboard/teacher-desk Teacher daily workspace
+/dashboard/attendance/mark Smart attendance marking
 /dashboard/attendance   Attendance overview
 /dashboard/results      Results overview
 /dashboard/fees         Fees/invoices overview
@@ -164,7 +166,7 @@ See `docs/AUTH_RBAC.md` for authentication and role-based access architecture.
 - Student enrollment forms
 - Parent and student portals
 - Teacher grade entry workflow
-- Attendance marking workflow
+- Smart attendance marking workflow
 - Report card PDF generation
 - Fee payment integration with Paystack
 - Email/SMS reminders

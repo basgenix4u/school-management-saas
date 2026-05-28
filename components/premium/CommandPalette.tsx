@@ -2,18 +2,20 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BrainCircuit, CalendarCheck, CreditCard, GraduationCap, History, KeyRound, LayoutDashboard, LockKeyhole, Rocket, Search, UsersRound, X } from "lucide-react";
+import { BrainCircuit, BriefcaseBusiness, CalendarCheck, ClipboardCheck, CreditCard, GraduationCap, History, KeyRound, LayoutDashboard, LockKeyhole, Rocket, Search, UsersRound, X } from "lucide-react";
 
 const actions = [
   { href: "/dashboard", title: "Open Command Center", hint: "Executive overview", icon: LayoutDashboard, tags: "home overview dashboard health" },
-  { href: "/dashboard/intelligence", title: "Open Intelligence Center", hint: "AI-style insights and decision queue", icon: BrainCircuit, tags: "ai insights risk signals copilot" },
+  { href: "/dashboard/intelligence", title: "Open Intelligence Center", hint: "AI-style insights and decision queue", icon: BrainCircuit, BriefcaseBusiness, tags: "ai insights risk signals copilot" },
   { href: "/dashboard/onboarding", title: "Launch School Workspace", hint: "Workspace setup checklist", icon: Rocket, tags: "setup onboarding launch school" },
   { href: "/dashboard/access", title: "Open Access Control", hint: "Roles, permissions and RBAC matrix", icon: KeyRound, tags: "auth access roles rbac permissions" },
   { href: "/dashboard/audit", title: "Open Audit Trail", hint: "Trace sensitive actions and risk events", icon: History, tags: "audit logs security events" },
   { href: "/dashboard/trust", title: "Open Trust Center", hint: "Security controls and readiness", icon: LockKeyhole, tags: "trust security compliance privacy" },
   { href: "/dashboard/students", title: "Manage Students", hint: "Enrollment and guardian records", icon: GraduationCap, History, tags: "student enrollment guardians" },
   { href: "/dashboard/teachers", title: "Manage Teachers", hint: "Staff, subjects and classes", icon: UsersRound, tags: "teacher staff subject" },
+  { href: "/dashboard/teacher-desk", title: "Open Teacher Desk", hint: "Daily teaching workspace and lesson flow", icon: BriefcaseBusiness, tags: "teacher desk daily lesson workspace" },
   { href: "/dashboard/attendance", title: "View Attendance", hint: "Daily attendance overview", icon: CalendarCheck, tags: "attendance class register" },
+  { href: "/dashboard/attendance/mark", title: "Mark Attendance", hint: "Smart attendance register", icon: ClipboardCheck, tags: "mark attendance present absent late excused" },
   { href: "/dashboard/results", title: "Publish Results", hint: "Scores and report cards", icon: GraduationCap, History, tags: "result scores report card" },
   { href: "/dashboard/fees", title: "Open Fees & Invoices", hint: "Payments, invoices and balances", icon: CreditCard, tags: "fees payment invoices finance" },
 ];
