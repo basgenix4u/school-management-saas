@@ -2,12 +2,13 @@
 
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
-import { BrainCircuit, CalendarCheck, CreditCard, GraduationCap, LayoutDashboard, Rocket, Search, UsersRound, X } from "lucide-react";
+import { BrainCircuit, CalendarCheck, CreditCard, GraduationCap, KeyRound, LayoutDashboard, Rocket, Search, UsersRound, X } from "lucide-react";
 
 const actions = [
   { href: "/dashboard", title: "Open Command Center", hint: "Executive overview", icon: LayoutDashboard, tags: "home overview dashboard health" },
   { href: "/dashboard/intelligence", title: "Open Intelligence Center", hint: "AI-style insights and decision queue", icon: BrainCircuit, tags: "ai insights risk signals copilot" },
   { href: "/dashboard/onboarding", title: "Launch School Workspace", hint: "Workspace setup checklist", icon: Rocket, tags: "setup onboarding launch school" },
+  { href: "/dashboard/access", title: "Open Access Control", hint: "Roles, permissions and RBAC matrix", icon: KeyRound, tags: "auth access roles rbac permissions" },
   { href: "/dashboard/students", title: "Manage Students", hint: "Enrollment and guardian records", icon: GraduationCap, tags: "student enrollment guardians" },
   { href: "/dashboard/teachers", title: "Manage Teachers", hint: "Staff, subjects and classes", icon: UsersRound, tags: "teacher staff subject" },
   { href: "/dashboard/attendance", title: "View Attendance", hint: "Daily attendance overview", icon: CalendarCheck, tags: "attendance class register" },

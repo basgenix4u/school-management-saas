@@ -30,6 +30,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Premium executive command-center dashboard
 - AI-style intelligence copilot experience
 - Workspace onboarding launch flow
+- Premium login and role-based access matrix
 - Student management screen
 - Teacher management screen
 - Attendance overview
@@ -131,6 +132,8 @@ Open http://localhost:3000.
 /dashboard              Executive command center
 /dashboard/intelligence Intelligence center and AI-style copilot
 /dashboard/onboarding   Workspace launch onboarding
+/dashboard/access       Role-based access control matrix
+/login                  Premium login experience
 /dashboard/students     Student management
 /dashboard/teachers     Teacher management
 /dashboard/attendance   Attendance overview
@@ -144,6 +147,8 @@ Open http://localhost:3000.
 ## Premium UX Documentation
 
 See `docs/UX_STRATEGY.md` for the product experience direction and high-end UX roadmap.
+
+See `docs/AUTH_RBAC.md` for authentication and role-based access architecture.
 
 ---
 
