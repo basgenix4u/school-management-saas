@@ -35,7 +35,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Student 360 directory and profile experience
 - Teacher daily workspace and smart attendance marking
 - Attendance overview
-- Results overview
+- Results command center and report card designer
 - Premium finance command center and invoice intelligence
 - Health API endpoint at `/api/health`
 - Prisma/PostgreSQL schema for SaaS school operations
@@ -143,7 +143,9 @@ Open http://localhost:3000.
 /dashboard/teacher-desk Teacher daily workspace
 /dashboard/attendance/mark Smart attendance marking
 /dashboard/attendance   Attendance overview
-/dashboard/results      Results overview
+/dashboard/results      Results command center
+/dashboard/results/entry Score entry matrix
+/dashboard/results/report-card/[student] Report card preview
 /dashboard/fees         Finance command center
 /dashboard/fees/invoices Invoice intelligence board
 /dashboard/fees/[invoice] Invoice detail workspace
@@ -167,7 +169,7 @@ See `docs/AUTH_RBAC.md` for authentication and role-based access architecture.
 - Multi-school workspace onboarding
 - Student enrollment forms
 - Parent and student portals
-- Teacher grade entry workflow
+- Premium score entry and report card designer
 - Smart attendance marking workflow
 - Report card PDF generation
 - Fee payment integration with Paystack
