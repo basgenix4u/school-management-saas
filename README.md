@@ -49,10 +49,10 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 | Styling | Tailwind CSS, custom design system |
 | Database | PostgreSQL |
 | ORM | Prisma |
-| Auth Foundation | Auth.js / NextAuth-ready |
+| Auth Foundation | Role-based architecture planned |
 | Email | Resend-ready |
 | Payments | Paystack/Stripe-ready placeholders |
-| Charts/UI | Recharts, Lucide Icons |
+| UI | Lucide Icons, custom dashboard components |
 | Deployment | Vercel-ready |
 
 ---
