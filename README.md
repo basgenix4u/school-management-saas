@@ -39,7 +39,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Premium finance command center and invoice intelligence
 - Health API endpoint at `/api/health`
 - Prisma/PostgreSQL schema for SaaS school operations
-- Supabase production schema migration and demo seed data
+- Supabase production schema migration, demo seed data and intelligence views
 - Seed script foundation
 - CI workflow
 - Security, contribution and architecture documentation

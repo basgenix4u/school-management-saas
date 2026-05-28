@@ -49,3 +49,30 @@ DATABASE_URL
 ## Production RLS Plan
 
 The migration enables RLS and adds demo authenticated-read policies. Before production launch, replace demo policies with strict organization-scoped policies based on `auth.uid()` and role membership.
+
+
+## Database Intelligence Views
+
+The second migration adds database-powered views and an RPC function:
+
+```txt
+v_command_center_summary
+v_student_360
+v_finance_summary
+v_attendance_daily
+v_results_summary
+get_school_command_center(org_slug)
+```
+
+These views prepare the app for live dashboard metrics and replace mock data progressively.
+
+## Runtime API Integration
+
+The Next.js app includes Supabase-aware API routes:
+
+```txt
+/api/database/status
+/api/database/command-center
+```
+
+These routes use environment variables and safely return `not_configured` if Supabase keys are not present in the runtime.
