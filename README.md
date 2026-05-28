@@ -31,6 +31,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - AI-style intelligence copilot experience
 - Workspace onboarding launch flow
 - Premium login and role-based access matrix
+- Audit trail and trust center experience
 - Student management screen
 - Teacher management screen
 - Attendance overview
@@ -133,6 +134,8 @@ Open http://localhost:3000.
 /dashboard/intelligence Intelligence center and AI-style copilot
 /dashboard/onboarding   Workspace launch onboarding
 /dashboard/access       Role-based access control matrix
+/dashboard/audit        Audit trail and sensitive action monitoring
+/dashboard/trust        Trust center and security posture
 /login                  Premium login experience
 /dashboard/students     Student management
 /dashboard/teachers     Teacher management
