@@ -1,8 +1,10 @@
 import Link from "next/link";
-import { BarChart3, BookOpenCheck, CalendarCheck, CreditCard, GraduationCap, LayoutDashboard, UsersRound } from "lucide-react";
+import { BarChart3, BookOpenCheck, BrainCircuit, CalendarCheck, CreditCard, GraduationCap, LayoutDashboard, Rocket, UsersRound } from "lucide-react";
 
 const nav = [
-  { href: "/dashboard", label: "Overview", icon: LayoutDashboard },
+  { href: "/dashboard", label: "Command Center", icon: LayoutDashboard },
+  { href: "/dashboard/intelligence", label: "Intelligence", icon: BrainCircuit },
+  { href: "/dashboard/onboarding", label: "Onboarding", icon: Rocket },
   { href: "/dashboard/students", label: "Students", icon: GraduationCap },
   { href: "/dashboard/teachers", label: "Teachers", icon: UsersRound },
   { href: "/dashboard/attendance", label: "Attendance", icon: CalendarCheck },
@@ -12,15 +14,13 @@ const nav = [
 
 export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="dashboard-shell">
-      <aside className="sidebar">
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 30 }}>
-          <div style={{ width: 44, height: 44, borderRadius: 14, background: "#2563eb", display: "grid", placeItems: "center" }}>
-            <BarChart3 />
-          </div>
+    <div className="dashboard-shell premium-shell">
+      <aside className="sidebar premium-sidebar">
+        <div className="sidebar-brand">
+          <div className="brand-mark"><BarChart3 /></div>
           <div>
-            <strong style={{ display: "block", fontSize: 18 }}>EduManage</strong>
-            <span style={{ color: "#94a3b8", fontSize: 13 }}>Admin Portal</span>
+            <strong>EduManage</strong>
+            <span>School OS</span>
           </div>
         </div>
         <nav>
@@ -33,12 +33,13 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
             );
           })}
         </nav>
-        <div style={{ marginTop: 30, padding: 16, background: "rgba(255,255,255,0.08)", borderRadius: 18 }}>
+        <div className="sidebar-status">
+          <span className="status-dot" />
           <strong>Demo Workspace</strong>
-          <p style={{ color: "#cbd5e1", fontSize: 13, lineHeight: 1.6 }}>Greenfield International School</p>
+          <p>Greenfield International School</p>
         </div>
       </aside>
-      <main className="main">{children}</main>
+      <main className="main premium-main">{children}</main>
     </div>
   );
 }

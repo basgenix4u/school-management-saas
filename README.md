@@ -27,7 +27,9 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 ## Current Features
 
 - Professional landing page
-- Demo admin dashboard
+- Premium executive command-center dashboard
+- AI-style intelligence copilot experience
+- Workspace onboarding launch flow
 - Student management screen
 - Teacher management screen
 - Attendance overview
@@ -64,7 +66,7 @@ app/                    Next.js app routes, dashboard pages and API routes
 components/             Reusable UI and layout components
 lib/                    Demo data and future utilities
 prisma/                 Prisma schema and seed script
-docs/                   Architecture and product documentation
+docs/                   Architecture, UX strategy and product documentation
 public/screenshots/     Screenshots for portfolio/demo assets
 .github/workflows/      GitHub Actions CI
 ```
@@ -126,7 +128,9 @@ Open http://localhost:3000.
 
 ```txt
 /                       Landing page
-/dashboard              Admin overview
+/dashboard              Executive command center
+/dashboard/intelligence Intelligence center and AI-style copilot
+/dashboard/onboarding   Workspace launch onboarding
 /dashboard/students     Student management
 /dashboard/teachers     Teacher management
 /dashboard/attendance   Attendance overview
@@ -137,8 +141,15 @@ Open http://localhost:3000.
 
 ---
 
+## Premium UX Documentation
+
+See `docs/UX_STRATEGY.md` for the product experience direction and high-end UX roadmap.
+
+---
+
 ## Roadmap
 
+- Connect command center to live database metrics
 - Authentication and role-based access control
 - Multi-school workspace onboarding
 - Student enrollment forms
@@ -149,6 +160,7 @@ Open http://localhost:3000.
 - Fee payment integration with Paystack
 - Email/SMS reminders
 - Audit logs
+- Real command palette and keyboard shortcuts
 - Admin analytics charts
 - Automated tests
 - Production deployment
