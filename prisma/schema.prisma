@@ -1,0 +1,179 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  SUPER_ADMIN
+  SCHOOL_ADMIN
+  TEACHER
+  ACCOUNTANT
+  PARENT
+  STUDENT
+}
+
+enum InvoiceStatus {
+  PENDING
+  PARTIAL
+  PAID
+  OVERDUE
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  email     String?
+  phone     String?
+  address   String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  users     User[]
+  classes   ClassRoom[]
+  students  Student[]
+  teachers  Teacher[]
+  subjects  Subject[]
+  invoices  Invoice[]
+}
+
+model User {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  email          String       @unique
+  passwordHash   String?
+  role           UserRole     @default(STUDENT)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Student {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  admissionNo    String
+  firstName      String
+  lastName       String
+  gender         String?
+  dateOfBirth    DateTime?
+  classRoomId    String?
+  classRoom      ClassRoom?   @relation(fields: [classRoomId], references: [id])
+  guardianName   String?
+  guardianPhone  String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  attendances    Attendance[]
+  results        Result[]
+  invoices       Invoice[]
+
+  @@unique([organizationId, admissionNo])
+}
+
+model Teacher {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  staffNo        String
+  name           String
+  email          String?
+  phone          String?
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+
+  subjects       Subject[]
+
+  @@unique([organizationId, staffNo])
+}
+
+model ClassRoom {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  name           String
+  level          String?
+  students       Student[]
+  subjects       Subject[]
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+}
+
+model Subject {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  classRoomId    String?
+  classRoom      ClassRoom?   @relation(fields: [classRoomId], references: [id])
+  teacherId      String?
+  teacher        Teacher?     @relation(fields: [teacherId], references: [id])
+  name           String
+  code           String?
+  results        Result[]
+}
+
+model Attendance {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  date      DateTime
+  status    String
+  note      String?
+  createdAt DateTime @default(now())
+
+  @@unique([studentId, date])
+}
+
+model Result {
+  id        String   @id @default(cuid())
+  studentId String
+  student   Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  subjectId String
+  subject   Subject  @relation(fields: [subjectId], references: [id], onDelete: Cascade)
+  term      String
+  session   String
+  score     Float
+  grade     String?
+  remark    String?
+  createdAt DateTime @default(now())
+}
+
+model Invoice {
+  id             String        @id @default(cuid())
+  organizationId String
+  organization   Organization  @relation(fields: [organizationId], references: [id], onDelete: Cascade)
+  studentId      String
+  student        Student       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  invoiceNo      String        @unique
+  amount         Decimal
+  amountPaid     Decimal       @default(0)
+  status         InvoiceStatus @default(PENDING)
+  dueDate        DateTime?
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+
+  payments       Payment[]
+}
+
+model Payment {
+  id          String   @id @default(cuid())
+  invoiceId   String
+  invoice     Invoice  @relation(fields: [invoiceId], references: [id], onDelete: Cascade)
+  amount      Decimal
+  provider    String?
+  reference   String?  @unique
+  paidAt      DateTime @default(now())
+}
+
+model Announcement {
+  id        String   @id @default(cuid())
+  title     String
+  body      String
+  audience  String
+  createdAt DateTime @default(now())
+}
