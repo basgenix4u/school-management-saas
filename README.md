@@ -134,6 +134,8 @@ Open http://localhost:3000.
 /dashboard              Executive command center
 /dashboard/intelligence Intelligence center and AI-style copilot
 /dashboard/onboarding   Workspace launch onboarding
+/dashboard/launch       Production launch center
+/dashboard/database     Supabase database control room
 /dashboard/communications Communication center
 /dashboard/communications/campaigns Campaign manager
 /dashboard/access       Role-based access control matrix
@@ -186,6 +188,7 @@ See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
 - Real command palette and keyboard shortcuts
 - Admin analytics charts
 - Automated tests
+- Production launch center
 - Production deployment
 
 ---
