@@ -169,6 +169,8 @@ See `docs/AUTH_RBAC.md` for authentication and role-based access architecture.
 
 See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
 
+See `docs/REMAINING_FEATURES.md` for the full production roadmap.
+
 ---
 
 ## Roadmap
