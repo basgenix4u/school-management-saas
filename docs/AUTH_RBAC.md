@@ -53,3 +53,84 @@ Never rely only on client-side role checks. Every protected database query and m
 - organization membership
 - role permission
 - resource ownership/scope
+
+
+## Supabase Auth Implementation
+
+The app now includes a Supabase Auth foundation:
+
+```txt
+/login
+/auth/callback
+/api/auth/session
+/api/auth/sign-out
+/api/auth/bootstrap-demo-user
+```
+
+Middleware protects:
+
+```txt
+/dashboard/*
+/portal/*
+```
+
+If Supabase public environment variables are missing, the app runs in demo mode so local builds and portfolio previews do not break.
+
+## Demo Users
+
+The migration `202605290003_auth_profiles_and_roles.sql` seeds app profile rows for:
+
+```txt
+admin@greenfield.test       SCHOOL_OWNER
+principal@greenfield.test   PRINCIPAL
+teacher@greenfield.test     TEACHER
+accountant@greenfield.test  ACCOUNTANT
+parent@greenfield.test      PARENT
+student@greenfield.test     STUDENT
+```
+
+Create matching Supabase Auth users from the Supabase dashboard or through the guarded bootstrap endpoint.
+
+## Bootstrap Endpoint
+
+```txt
+POST /api/auth/bootstrap-demo-user
+Header: x-bootstrap-secret: <DEMO_BOOTSTRAP_SECRET>
+Body: { "email": "admin@greenfield.test", "password": "ChangeMe123!" }
+```
+
+This endpoint requires `SUPABASE_SERVICE_ROLE_KEY` and must be disabled or protected in production.
+
+## Production Requirement
+
+Before real launch:
+
+1. Configure Supabase Auth redirect URLs.
+2. Create staff/parent/student invite flows.
+3. Link `auth.users.id` to `app_users.auth_user_id`.
+4. Replace demo policies with strict organization-scoped RLS.
+5. Enforce permission checks on every mutation.
+
+
+## Demo Credentials
+
+The Supabase Auth users were created and linked to `app_users` profiles for the demo school.
+
+All demo users currently use this password:
+
+```txt
+ChangeMe123!
+```
+
+Demo emails:
+
+```txt
+admin@greenfield.test       School Owner
+principal@greenfield.test   Principal
+teacher@greenfield.test     Teacher
+accountant@greenfield.test  Accountant
+parent@greenfield.test      Parent
+student@greenfield.test     Student
+```
+
+Rotate or delete these users before using the project with real school data.

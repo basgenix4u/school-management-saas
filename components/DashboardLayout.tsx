@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { CommandPalette } from "@/components/premium/CommandPalette";
+import { SessionBadge } from "@/components/auth/SessionBadge";
 import { BarChart3, BookOpenCheck, BriefcaseBusiness, BrainCircuit, CalendarCheck, ClipboardCheck, Database, KeyRound, CreditCard, GraduationCap, History, LayoutDashboard, LockKeyhole, Megaphone, Rocket, UsersRound } from "lucide-react";
 
 const nav = [
@@ -49,7 +50,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
           <p>Greenfield International School</p>
         </div>
       </aside>
-      <main className="main premium-main"><div className="top-command-row"><CommandPalette /></div>{children}</main>
+      <main className="main premium-main"><div className="top-command-row"><SessionBadge /><CommandPalette /></div>{children}</main>
     </div>
   );
 }

@@ -496,3 +496,17 @@ kbd { font-family: inherit; border-radius: 10px; padding: 6px 9px; background: #
 .demo-script-grid span { flex: 0 0 auto; width: 38px; height: 38px; border-radius: 14px; background: linear-gradient(135deg,#2563eb,#7c3aed); color: white; display: grid; place-items: center; font-weight: 950; }
 .demo-script-grid p { margin: 0; color: #475569; line-height: 1.55; font-weight: 850; }
 @media (max-width: 900px) { .database-hero, .launch-hero, .launch-readiness-list article, .demo-script-grid { grid-template-columns: 1fr; } .database-table-grid { grid-template-columns: 1fr; } .launch-readiness-list article > div:last-child { text-align: left; } }
+
+.auth-message { margin: 12px 0 0; color: #64748b; font-weight: 850; line-height: 1.55; text-align: center; }
+.spin { animation: spin 1s linear infinite; }
+@keyframes spin { to { transform: rotate(360deg); } }
+button:disabled { opacity: .7; cursor: not-allowed; }
+
+.top-command-row { gap: 10px; align-items: center; }
+.session-badge { display: inline-flex; align-items: center; gap: 9px; border: 1px solid rgba(148,163,184,.28); background: rgba(255,255,255,.82); color: #334155; border-radius: 999px; padding: 10px 12px; font-weight: 900; box-shadow: 0 14px 40px rgba(15,23,42,.06); }
+.session-badge.live { padding: 8px 8px 8px 12px; }
+.session-badge span { display: grid; line-height: 1.1; }
+.session-badge strong { font-size: 12px; max-width: 160px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.session-badge small { color: #64748b; font-size: 10px; font-weight: 900; }
+.session-badge button { width: 30px; height: 30px; border-radius: 999px; border: 0; background: #f1f5f9; color: #334155; display: grid; place-items: center; cursor: pointer; }
+@media (max-width: 720px) { .top-command-row { justify-content: stretch; flex-wrap: wrap; } .session-badge, .command-trigger { width: 100%; justify-content: center; } }

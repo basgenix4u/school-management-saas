@@ -31,6 +31,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - AI-style intelligence copilot experience
 - Workspace onboarding launch flow
 - Premium login and role-based access matrix
+- Supabase Auth foundation with protected routes
 - Audit trail and trust center experience
 - Student 360 directory and profile experience
 - Teacher daily workspace and smart attendance marking
@@ -141,7 +142,8 @@ Open http://localhost:3000.
 /dashboard/access       Role-based access control matrix
 /dashboard/audit        Audit trail and sensitive action monitoring
 /dashboard/trust        Trust center and security posture
-/login                  Premium login experience
+/login                  Supabase Auth login experience
+/auth/callback          Supabase Auth callback
 /portal/parent          Parent portal
 /portal/student         Student portal
 /dashboard/students     Student 360 directory
@@ -165,7 +167,7 @@ Open http://localhost:3000.
 
 See `docs/UX_STRATEGY.md` for the product experience direction and high-end UX roadmap.
 
-See `docs/AUTH_RBAC.md` for authentication and role-based access architecture.
+See `docs/AUTH_RBAC.md` for authentication and role-based access architecture. Demo credentials are documented there for development/testing.
 
 See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
 
