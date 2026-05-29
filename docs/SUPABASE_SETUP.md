@@ -76,3 +76,30 @@ The Next.js app includes Supabase-aware API routes:
 ```
 
 These routes use environment variables and safely return `not_configured` if Supabase keys are not present in the runtime.
+
+
+## CRUD API Layer
+
+The project now includes Supabase-aware CRUD endpoints. They fall back to mock data when runtime environment variables are missing, and use Supabase when configured.
+
+```txt
+GET  /api/students
+POST /api/students
+GET  /api/students/[id]
+PATCH /api/students/[id]
+
+GET  /api/attendance
+POST /api/attendance
+
+GET  /api/finance/invoices
+POST /api/finance/invoices
+GET  /api/finance/invoices/[invoice]
+
+GET  /api/results
+POST /api/results
+GET  /api/results/[student]
+
+GET  /api/live/command-center
+```
+
+These endpoints are the bridge from premium UI prototypes to production database-backed workflows.

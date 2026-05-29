@@ -39,7 +39,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Premium finance command center and invoice intelligence
 - Health API endpoint at `/api/health`
 - Prisma/PostgreSQL schema for SaaS school operations
-- Supabase production schema migration, demo seed data and intelligence views
+- Supabase production schema migration, demo seed data, intelligence views and CRUD API layer
 - Seed script foundation
 - CI workflow
 - Security, contribution and architecture documentation
@@ -174,6 +174,7 @@ See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
 ## Roadmap
 
 - Connect command center to live database metrics
+- Supabase-backed CRUD for students, attendance, invoices and results
 - Authentication and role-based access control
 - Multi-school workspace onboarding
 - Student enrollment forms

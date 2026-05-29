@@ -1,6 +1,36 @@
-import { NextResponse } from "next/server";
+import { NextRequest, NextResponse } from "next/server";
 import { getFinanceSummary, invoices } from "@/lib/finance-center";
+import { configuredOrNull, createLiveInvoice, InvoiceCreateInput, listLiveInvoices } from "@/lib/supabase/school-data";
 
-export function GET() {
-  return NextResponse.json({ status: "ok", summary: getFinanceSummary(), data: invoices });
+export async function GET() {
+  const supabase = configuredOrNull();
+  if (!supabase) {
+    return NextResponse.json({ status: "ok", source: "mock", summary: getFinanceSummary(), data: invoices });
+  }
+
+  try {
+    const data = await listLiveInvoices(supabase);
+    return NextResponse.json({ status: "ok", source: "supabase", data });
+  } catch (error) {
+    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load invoices" }, { status: 500 });
+  }
+}
+
+export async function POST(request: NextRequest) {
+  const supabase = configuredOrNull();
+  if (!supabase) {
+    return NextResponse.json({ status: "not_configured", message: "Supabase env vars are required for invoice creation." }, { status: 503 });
+  }
+
+  const body = await request.json().catch(() => null) as Partial<InvoiceCreateInput> | null;
+  if (!body?.admissionNo || !body?.invoiceNo || typeof body.amount !== "number") {
+    return NextResponse.json({ status: "error", message: "admissionNo, invoiceNo and numeric amount are required." }, { status: 400 });
+  }
+
+  try {
+    const invoice = await createLiveInvoice(supabase, body as InvoiceCreateInput);
+    return NextResponse.json({ status: "created", source: "supabase", data: invoice }, { status: 201 });
+  } catch (error) {
+    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to create invoice" }, { status: 500 });
+  }
 }

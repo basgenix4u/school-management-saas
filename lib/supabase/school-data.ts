@@ -1,0 +1,362 @@
+import { createServerSupabaseClient, hasSupabaseConfig } from "@/lib/supabase/server";
+
+export const DEFAULT_ORG_SLUG = "greenfield-school";
+
+type SupabaseClient = ReturnType<typeof createServerSupabaseClient>;
+
+type OrganizationRow = { id: string; name: string; slug: string };
+type ClassroomRow = { id: string; name: string; organization_id: string };
+type StudentRow = {
+  id: string;
+  organization_id: string;
+  classroom_id: string | null;
+  admission_no: string;
+  first_name: string;
+  last_name: string;
+  gender: string | null;
+  guardian_name: string | null;
+  guardian_phone: string | null;
+  guardian_email: string | null;
+  risk_level: string;
+  status: string;
+  active: boolean;
+};
+
+type StudentViewRow = {
+  id: string;
+  admission_no: string;
+  student_name: string;
+  classroom: string | null;
+  guardian_name: string | null;
+  guardian_phone: string | null;
+  risk_level: string | null;
+  attendance_records: number | null;
+  invoices: number | null;
+  balance: string | number | null;
+};
+
+type InvoiceRow = {
+  id: string;
+  invoice_no: string;
+  title: string;
+  amount: string | number;
+  amount_paid: string | number;
+  status: string;
+  due_date: string | null;
+  payment_probability: number;
+  student_id: string;
+};
+
+type SubjectRow = { id: string; name: string; organization_id: string; classroom_id: string | null };
+
+type ResultRow = {
+  id: string;
+  student_id: string;
+  subject_id: string;
+  term: string;
+  session: string;
+  ca_score: string | number;
+  exam_score: string | number;
+  total_score: string | number;
+  grade: string | null;
+  remark: string | null;
+  status: string;
+  teacher_comment: string | null;
+  principal_comment: string | null;
+};
+
+export type StudentCreateInput = {
+  firstName: string;
+  lastName: string;
+  admissionNo: string;
+  className?: string;
+  gender?: string;
+  guardianName?: string;
+  guardianPhone?: string;
+  guardianEmail?: string;
+  riskLevel?: string;
+};
+
+export type AttendanceCreateInput = {
+  admissionNo: string;
+  status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+  period?: string;
+  date?: string;
+  note?: string;
+};
+
+export type InvoiceCreateInput = {
+  admissionNo: string;
+  invoiceNo: string;
+  title?: string;
+  amount: number;
+  amountPaid?: number;
+  status?: "PENDING" | "PARTIAL" | "PAID" | "OVERDUE";
+  dueDate?: string;
+  paymentProbability?: number;
+};
+
+export type ResultUpsertInput = {
+  admissionNo: string;
+  subjectName: string;
+  term: string;
+  session: string;
+  caScore: number;
+  examScore: number;
+  grade?: string;
+  remark?: string;
+  status?: "DRAFT" | "REVIEW" | "APPROVED" | "PUBLISHED";
+  teacherComment?: string;
+  principalComment?: string;
+};
+
+export function configuredOrNull() {
+  if (!hasSupabaseConfig()) return null;
+  return createServerSupabaseClient();
+}
+
+export async function getOrganization(client: SupabaseClient, slug = DEFAULT_ORG_SLUG) {
+  const { data, error } = await client.from("organizations").select("id,name,slug").eq("slug", slug).single<OrganizationRow>();
+  if (error) throw error;
+  return data;
+}
+
+export async function getClassroomByName(client: SupabaseClient, organizationId: string, className?: string) {
+  if (!className) return null;
+  const { data, error } = await client
+    .from("classrooms")
+    .select("id,name,organization_id")
+    .eq("organization_id", organizationId)
+    .eq("name", className)
+    .maybeSingle<ClassroomRow>();
+  if (error) throw error;
+  return data;
+}
+
+export async function getStudentByAdmission(client: SupabaseClient, organizationId: string, admissionNo: string) {
+  const { data, error } = await client
+    .from("students")
+    .select("id,organization_id,classroom_id,admission_no,first_name,last_name,gender,guardian_name,guardian_phone,guardian_email,risk_level,status,active")
+    .eq("organization_id", organizationId)
+    .eq("admission_no", admissionNo)
+    .maybeSingle<StudentRow>();
+  if (error) throw error;
+  return data;
+}
+
+export async function listLiveStudents(client: SupabaseClient) {
+  const { data, error } = await client
+    .from("v_student_360")
+    .select("id,admission_no,student_name,classroom,guardian_name,guardian_phone,risk_level,attendance_records,invoices,balance")
+    .order("student_name", { ascending: true })
+    .returns<StudentViewRow[]>();
+  if (error) throw error;
+  const students = data ?? [];
+  return {
+    summary: {
+      total: students.length,
+      highRisk: students.filter((student) => student.risk_level === "High").length,
+      withBalance: students.filter((student) => Number(student.balance ?? 0) > 0).length,
+    },
+    data: students,
+  };
+}
+
+export async function createLiveStudent(client: SupabaseClient, input: StudentCreateInput) {
+  const organization = await getOrganization(client);
+  const classroom = await getClassroomByName(client, organization.id, input.className);
+  const payload = {
+    organization_id: organization.id,
+    classroom_id: classroom?.id ?? null,
+    admission_no: input.admissionNo,
+    first_name: input.firstName,
+    last_name: input.lastName,
+    gender: input.gender ?? null,
+    guardian_name: input.guardianName ?? null,
+    guardian_phone: input.guardianPhone ?? null,
+    guardian_email: input.guardianEmail ?? null,
+    risk_level: input.riskLevel ?? "Low",
+  };
+  const { data, error } = await client.from("students").insert(payload).select("*").single<StudentRow>();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateLiveStudent(client: SupabaseClient, admissionNo: string, changes: Partial<StudentCreateInput>) {
+  const organization = await getOrganization(client);
+  const classroom = await getClassroomByName(client, organization.id, changes.className);
+  const payload: Record<string, string | null> = {};
+  if (changes.firstName) payload.first_name = changes.firstName;
+  if (changes.lastName) payload.last_name = changes.lastName;
+  if (changes.gender !== undefined) payload.gender = changes.gender ?? null;
+  if (changes.guardianName !== undefined) payload.guardian_name = changes.guardianName ?? null;
+  if (changes.guardianPhone !== undefined) payload.guardian_phone = changes.guardianPhone ?? null;
+  if (changes.guardianEmail !== undefined) payload.guardian_email = changes.guardianEmail ?? null;
+  if (changes.riskLevel !== undefined) payload.risk_level = changes.riskLevel ?? "Low";
+  if (classroom) payload.classroom_id = classroom.id;
+
+  const { data, error } = await client
+    .from("students")
+    .update(payload)
+    .eq("organization_id", organization.id)
+    .eq("admission_no", admissionNo)
+    .select("*")
+    .single<StudentRow>();
+  if (error) throw error;
+  return data;
+}
+
+export async function listLiveAttendance(client: SupabaseClient) {
+  const { data, error } = await client
+    .from("attendance_records")
+    .select("id,attendance_date,period,status,note,students(admission_no,first_name,last_name),classrooms(name)")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createLiveAttendance(client: SupabaseClient, input: AttendanceCreateInput) {
+  const organization = await getOrganization(client);
+  const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
+  if (!student) throw new Error(`Student ${input.admissionNo} not found`);
+  const payload = {
+    organization_id: organization.id,
+    student_id: student.id,
+    classroom_id: student.classroom_id,
+    attendance_date: input.date ?? new Date().toISOString().slice(0, 10),
+    period: input.period ?? "Morning",
+    status: input.status,
+    note: input.note ?? null,
+  };
+  const { data, error } = await client.from("attendance_records").upsert(payload, { onConflict: "student_id,attendance_date,period" }).select("*").single();
+  if (error) throw error;
+  return data;
+}
+
+export async function listLiveInvoices(client: SupabaseClient) {
+  const { data, error } = await client
+    .from("invoices")
+    .select("id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name)")
+    .order("created_at", { ascending: false })
+    .returns<Array<InvoiceRow & { students: Record<string, unknown> | null }>>();
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getLiveInvoice(client: SupabaseClient, invoiceNo: string) {
+  const { data, error } = await client
+    .from("invoices")
+    .select("id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name)")
+    .eq("invoice_no", invoiceNo)
+    .maybeSingle<InvoiceRow & { students: Record<string, unknown> | null }>();
+  if (error) throw error;
+  return data;
+}
+
+export async function createLiveInvoice(client: SupabaseClient, input: InvoiceCreateInput) {
+  const organization = await getOrganization(client);
+  const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
+  if (!student) throw new Error(`Student ${input.admissionNo} not found`);
+  const payload = {
+    organization_id: organization.id,
+    student_id: student.id,
+    invoice_no: input.invoiceNo,
+    title: input.title ?? "School Fees",
+    amount: input.amount,
+    amount_paid: input.amountPaid ?? 0,
+    status: input.status ?? "PENDING",
+    due_date: input.dueDate ?? null,
+    payment_probability: input.paymentProbability ?? 50,
+  };
+  const { data, error } = await client.from("invoices").insert(payload).select("*").single<InvoiceRow>();
+  if (error) throw error;
+  return data;
+}
+
+export async function getOrCreateSubject(client: SupabaseClient, organizationId: string, subjectName: string) {
+  const { data: existing, error: findError } = await client
+    .from("subjects")
+    .select("id,name,organization_id,classroom_id")
+    .eq("organization_id", organizationId)
+    .eq("name", subjectName)
+    .maybeSingle<SubjectRow>();
+  if (findError) throw findError;
+  if (existing) return existing;
+
+  const { data, error } = await client
+    .from("subjects")
+    .insert({ organization_id: organizationId, name: subjectName })
+    .select("id,name,organization_id,classroom_id")
+    .single<SubjectRow>();
+  if (error) throw error;
+  return data;
+}
+
+export async function listLiveResults(client: SupabaseClient) {
+  const { data, error } = await client
+    .from("results")
+    .select("id,student_id,subject_id,term,session,ca_score,exam_score,total_score,grade,remark,status,teacher_comment,principal_comment,students(admission_no,first_name,last_name),subjects(name)")
+    .order("created_at", { ascending: false })
+    .returns<Array<ResultRow & { students: Record<string, unknown> | null; subjects: Record<string, unknown> | null }>>();
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getLiveResultByStudent(client: SupabaseClient, admissionNo: string) {
+  const organization = await getOrganization(client);
+  const student = await getStudentByAdmission(client, organization.id, admissionNo);
+  if (!student) return null;
+  const { data, error } = await client
+    .from("results")
+    .select("id,student_id,subject_id,term,session,ca_score,exam_score,total_score,grade,remark,status,teacher_comment,principal_comment,subjects(name)")
+    .eq("student_id", student.id)
+    .returns<Array<ResultRow & { subjects: Record<string, unknown> | null }>>();
+  if (error) throw error;
+  return { student, results: data ?? [] };
+}
+
+export async function upsertLiveResult(client: SupabaseClient, input: ResultUpsertInput) {
+  const organization = await getOrganization(client);
+  const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
+  if (!student) throw new Error(`Student ${input.admissionNo} not found`);
+  const subject = await getOrCreateSubject(client, organization.id, input.subjectName);
+  const total = input.caScore + input.examScore;
+  const payload = {
+    organization_id: organization.id,
+    student_id: student.id,
+    subject_id: subject.id,
+    term: input.term,
+    session: input.session,
+    ca_score: input.caScore,
+    exam_score: input.examScore,
+    grade: input.grade ?? calculateGrade(total),
+    remark: input.remark ?? calculateRemark(total),
+    status: input.status ?? "DRAFT",
+    teacher_comment: input.teacherComment ?? null,
+    principal_comment: input.principalComment ?? null,
+  };
+  const { data, error } = await client
+    .from("results")
+    .upsert(payload, { onConflict: "student_id,subject_id,term,session" })
+    .select("*")
+    .single<ResultRow>();
+  if (error) throw error;
+  return data;
+}
+
+function calculateGrade(score: number) {
+  if (score >= 80) return "A";
+  if (score >= 70) return "B";
+  if (score >= 60) return "C";
+  if (score >= 50) return "D";
+  return "F";
+}
+
+function calculateRemark(score: number) {
+  if (score >= 80) return "Excellent";
+  if (score >= 70) return "Very Good";
+  if (score >= 60) return "Good";
+  if (score >= 50) return "Fair";
+  return "Needs Improvement";
+}
