@@ -17,9 +17,9 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 ## Priority 2 — Live Database UI Wiring
 
 - Connect Executive Command Center to `/api/live/command-center`
-- Connect Student 360 UI to Supabase students endpoints
-- Connect Teacher Desk to Supabase attendance endpoints
-- Connect Finance Command Center to Supabase invoice endpoints
+- Connect Student 360 UI to Supabase students endpoints ✅ initial live wiring complete
+- Connect Teacher Desk to Supabase attendance endpoints ✅ initial live wiring complete
+- Connect Finance Command Center to Supabase invoice endpoints ✅ initial live wiring complete
 - Connect Results Command Center to Supabase results endpoints
 - Connect Parent Portal to authenticated parent/child records
 - Connect Student Portal to authenticated student records

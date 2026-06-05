@@ -654,3 +654,18 @@ button:disabled { opacity: .7; cursor: not-allowed; }
   .public-page { padding: 16px; }
   .public-nav { flex-direction: column; align-items: stretch; }
 }
+
+/* Live data wiring states */
+.live-status-card { display: flex; align-items: center; gap: 10px; border: 1px solid rgba(148,163,184,.24); background: rgba(255,255,255,.88); border-radius: 22px; padding: 14px 16px; color: #334155; font-weight: 850; box-shadow: 0 16px 40px rgba(15,23,42,.05); }
+.live-status-card svg { color: #2563eb; flex: 0 0 auto; }
+.live-status-card span { flex: 1; line-height: 1.5; }
+.live-status-card button { border: 1px solid #dbeafe; background: #eff6ff; color: #1d4ed8; border-radius: 999px; padding: 8px 12px; font-weight: 950; cursor: pointer; }
+.live-form-panel h2 { margin-top: 8px; }
+.live-form-grid { display: grid; grid-template-columns: repeat(3,minmax(0,1fr)); gap: 12px; margin-top: 18px; }
+.live-form-grid label { display: grid; gap: 7px; color: #334155; font-weight: 900; }
+.live-form-grid label span { font-size: 12px; text-transform: uppercase; letter-spacing: .08em; color: #64748b; }
+.live-form-grid input, .live-form-grid select { min-height: 46px; border: 1px solid #e2e8f0; background: #f8fafc; border-radius: 14px; padding: 0 12px; color: #0f172a; font-weight: 850; outline: none; }
+.live-form-grid input:focus, .live-form-grid select:focus { border-color: #93c5fd; box-shadow: 0 0 0 4px rgba(37,99,235,.12); }
+.live-form-grid button { align-self: end; }
+.empty-state-card { border: 1px dashed #cbd5e1; background: #f8fafc; color: #64748b; border-radius: 20px; padding: 22px; font-weight: 900; text-align: center; }
+@media (max-width: 900px) { .live-form-grid { grid-template-columns: 1fr; } .live-status-card { align-items: flex-start; flex-direction: column; } }

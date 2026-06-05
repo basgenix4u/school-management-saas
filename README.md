@@ -41,6 +41,7 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Health API endpoint at `/api/health`
 - Prisma/PostgreSQL schema for SaaS school operations
 - Supabase production schema migration, demo seed data, intelligence views and CRUD API layer
+- Live UI wiring for Student 360, Finance and Attendance modules
 - Seed script foundation
 - CI workflow
 - Security, contribution and architecture documentation
