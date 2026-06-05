@@ -70,7 +70,7 @@ export default function Home() {
               EduManage helps school owners, principals, teachers and parents manage students, attendance, fees, results and communication without spreadsheet chaos.
             </p>
             <div className="marketing-hero-actions">
-              <Link className="ds-btn ds-btn-primary ds-btn-lg" href="/login">Start now <ArrowRight size={18} /></Link>
+              <Link className="ds-btn ds-btn-primary ds-btn-lg" href="/login">Start free <ArrowRight size={18} /></Link>
               <Link className="ds-btn ds-btn-secondary ds-btn-lg" href="/dashboard/launch">See how it works</Link>
             </div>
             <div className="trust-strip" aria-label="Trust highlights">
