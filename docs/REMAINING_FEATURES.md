@@ -20,7 +20,7 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 - Connect Student 360 UI to Supabase students endpoints ✅ initial live wiring complete
 - Connect Teacher Desk to Supabase attendance endpoints ✅ initial live wiring complete
 - Connect Finance Command Center to Supabase invoice endpoints ✅ initial live wiring complete
-- Connect Results Command Center to Supabase results endpoints
+- Connect Results Command Center to Supabase results endpoints ✅ initial live wiring complete
 - Connect Parent Portal to authenticated parent/child records
 - Connect Student Portal to authenticated student records
 - Add loading, empty and error states for all live modules
@@ -63,7 +63,7 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 
 ## Priority 6 — Results and Report Cards
 
-- Live result entry forms
+- Live result entry forms ✅ initial API-backed form complete
 - Subject score validation
 - Grade scale configuration per school
 - Result approval workflow

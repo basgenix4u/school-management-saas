@@ -1874,3 +1874,23 @@ section#platform.ds-section {
     grid-column: 1;
   }
 }
+
+.result-entry-form textarea {
+  min-height: 104px;
+  border: 1px solid #e2e8f0;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 12px;
+  color: #0f172a;
+  font-weight: 850;
+  outline: none;
+  resize: vertical;
+  font-family: inherit;
+}
+.result-entry-form textarea:focus {
+  border-color: #93c5fd;
+  box-shadow: 0 0 0 4px rgba(37,99,235,.12);
+}
+.result-entry-form .full {
+  grid-column: 1 / -1;
+}
