@@ -124,6 +124,12 @@ npm run db:seed
 npm run dev
 ```
 
+Run full local checks:
+
+```bash
+npm run check
+```
+
 Open http://localhost:3000.
 
 ---
@@ -172,6 +178,8 @@ See `docs/AUTH_RBAC.md` for authentication and role-based access architecture. D
 See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
 
 See `docs/REMAINING_FEATURES.md` for the full production roadmap.
+
+See `docs/DEPLOYMENT_TESTING.md` for Vercel deployment, Supabase setup and QA testing steps.
 
 ---
 
