@@ -1,13 +1,26 @@
+import Image from "next/image";
 import Link from "next/link";
 
 type LogoProps = {
   href?: string;
   compact?: boolean;
   className?: string;
+  uploaded?: boolean;
 };
 
-export function EduManageLogo({ href = "/", compact = false, className = "" }: LogoProps) {
-  const content = (
+export function EduManageLogo({ href = "/", compact = false, className = "", uploaded = false }: LogoProps) {
+  const content = uploaded ? (
+    <span className={`brand-logo uploaded-brand-logo ${className}`} aria-label="EduManage School OS">
+      <Image
+        src="/brand/edumanage-uploaded-wordmark.webp"
+        alt="EduManage School OS"
+        width={1536}
+        height={1024}
+        priority
+        sizes="(max-width: 640px) 190px, 260px"
+      />
+    </span>
+  ) : (
     <span className={`brand-logo ${className}`} aria-label="EduManage School OS">
       <span className="brand-logo-mark" aria-hidden="true">
         <svg width="28" height="28" viewBox="0 0 28 28" fill="none" xmlns="http://www.w3.org/2000/svg">

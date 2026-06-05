@@ -15,7 +15,7 @@ The uploaded assets are strong enough to support a premium SaaS launch experienc
 | `Gemini_Generated_Image_g266l4g266l4g266.png` | `/marketing/finance-intelligence.webp` | Finance/invoice section | Strong fit for invoice cards, revenue forecast and risk signals. |
 | `Gemini_Generated_Image_eb1phveb1phveb1p.png` | `/marketing/security-cloud.webp` | Security/trust section | Strong fit for data protection and school record security. |
 | `ChatGPT Image Jun 5, 2026, 11_38_53 PM.png` | `/brand/uploaded-logo-mark.webp`, favicon source | Brand/reference asset | Usable as uploaded logo mark. For actual UI, the vector/SVG logo remains sharper. |
-| `ChatGPT Image Jun 5, 2026, 11_37_57 PM.png` | `/brand/uploaded-logo-wordmark.webp` | Brand/reference asset | Usable for pitch/social assets. Not ideal in UI at small sizes because it is soft/blurred. |
+| `ChatGPT Image Jun 5, 2026, 11_37_57 PM.png` | `/brand/uploaded-logo-wordmark.webp` | Brand/reference asset | Usable for pitch/social assets. Now used as the primary homepage uploaded wordmark treatment in a controlled dark brand container. Avoid using it at very small sizes because it is soft/blurred. |
 
 ## Favicon Decision
 
@@ -65,3 +65,19 @@ School administrators using EduManage dashboards in a modern school office
 - Add Open Graph image optimized for social sharing.
 - Replace AI-generated UI overlays with real screenshots where possible.
 - Compress and test Lighthouse performance after deployment.
+
+
+## Homepage 3D Intelligence Box
+
+A bespoke CSS 3D model was added to the homepage hero. It represents the product as a school operating system cube with six operational sides:
+
+```txt
+Command
+Finance
+Attendance
+Trust
+Parents
+Results
+```
+
+This is intentionally not a generic screenshot block. It creates a memorable first impression while still communicating real product modules.

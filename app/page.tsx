@@ -48,7 +48,7 @@ export default function Home() {
     <main className="marketing-site">
       <section className="marketing-hero">
         <div className="marketing-nav ds-container">
-          <EduManageLogo />
+          <EduManageLogo uploaded />
           <div className="marketing-nav-links" aria-label="Primary navigation">
             <a href="#platform">Platform</a>
             <a href="#roles">Roles</a>
@@ -78,9 +78,44 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="hero-product-frame image-frame" aria-label="EduManage product intelligence preview">
-            <Image src="/marketing/platform-intelligence.webp" alt="Abstract EduManage dashboard showing school overview, academic insights, attendance signals and finance charts" width={1376} height={768} priority sizes="(max-width: 980px) 100vw, 48vw" />
-            <div className="hero-insight-card"><ShieldCheck size={18} /> Role-based controls, audit trail and Supabase-backed data architecture.</div>
+          <div className="hero-experience-stage" aria-label="EduManage School OS intelligence model">
+            <Image className="hero-stage-bg" src="/marketing/platform-intelligence.webp" alt="Abstract EduManage dashboard showing school overview, academic insights, attendance signals and finance charts" width={1376} height={768} priority sizes="(max-width: 980px) 100vw, 48vw" />
+            <div className="intelligence-box" aria-hidden="true">
+              <div className="box-face box-front">
+                <span>Command</span>
+                <strong>School OS</strong>
+                <small>Live operating center</small>
+              </div>
+              <div className="box-face box-right">
+                <span>Finance</span>
+                <strong>₦18.4M</strong>
+                <small>collection intelligence</small>
+              </div>
+              <div className="box-face box-left">
+                <span>Attendance</span>
+                <strong>94%</strong>
+                <small>daily reliability</small>
+              </div>
+              <div className="box-face box-top">
+                <span>Trust</span>
+                <strong>RBAC</strong>
+                <small>secure access</small>
+              </div>
+              <div className="box-face box-bottom">
+                <span>Parents</span>
+                <strong>Portal</strong>
+                <small>mobile confidence</small>
+              </div>
+              <div className="box-face box-back">
+                <span>Results</span>
+                <strong>Reports</strong>
+                <small>approval workflow</small>
+              </div>
+            </div>
+            <div className="orbit-card orbit-one"><span>Student 360</span><strong>Risk + guardian + fees</strong></div>
+            <div className="orbit-card orbit-two"><span>Teacher Desk</span><strong>Attendance in seconds</strong></div>
+            <div className="orbit-card orbit-three"><span>Trust Layer</span><strong>Audit + security</strong></div>
+            <div className="hero-insight-card floating"><ShieldCheck size={18} /> Role-based controls, audit trail and Supabase-backed data architecture.</div>
           </div>
         </div>
       </section>
