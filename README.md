@@ -44,6 +44,8 @@ This repository demonstrates advanced full-stack skills for client-facing softwa
 - Seed script foundation
 - CI workflow
 - Security, contribution and architecture documentation
+- Launch-grade public pages: contact, support, FAQ, pricing, privacy, terms and security
+- Professional brand assets and design system documentation
 
 ---
 
@@ -180,6 +182,12 @@ See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
 See `docs/REMAINING_FEATURES.md` for the full production roadmap.
 
 See `docs/DEPLOYMENT_TESTING.md` for Vercel deployment, Supabase setup and QA testing steps.
+
+See `docs/PRODUCT_UX_AUDIT.md` for the full product UX audit and conversion strategy.
+
+See `docs/DESIGN_SYSTEM.md` for typography, color, component and layout standards.
+
+See `docs/BRAND_ASSET_PROMPTS.md` for logo and marketing image generation prompts.
 
 ---
 

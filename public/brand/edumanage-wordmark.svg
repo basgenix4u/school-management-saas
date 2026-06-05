@@ -1,0 +1,12 @@
+<svg width="1200" height="320" viewBox="0 0 1200 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="1200" height="320" rx="64" fill="#07111F"/>
+  <g transform="translate(72 54)">
+    <rect width="212" height="212" rx="54" fill="#0F172A"/>
+    <path d="M106 32L181 71L106 110L31 71L106 32Z" fill="#60A5FA"/>
+    <path d="M55 101V139C55 164 78 183 106 183C134 183 157 164 157 139V101L106 128L55 101Z" fill="#10B981"/>
+    <path d="M173 80V134" stroke="#FFFFFF" stroke-width="12" stroke-linecap="round"/>
+    <circle cx="173" cy="150" r="9" fill="#FFFFFF"/>
+  </g>
+  <text x="340" y="140" fill="#FFFFFF" font-family="Inter, Arial, sans-serif" font-size="72" font-weight="800" letter-spacing="-3">EduManage</text>
+  <text x="342" y="205" fill="#93A4BB" font-family="Inter, Arial, sans-serif" font-size="34" font-weight="700" letter-spacing="6">SCHOOL OPERATING SYSTEM</text>
+</svg>

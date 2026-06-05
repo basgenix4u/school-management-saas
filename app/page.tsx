@@ -1,78 +1,181 @@
 import Link from "next/link";
-import { ArrowRight, BarChart3, Bell, BookOpenCheck, CreditCard, ShieldCheck, UsersRound } from "lucide-react";
-import { AppLogo } from "@/components/AppLogo";
+import {
+  ArrowRight,
+  BarChart3,
+  Bell,
+  BookOpenCheck,
+  CheckCircle2,
+  CreditCard,
+  Database,
+  LockKeyhole,
+  MessageCircle,
+  ShieldCheck,
+  Sparkles,
+  UsersRound,
+} from "lucide-react";
+import { EduManageLogo } from "@/components/brand/EduManageLogo";
 
-const features = [
-  { icon: UsersRound, title: "Student & Parent CRM", text: "Centralized records, guardians, classes, communication history and enrollment status." },
-  { icon: BookOpenCheck, title: "Results & Report Cards", text: "Manage scores, subjects, grading, comments and publishable reports." },
-  { icon: CreditCard, title: "Fees & Invoices", text: "Track invoices, partial payments, outstanding balances and payment reminders." },
-  { icon: BarChart3, title: "Admin Analytics", text: "Monitor attendance, collections, student growth and academic performance." },
-  { icon: Bell, title: "Notifications", text: "Email/SMS-ready architecture for announcements, fee reminders and alerts." },
-  { icon: ShieldCheck, title: "Role-Based Access", text: "Designed for admins, teachers, accountants, parents and students." },
+const modules = [
+  { icon: UsersRound, title: "Student 360", text: "A complete student view across guardians, attendance, finance, results, risk and interventions." },
+  { icon: BookOpenCheck, title: "Results & report cards", text: "Score entry, approval workflow and parent-ready report cards built for term operations." },
+  { icon: CreditCard, title: "Fees & invoices", text: "Invoice intelligence, collection forecasting, payment risk and guardian follow-up workflows." },
+  { icon: Bell, title: "Attendance operations", text: "Teacher-first attendance marking, intervention signals, heatmaps and class reliability insights." },
+  { icon: MessageCircle, title: "Parent communication", text: "Campaigns, announcements, fee reminders and engagement intelligence for stronger parent trust." },
+  { icon: ShieldCheck, title: "Trust and audit", text: "Role-based access, audit trail, Supabase-backed data model and security-ready product architecture." },
+];
+
+const roles = [
+  { title: "School owners", outcome: "See revenue, enrollment, risk and growth signals without waiting for reports." },
+  { title: "Principals", outcome: "Control academics, attendance, approvals and interventions from one operating cockpit." },
+  { title: "Teachers", outcome: "Mark attendance, enter scores, follow lesson flow and escalate concerns quickly." },
+  { title: "Accountants", outcome: "Track balances, partial payments, overdue risk and invoice follow-up in real time." },
+  { title: "Parents", outcome: "Access fees, report cards, messages and child progress from a simple mobile portal." },
+  { title: "Students", outcome: "Understand progress, tasks, results and learning momentum without confusion." },
+];
+
+const proof = ["45 production-built routes", "Supabase Auth foundation", "Protected dashboards and portals", "Database migrations and views", "CI build checks", "Deployment and QA guide"];
+
+const faqs = [
+  { q: "Is EduManage only a dashboard?", a: "No. It is structured as a school operating system covering academics, finance, attendance, communication, portals, trust and launch readiness." },
+  { q: "Can it support multiple roles?", a: "Yes. The architecture includes school owner, principal, teacher, accountant, parent, student and super admin role planning." },
+  { q: "Is it ready for Supabase?", a: "Yes. The project includes Supabase migrations, auth foundation, CRUD APIs, database views and demo users." },
+  { q: "Can this become a paid SaaS?", a: "Yes. Remaining work includes strict RLS, live UI wiring, payments, PDF exports, support workflows and production monitoring." },
 ];
 
 export default function Home() {
   return (
-    <main>
-      <section style={{ padding: "28px 0 90px", background: "radial-gradient(circle at top left,#dbeafe,transparent 32%), linear-gradient(180deg,#fff,#f6f8fb)" }}>
-        <div className="container">
-          <nav style={{ display: "flex", alignItems: "center", justifyContent: "space-between", gap: 18, marginBottom: 80 }}>
-            <AppLogo />
-            <div style={{ display: "flex", gap: 12 }}>
-              <Link className="btn btn-secondary" href="/dashboard">Demo Dashboard</Link>
-              <a className="btn btn-primary" href="https://github.com/basgenix4u/school-management-saas">GitHub</a>
-            </div>
-          </nav>
+    <main className="marketing-site">
+      <section className="marketing-hero">
+        <div className="marketing-nav ds-container">
+          <EduManageLogo />
+          <div className="marketing-nav-links" aria-label="Primary navigation">
+            <a href="#platform">Platform</a>
+            <a href="#roles">Roles</a>
+            <a href="#security">Security</a>
+            <Link href="/pricing">Pricing</Link>
+            <Link href="/support">Support</Link>
+          </div>
+          <div className="marketing-nav-actions">
+            <Link className="ds-btn ds-btn-ghost" href="/login">Sign in</Link>
+            <Link className="ds-btn ds-btn-primary" href="/dashboard">Open platform</Link>
+          </div>
+        </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1.05fr .95fr", gap: 34, alignItems: "center" }}>
-            <div>
-              <span className="badge">Production-ready SaaS foundation</span>
-              <h1 style={{ fontSize: "clamp(42px, 7vw, 76px)", lineHeight: 0.95, margin: "22px 0", letterSpacing: "-0.06em" }}>
-                Modern school management for growing institutions.
-              </h1>
-              <p style={{ fontSize: 20, color: "#475569", lineHeight: 1.75, maxWidth: 680 }}>
-                EduManage is a full-stack SaaS platform for managing students, teachers, attendance, results, fees, parent communication and admin analytics from one clean dashboard.
-              </p>
-              <div style={{ display: "flex", gap: 14, flexWrap: "wrap", marginTop: 30 }}>
-                <Link className="btn btn-primary" href="/dashboard">Open Demo Dashboard <ArrowRight size={18} /></Link>
-                <a className="btn btn-secondary" href="#features">Explore Features</a>
+        <div className="ds-container marketing-hero-grid">
+          <div className="marketing-hero-copy">
+            <span className="ds-eyebrow"><Sparkles size={15} /> School operating system for serious institutions</span>
+            <h1 className="ds-display">Run academics, finance, attendance and parent engagement from one trusted platform.</h1>
+            <p className="ds-lead">
+              EduManage gives school owners and administrators a premium command center for daily operations, revenue visibility, student outcomes, parent trust and secure role-based workflows.
+            </p>
+            <div className="marketing-hero-actions">
+              <Link className="ds-btn ds-btn-primary ds-btn-lg" href="/login">Start secure access <ArrowRight size={18} /></Link>
+              <Link className="ds-btn ds-btn-secondary ds-btn-lg" href="/dashboard/launch">View launch readiness</Link>
+            </div>
+            <div className="trust-strip" aria-label="Trust highlights">
+              {proof.slice(0, 3).map((item) => <span key={item}><CheckCircle2 size={15} /> {item}</span>)}
+            </div>
+          </div>
+
+          <div className="hero-product-frame" aria-label="EduManage product preview">
+            <div className="hero-window-top"><span /><span /><span /><strong>Executive Command Center</strong></div>
+            <div className="hero-dashboard-preview">
+              <div className="hero-dashboard-main">
+                <span className="ds-eyebrow">Live school health</span>
+                <strong>96%</strong>
+                <p>Attendance, finance, results and parent engagement are operating above baseline.</p>
+                <div className="hero-chart" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></div>
+              </div>
+              <div className="hero-dashboard-side">
+                {[
+                  ["Fees collected", "₦18.4M"],
+                  ["Attendance", "94.2%"],
+                  ["Risk signals", "12"],
+                ].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
               </div>
             </div>
-
-            <div className="card" style={{ padding: 22 }}>
-              <div style={{ padding: 18, borderRadius: 20, background: "#0f172a", color: "white" }}>
-                <div style={{ display: "flex", justifyContent: "space-between", marginBottom: 22 }}>
-                  <strong>Greenfield School</strong>
-                  <span style={{ color: "#93c5fd" }}>Live term</span>
-                </div>
-                <div className="grid" style={{ gridTemplateColumns: "repeat(2,1fr)" }}>
-                  {["1,248 Students", "86 Teachers", "94% Attendance", "₦18.4M Fees"].map((item) => (
-                    <div key={item} style={{ padding: 18, background: "rgba(255,255,255,0.08)", borderRadius: 18, fontWeight: 800 }}>{item}</div>
-                  ))}
-                </div>
-              </div>
-            </div>
+            <div className="hero-insight-card"><ShieldCheck size={18} /> Role-based controls, audit trail and Supabase-backed data architecture.</div>
           </div>
         </div>
       </section>
 
-      <section id="features" className="container" style={{ padding: "70px 0" }}>
-        <div style={{ textAlign: "center", marginBottom: 34 }}>
-          <span className="badge">Core Modules</span>
-          <h2 style={{ fontSize: 42, margin: "16px 0 8px", letterSpacing: "-0.04em" }}>Everything a school needs to operate smarter</h2>
-          <p style={{ color: "#64748b", fontSize: 18 }}>Built as a serious portfolio SaaS foundation with real business use cases.</p>
+      <section className="ds-section ds-container proof-section" aria-label="Product proof">
+        {proof.map((item) => <div key={item}><CheckCircle2 size={18} /><span>{item}</span></div>)}
+      </section>
+
+      <section id="platform" className="ds-section ds-container">
+        <div className="section-heading">
+          <span className="ds-eyebrow">Platform modules</span>
+          <h2 className="ds-section-title">Everything important to school operations, designed around real daily workflows.</h2>
+          <p className="ds-body-large">The product is intentionally split into focused workspaces so each user gets speed, clarity and confidence instead of a crowded generic dashboard.</p>
         </div>
-        <div className="grid" style={{ gridTemplateColumns: "repeat(auto-fit,minmax(260px,1fr))" }}>
-          {features.map((feature) => {
-            const Icon = feature.icon;
+        <div className="module-grid">
+          {modules.map((module) => {
+            const Icon = module.icon;
             return (
-              <div className="card" key={feature.title} style={{ padding: 26 }}>
-                <div style={{ width: 48, height: 48, borderRadius: 16, background: "#eff6ff", color: "#2563eb", display: "grid", placeItems: "center", marginBottom: 18 }}><Icon /></div>
-                <h3 style={{ margin: "0 0 10px", fontSize: 21 }}>{feature.title}</h3>
-                <p style={{ color: "#64748b", lineHeight: 1.7 }}>{feature.text}</p>
-              </div>
+              <article className="ds-card module-card" key={module.title}>
+                <div className="ds-icon"><Icon size={22} /></div>
+                <h3>{module.title}</h3>
+                <p>{module.text}</p>
+              </article>
             );
           })}
+        </div>
+      </section>
+
+      <section id="roles" className="ds-section role-section">
+        <div className="ds-container role-grid-shell">
+          <div className="section-heading align-left">
+            <span className="ds-eyebrow">Role-first product architecture</span>
+            <h2 className="ds-section-title">Every user sees the work that matters to them.</h2>
+            <p className="ds-body-large">A school owner, teacher, accountant and parent should not fight through the same interface. EduManage is structured around jobs-to-be-done.</p>
+            <Link className="ds-btn ds-btn-secondary" href="/dashboard/access">Explore access matrix</Link>
+          </div>
+          <div className="role-card-grid">
+            {roles.map((role) => <article key={role.title}><strong>{role.title}</strong><p>{role.outcome}</p></article>)}
+          </div>
+        </div>
+      </section>
+
+      <section id="security" className="ds-section ds-container trust-section">
+        <div className="trust-panel">
+          <div>
+            <span className="ds-eyebrow"><LockKeyhole size={15} /> Security and operational trust</span>
+            <h2 className="ds-section-title">Built for sensitive student, parent and financial data.</h2>
+            <p className="ds-body-large">EduManage includes a Supabase Auth foundation, protected routes, audit trail, role planning, database migrations, intelligence views and deployment QA documentation.</p>
+            <div className="security-links">
+              <Link href="/security">Security center</Link>
+              <Link href="/privacy">Privacy policy</Link>
+              <Link href="/terms">Terms of service</Link>
+            </div>
+          </div>
+          <div className="trust-metrics">
+            <article><Database size={20} /><strong>Supabase</strong><span>Database + Auth foundation</span></article>
+            <article><ShieldCheck size={20} /><strong>RBAC</strong><span>Role and permission architecture</span></article>
+            <article><BarChart3 size={20} /><strong>Audit</strong><span>Traceable sensitive actions</span></article>
+          </div>
+        </div>
+      </section>
+
+      <section className="ds-section ds-container faq-section">
+        <div className="section-heading">
+          <span className="ds-eyebrow">Buyer questions</span>
+          <h2 className="ds-section-title">Designed to reduce risk before a school commits.</h2>
+        </div>
+        <div className="faq-grid">
+          {faqs.map((faq) => <article key={faq.q}><h3>{faq.q}</h3><p>{faq.a}</p></article>)}
+        </div>
+      </section>
+
+      <section className="ds-section final-cta">
+        <div className="ds-container final-cta-panel">
+          <span className="ds-eyebrow">Ready for launch preparation</span>
+          <h2>Deploy, test, and start onboarding real schools.</h2>
+          <p>Use the launch center, deployment guide and smoke tests to move from product build to live customer validation.</p>
+          <div className="marketing-hero-actions">
+            <Link className="ds-btn ds-btn-primary ds-btn-lg" href="/dashboard/launch">Open launch center</Link>
+            <Link className="ds-btn ds-btn-secondary ds-btn-lg" href="/contact">Contact the team</Link>
+          </div>
         </div>
       </section>
     </main>
