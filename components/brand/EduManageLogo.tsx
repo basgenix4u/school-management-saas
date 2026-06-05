@@ -10,14 +10,14 @@ type LogoProps = {
 
 export function EduManageLogo({ href = "/", compact = false, className = "", uploaded = false }: LogoProps) {
   const content = uploaded ? (
-    <span className={`brand-logo uploaded-brand-logo ${className}`} aria-label="EduManage School OS">
+    <span className={`brand-logo uploaded-brand-logo clean-wordmark ${className}`} aria-label="EduManage School OS">
       <Image
-        src="/brand/edumanage-uploaded-wordmark.webp"
+        src="/brand/edumanage-wordmark-transparent.webp"
         alt="EduManage School OS"
-        width={1536}
-        height={1024}
+        width={900}
+        height={260}
         priority
-        sizes="(max-width: 640px) 190px, 260px"
+        sizes="(max-width: 640px) 180px, 250px"
       />
     </span>
   ) : (
