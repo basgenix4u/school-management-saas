@@ -190,6 +190,8 @@ See `docs/DESIGN_SYSTEM.md` for typography, color, component and layout standard
 
 See `docs/BRAND_ASSET_PROMPTS.md` for logo and marketing image generation prompts.
 
+See `docs/IMAGE_ASSET_AUDIT.md` for uploaded image placement, usage and performance guidance.
+
 ---
 
 ## Roadmap

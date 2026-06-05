@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import {
   ArrowRight,
@@ -77,23 +78,8 @@ export default function Home() {
             </div>
           </div>
 
-          <div className="hero-product-frame" aria-label="EduManage product preview">
-            <div className="hero-window-top"><span /><span /><span /><strong>Executive Command Center</strong></div>
-            <div className="hero-dashboard-preview">
-              <div className="hero-dashboard-main">
-                <span className="ds-eyebrow">Live school health</span>
-                <strong>96%</strong>
-                <p>Attendance, finance, results and parent engagement are operating above baseline.</p>
-                <div className="hero-chart" aria-hidden="true"><i /><i /><i /><i /><i /><i /><i /></div>
-              </div>
-              <div className="hero-dashboard-side">
-                {[
-                  ["Fees collected", "₦18.4M"],
-                  ["Attendance", "94.2%"],
-                  ["Risk signals", "12"],
-                ].map(([label, value]) => <div key={label}><span>{label}</span><strong>{value}</strong></div>)}
-              </div>
-            </div>
+          <div className="hero-product-frame image-frame" aria-label="EduManage product intelligence preview">
+            <Image src="/marketing/platform-intelligence.webp" alt="Abstract EduManage dashboard showing school overview, academic insights, attendance signals and finance charts" width={1376} height={768} priority sizes="(max-width: 980px) 100vw, 48vw" />
             <div className="hero-insight-card"><ShieldCheck size={18} /> Role-based controls, audit trail and Supabase-backed data architecture.</div>
           </div>
         </div>
@@ -120,6 +106,28 @@ export default function Home() {
               </article>
             );
           })}
+        </div>
+      </section>
+
+      <section className="ds-section ds-container visual-proof-section">
+        <div className="section-heading">
+          <span className="ds-eyebrow">Real school workflows</span>
+          <h2 className="ds-section-title">Designed for the people who run, teach, pay, support and trust the school.</h2>
+          <p className="ds-body-large">These product surfaces are mapped to real school behavior: administrators need oversight, teachers need speed, parents need clarity, and finance teams need confidence.</p>
+        </div>
+        <div className="visual-story-grid">
+          <article className="visual-story-card large">
+            <Image src="/marketing/school-operations.webp" alt="School administrators using EduManage dashboards in a modern school office" width={1376} height={768} sizes="(max-width: 980px) 100vw, 55vw" />
+            <div><span>Operations</span><h3>School teams get one operating rhythm.</h3><p>Attendance, invoices and student records become visible across the school office without spreadsheet chaos.</p></div>
+          </article>
+          <article className="visual-story-card">
+            <Image src="/marketing/teacher-workflow.webp" alt="Teacher using a tablet in class to manage attendance and learning progress" width={1376} height={768} sizes="(max-width: 980px) 100vw, 45vw" />
+            <div><span>Teachers</span><h3>Fast classroom workflows.</h3><p>Teachers can mark attendance and act on student signals without leaving the classroom context.</p></div>
+          </article>
+          <article className="visual-story-card">
+            <Image src="/marketing/parent-portal.webp" alt="Parent checking a school portal on a phone while supporting a child at home" width={1200} height={896} sizes="(max-width: 980px) 100vw, 45vw" />
+            <div><span>Parents</span><h3>Trust on mobile.</h3><p>Parents see fees, progress, messages and report cards from a calm mobile-first portal.</p></div>
+          </article>
         </div>
       </section>
 
@@ -155,6 +163,17 @@ export default function Home() {
             <article><BarChart3 size={20} /><strong>Audit</strong><span>Traceable sensitive actions</span></article>
           </div>
         </div>
+      </section>
+
+      <section className="ds-section ds-container image-use-case-grid">
+        <article className="use-case-image-card">
+          <Image src="/marketing/finance-intelligence.webp" alt="Abstract finance dashboard showing invoice cards, revenue forecast and payment risk signals" width={1376} height={768} sizes="(max-width: 980px) 100vw, 50vw" />
+          <div><span className="ds-eyebrow">Finance intelligence</span><h3>Revenue clarity before cashflow problems grow.</h3><p>Invoice cards, collection forecasts and risk signals help schools follow up before balances become operational stress.</p></div>
+        </article>
+        <article className="use-case-image-card">
+          <Image src="/marketing/security-cloud.webp" alt="Secure cloud illustration with protected student records and trust controls" width={1376} height={768} sizes="(max-width: 980px) 100vw, 50vw" />
+          <div><span className="ds-eyebrow">Security posture</span><h3>Trust is part of the product experience.</h3><p>Security visuals belong near data protection, audit and role-based access messaging — not as decoration.</p></div>
+        </article>
       </section>
 
       <section className="ds-section ds-container faq-section">

@@ -669,3 +669,24 @@ button:disabled { opacity: .7; cursor: not-allowed; }
 .live-form-grid button { align-self: end; }
 .empty-state-card { border: 1px dashed #cbd5e1; background: #f8fafc; color: #64748b; border-radius: 20px; padding: 22px; font-weight: 900; text-align: center; }
 @media (max-width: 900px) { .live-form-grid { grid-template-columns: 1fr; } .live-status-card { align-items: flex-start; flex-direction: column; } }
+
+/* Marketing image integration */
+.image-frame { overflow: hidden; padding: 10px; }
+.image-frame > img { width: 100%; display: block; border-radius: 24px; object-fit: cover; aspect-ratio: 16 / 9; background: #07111f; }
+.visual-proof-section { padding-top: 36px; }
+.visual-story-grid { display: grid; grid-template-columns: 1.08fr .92fr; gap: 18px; align-items: stretch; }
+.visual-story-card { overflow: hidden; border: 1px solid rgba(148,163,184,.22); border-radius: 30px; background: white; box-shadow: var(--ds-shadow); }
+.visual-story-card.large { grid-row: span 2; }
+.visual-story-card img { width: 100%; display: block; aspect-ratio: 16 / 9; object-fit: cover; background: #e2e8f0; }
+.visual-story-card.large img { aspect-ratio: 16 / 10; }
+.visual-story-card div { padding: 22px; }
+.visual-story-card span { color: #2563eb; text-transform: uppercase; letter-spacing: .12em; font-size: 12px; font-weight: 950; }
+.visual-story-card h3 { font-size: clamp(22px, 3vw, 34px); line-height: 1.04; letter-spacing: -.05em; margin: 10px 0 8px; }
+.visual-story-card p { color: var(--ds-muted); line-height: 1.7; margin: 0; }
+.image-use-case-grid { display: grid; grid-template-columns: repeat(2,minmax(0,1fr)); gap: 18px; padding-top: 34px; }
+.use-case-image-card { overflow: hidden; border-radius: 32px; border: 1px solid rgba(148,163,184,.22); background: #07111f; color: white; box-shadow: 0 28px 90px rgba(15,23,42,.18); }
+.use-case-image-card img { width: 100%; display: block; aspect-ratio: 16 / 9; object-fit: cover; opacity: .94; }
+.use-case-image-card div { padding: 24px; }
+.use-case-image-card h3 { color: white; font-size: clamp(24px, 3vw, 38px); line-height: 1; letter-spacing: -.055em; margin: 12px 0 8px; }
+.use-case-image-card p { color: rgba(255,255,255,.72); line-height: 1.7; }
+@media (max-width: 980px) { .visual-story-grid, .image-use-case-grid { grid-template-columns: 1fr; } .visual-story-card.large { grid-row: auto; } }
