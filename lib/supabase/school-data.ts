@@ -163,7 +163,7 @@ export async function listLiveStudents(client: SupabaseClient) {
 }
 
 export async function createLiveStudent(client: SupabaseClient, input: StudentCreateInput) {
-  const organization = await getOrganization(client);
+  const organization = await getOrganizationForWrite(client);
   const classroom = await getClassroomByName(client, organization.id, input.className);
   const payload = {
     organization_id: organization.id,
@@ -183,7 +183,7 @@ export async function createLiveStudent(client: SupabaseClient, input: StudentCr
 }
 
 export async function updateLiveStudent(client: SupabaseClient, admissionNo: string, changes: Partial<StudentCreateInput>) {
-  const organization = await getOrganization(client);
+  const organization = await getOrganizationForWrite(client);
   const classroom = await getClassroomByName(client, organization.id, changes.className);
   const payload: Record<string, string | null> = {};
   if (changes.firstName) payload.first_name = changes.firstName;
@@ -217,7 +217,7 @@ export async function listLiveAttendance(client: SupabaseClient) {
 }
 
 export async function createLiveAttendance(client: SupabaseClient, input: AttendanceCreateInput) {
-  const organization = await getOrganization(client);
+  const organization = await getOrganizationForWrite(client);
   const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
   if (!student) throw new Error(`Student ${input.admissionNo} not found`);
   const payload = {
@@ -255,7 +255,7 @@ export async function getLiveInvoice(client: SupabaseClient, invoiceNo: string) 
 }
 
 export async function createLiveInvoice(client: SupabaseClient, input: InvoiceCreateInput) {
-  const organization = await getOrganization(client);
+  const organization = await getOrganizationForWrite(client);
   const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
   if (!student) throw new Error(`Student ${input.admissionNo} not found`);
   const payload = {
@@ -304,7 +304,7 @@ export async function listLiveResults(client: SupabaseClient) {
 }
 
 export async function getLiveResultByStudent(client: SupabaseClient, admissionNo: string) {
-  const organization = await getOrganization(client);
+  const organization = await getOrganizationForWrite(client);
   const student = await getStudentByAdmission(client, organization.id, admissionNo);
   if (!student) return null;
   const { data, error } = await client
@@ -317,7 +317,7 @@ export async function getLiveResultByStudent(client: SupabaseClient, admissionNo
 }
 
 export async function upsertLiveResult(client: SupabaseClient, input: ResultUpsertInput) {
-  const organization = await getOrganization(client);
+  const organization = await getOrganizationForWrite(client);
   const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
   if (!student) throw new Error(`Student ${input.admissionNo} not found`);
   const subject = await getOrCreateSubject(client, organization.id, input.subjectName);
@@ -359,4 +359,137 @@ function calculateRemark(score: number) {
   if (score >= 60) return "Good";
   if (score >= 50) return "Fair";
   return "Needs Improvement";
+}
+
+export type OrganizationSetupInput = {
+  name: string;
+  slug?: string;
+  email?: string;
+  phone?: string;
+  address?: string;
+};
+
+export type AcademicSessionInput = {
+  name: string;
+  currentTerm: string;
+  startsOn?: string;
+  endsOn?: string;
+};
+
+export type ClassroomSetupInput = {
+  name: string;
+  level?: string;
+  arm?: string;
+  capacity?: number;
+};
+
+export type TeacherSetupInput = {
+  staffNo: string;
+  name: string;
+  email?: string;
+  phone?: string;
+  department?: string;
+  title?: string;
+};
+
+export type FeeCategoryInput = {
+  name: string;
+  amount: number;
+  billingCycle?: string;
+  required?: boolean;
+};
+
+export function slugify(value: string) {
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || DEFAULT_ORG_SLUG;
+}
+
+export async function getPrimaryOrganization(client: SupabaseClient) {
+  const { data, error } = await client.from("organizations").select("id,name,slug").order("created_at", { ascending: true }).limit(1).maybeSingle<OrganizationRow>();
+  if (error) throw error;
+  return data;
+}
+
+export async function getOrganizationForWrite(client: SupabaseClient) {
+  const primary = await getPrimaryOrganization(client);
+  if (primary) return primary;
+  throw new Error("Create a school profile before adding records.");
+}
+
+export async function upsertOrganization(client: SupabaseClient, input: OrganizationSetupInput) {
+  const slug = input.slug ? slugify(input.slug) : slugify(input.name);
+  const { data, error } = await client.from("organizations").upsert({
+    name: input.name,
+    slug,
+    email: input.email ?? null,
+    phone: input.phone ?? null,
+    address: input.address ?? null,
+    active: true,
+  }, { onConflict: "slug" }).select("id,name,slug").single<OrganizationRow>();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertAcademicSession(client: SupabaseClient, organizationId: string, input: AcademicSessionInput) {
+  const { data, error } = await client.from("academic_sessions").upsert({
+    organization_id: organizationId,
+    name: input.name,
+    current_term: input.currentTerm,
+    starts_on: input.startsOn || null,
+    ends_on: input.endsOn || null,
+    active: true,
+  }, { onConflict: "organization_id,name" }).select("*").single();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertClassrooms(client: SupabaseClient, organizationId: string, classes: ClassroomSetupInput[]) {
+  const rows = classes.filter((item) => item.name).map((item) => ({
+    organization_id: organizationId,
+    name: item.name,
+    level: item.level ?? null,
+    arm: item.arm ?? null,
+    capacity: item.capacity ?? null,
+  }));
+  if (!rows.length) return [];
+  const { data, error } = await client.from("classrooms").upsert(rows, { onConflict: "organization_id,name" }).select("*");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function upsertTeachers(client: SupabaseClient, organizationId: string, teachers: TeacherSetupInput[]) {
+  const rows = teachers.filter((item) => item.staffNo && item.name).map((item) => ({
+    organization_id: organizationId,
+    staff_no: item.staffNo,
+    name: item.name,
+    email: item.email ?? null,
+    phone: item.phone ?? null,
+    department: item.department ?? null,
+    title: item.title ?? null,
+    active: true,
+  }));
+  if (!rows.length) return [];
+  const { data, error } = await client.from("teachers").upsert(rows, { onConflict: "organization_id,staff_no" }).select("*");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function upsertFeeCategories(client: SupabaseClient, organizationId: string, fees: FeeCategoryInput[]) {
+  const rows = fees.filter((item) => item.name).map((item) => ({
+    organization_id: organizationId,
+    name: item.name,
+    amount: item.amount,
+    billing_cycle: item.billingCycle ?? "termly",
+    required: item.required ?? true,
+    active: true,
+  }));
+  if (!rows.length) return [];
+  const { data, error } = await client.from("fee_categories").upsert(rows, { onConflict: "organization_id,name" }).select("*");
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getSetupReadiness(client: SupabaseClient) {
+  const { data, error } = await client.from("v_setup_readiness").select("*").order("readiness_score", { ascending: false }).limit(1).maybeSingle();
+  if (error) throw error;
+  return data;
 }

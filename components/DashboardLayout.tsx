@@ -7,6 +7,7 @@ import { BookOpenCheck, BriefcaseBusiness, BrainCircuit, CalendarCheck, Clipboar
 const nav = [
   { href: "/dashboard", label: "Command Center", icon: LayoutDashboard },
   { href: "/dashboard/intelligence", label: "Intelligence", icon: BrainCircuit },
+  { href: "/dashboard/setup", label: "School Setup", icon: Rocket },
   { href: "/dashboard/onboarding", label: "Onboarding", icon: Rocket },
   { href: "/dashboard/launch", label: "Launch Center", icon: Rocket },
   { href: "/dashboard/database", label: "Database", icon: Database },

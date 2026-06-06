@@ -142,6 +142,7 @@ Open http://localhost:3000.
 ```txt
 /                       Landing page
 /dashboard              Executive command center
+/dashboard/setup        First-run school setup wizard
 /dashboard/intelligence Intelligence center and AI-style copilot
 /dashboard/onboarding   Workspace launch onboarding
 /dashboard/launch       Production launch center

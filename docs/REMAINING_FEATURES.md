@@ -119,8 +119,9 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 
 ## Priority 10 — SaaS Multi-Tenancy
 
-- School onboarding wizard
+- School onboarding wizard ✅ initial production setup wizard complete
 - School settings
+- First-run setup APIs ✅ school profile, session, classes, staff, students and fees
 - Academic session/term setup
 - Class/arm setup
 - Subject setup
