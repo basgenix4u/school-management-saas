@@ -829,3 +829,88 @@ export async function getResultPublicationEvents(client: SupabaseClient) {
   if (error) throw error;
   return data ?? [];
 }
+
+export type AnnouncementInput = {
+  title: string;
+  body: string;
+  audience?: string;
+  publish?: boolean;
+};
+
+export async function listAnnouncements(client: SupabaseClient) {
+  const organization = await getOrganizationForWrite(client);
+  const { data, error } = await client
+    .from("announcements")
+    .select("id,title,body,audience,published_at,created_at")
+    .eq("organization_id", organization.id)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createAnnouncement(client: SupabaseClient, input: AnnouncementInput) {
+  const organization = await getOrganizationForWrite(client);
+  const { data, error } = await client
+    .from("announcements")
+    .insert({
+      organization_id: organization.id,
+      title: input.title,
+      body: input.body,
+      audience: input.audience ?? "ALL",
+      published_at: input.publish ? new Date().toISOString() : null,
+    })
+    .select("id,title,body,audience,published_at,created_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function getCommunicationSummary(client: SupabaseClient) {
+  const { data, error } = await client.from("v_communication_summary").select("*").limit(1).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function listCommunicationDeliveries(client: SupabaseClient) {
+  const organization = await getOrganizationForWrite(client);
+  const { data, error } = await client
+    .from("communication_deliveries")
+    .select("id,announcement_id,channel,recipient_email,subject,status,provider,provider_message_id,error_message,sent_at,created_at")
+    .eq("organization_id", organization.id)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function recordCommunicationDelivery(client: SupabaseClient, input: {
+  announcementId?: string;
+  recipientEmail: string;
+  subject: string;
+  status: "queued" | "sent" | "failed";
+  provider?: string;
+  providerMessageId?: string;
+  errorMessage?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const organization = await getOrganizationForWrite(client);
+  const { data, error } = await client
+    .from("communication_deliveries")
+    .insert({
+      organization_id: organization.id,
+      announcement_id: input.announcementId ?? null,
+      channel: "email",
+      recipient_email: input.recipientEmail.toLowerCase(),
+      subject: input.subject,
+      status: input.status,
+      provider: input.provider ?? null,
+      provider_message_id: input.providerMessageId ?? null,
+      error_message: input.errorMessage ?? null,
+      sent_at: input.status === "sent" ? new Date().toISOString() : null,
+      metadata: input.metadata ?? {},
+    })
+    .select("*")
+    .single();
+  if (error) throw error;
+  return data;
+}

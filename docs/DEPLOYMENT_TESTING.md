@@ -393,3 +393,36 @@ POST /api/payments/paystack/verify
 POST /api/payments/paystack/webhook
 GET  /api/receipts/[reference]
 ```
+
+
+## Resend Email Setup
+
+Add these Vercel environment variables before enabling email delivery:
+
+```txt
+RESEND_API_KEY
+EMAIL_FROM
+```
+
+Recommended `EMAIL_FROM` format:
+
+```txt
+EduManage <noreply@yourdomain.com>
+```
+
+Communication APIs:
+
+```txt
+GET  /api/communications
+POST /api/communications
+POST /api/communications/send
+```
+
+Email test flow:
+
+1. Create a school profile in `/dashboard/setup`.
+2. Open `/dashboard/communications`.
+3. Create an announcement.
+4. Add recipient emails.
+5. Send email.
+6. Confirm delivery records appear in the communication log.

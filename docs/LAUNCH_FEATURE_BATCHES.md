@@ -53,8 +53,8 @@ Why: report cards are one of the highest-value school workflows.
 
 ## Batch 6 — Communication Launch
 
-11. Real announcement creation
-12. Email delivery via Resend
+11. Real announcement creation ✅ complete
+12. Email delivery via Resend ✅ complete
 
 Why: communication drives daily usage and parent trust.
 
