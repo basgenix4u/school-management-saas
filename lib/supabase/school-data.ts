@@ -17,6 +17,7 @@ type StudentRow = {
   guardian_name: string | null;
   guardian_phone: string | null;
   guardian_email: string | null;
+  student_email: string | null;
   risk_level: string;
   status: string;
   active: boolean;
@@ -74,6 +75,7 @@ export type StudentCreateInput = {
   guardianName?: string;
   guardianPhone?: string;
   guardianEmail?: string;
+  studentEmail?: string;
   riskLevel?: string;
 };
 
@@ -136,7 +138,7 @@ export async function getClassroomByName(client: SupabaseClient, organizationId:
 export async function getStudentByAdmission(client: SupabaseClient, organizationId: string, admissionNo: string) {
   const { data, error } = await client
     .from("students")
-    .select("id,organization_id,classroom_id,admission_no,first_name,last_name,gender,guardian_name,guardian_phone,guardian_email,risk_level,status,active")
+    .select("id,organization_id,classroom_id,admission_no,first_name,last_name,gender,guardian_name,guardian_phone,guardian_email,student_email,risk_level,status,active")
     .eq("organization_id", organizationId)
     .eq("admission_no", admissionNo)
     .maybeSingle<StudentRow>();
@@ -175,10 +177,12 @@ export async function createLiveStudent(client: SupabaseClient, input: StudentCr
     guardian_name: input.guardianName ?? null,
     guardian_phone: input.guardianPhone ?? null,
     guardian_email: input.guardianEmail ?? null,
+    student_email: input.studentEmail ?? null,
     risk_level: input.riskLevel ?? "Low",
   };
   const { data, error } = await client.from("students").insert(payload).select("*").single<StudentRow>();
   if (error) throw error;
+  await linkExistingUsersForStudent(client, data).catch(() => []);
   return data;
 }
 
@@ -192,6 +196,7 @@ export async function updateLiveStudent(client: SupabaseClient, admissionNo: str
   if (changes.guardianName !== undefined) payload.guardian_name = changes.guardianName ?? null;
   if (changes.guardianPhone !== undefined) payload.guardian_phone = changes.guardianPhone ?? null;
   if (changes.guardianEmail !== undefined) payload.guardian_email = changes.guardianEmail ?? null;
+  if (changes.studentEmail !== undefined) payload.student_email = changes.studentEmail ?? null;
   if (changes.riskLevel !== undefined) payload.risk_level = changes.riskLevel ?? "Low";
   if (classroom) payload.classroom_id = classroom.id;
 
@@ -399,6 +404,14 @@ export type FeeCategoryInput = {
   required?: boolean;
 };
 
+
+function relationName(value: unknown) {
+  if (!value) return null;
+  if (Array.isArray(value)) return String((value[0] as Record<string, unknown> | undefined)?.name ?? "") || null;
+  if (typeof value === "object") return String((value as Record<string, unknown>).name ?? "") || null;
+  return null;
+}
+
 export function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || DEFAULT_ORG_SLUG;
 }
@@ -568,4 +581,128 @@ export async function acceptInvitation(client: SupabaseClient, token: string, au
   if (updateError) throw updateError;
 
   return profile;
+}
+
+
+export async function findAppUserByEmail(client: SupabaseClient, email: string) {
+  const { data, error } = await client
+    .from("app_users")
+    .select("id,organization_id,name,email,role")
+    .eq("email", email.toLowerCase())
+    .maybeSingle<{ id: string; organization_id: string; name: string; email: string; role: string }>();
+  if (error) throw error;
+  return data;
+}
+
+export async function linkExistingUsersForStudent(client: SupabaseClient, student: StudentRow) {
+  const links = [];
+  if (student.guardian_email) {
+    const parent = await findAppUserByEmail(client, student.guardian_email);
+    if (parent) {
+      const { data, error } = await client.from("user_student_links").upsert({
+        organization_id: student.organization_id,
+        app_user_id: parent.id,
+        student_id: student.id,
+        relationship: "PARENT",
+        active: true,
+      }, { onConflict: "app_user_id,student_id,relationship" }).select("*").single();
+      if (error) throw error;
+      links.push(data);
+    }
+  }
+  if (student.student_email) {
+    const studentUser = await findAppUserByEmail(client, student.student_email);
+    if (studentUser) {
+      const { data, error } = await client.from("user_student_links").upsert({
+        organization_id: student.organization_id,
+        app_user_id: studentUser.id,
+        student_id: student.id,
+        relationship: "STUDENT",
+        active: true,
+      }, { onConflict: "app_user_id,student_id,relationship" }).select("*").single();
+      if (error) throw error;
+      links.push(data);
+    }
+  }
+  return links;
+}
+
+export async function getPortalStudentsForUser(client: SupabaseClient, userEmail: string, relationship: "PARENT" | "STUDENT") {
+  const profile = await findAppUserByEmail(client, userEmail);
+  if (!profile) return { profile: null, students: [] as Array<Record<string, unknown>> };
+
+  const { data: linked, error: linkError } = await client
+    .from("v_portal_student_links")
+    .select("*")
+    .eq("app_user_id", profile.id)
+    .eq("relationship", relationship)
+    .eq("active", true);
+  if (linkError) throw linkError;
+
+  let students = linked ?? [];
+  if (!students.length && relationship === "PARENT") {
+    const { data, error } = await client
+      .from("students")
+      .select("id,organization_id,admission_no,first_name,last_name,student_email,guardian_name,guardian_email,guardian_phone,risk_level,classrooms(name)")
+      .eq("guardian_email", userEmail.toLowerCase());
+    if (error) throw error;
+    students = (data ?? []).map((student) => ({
+      student_id: student.id,
+      organization_id: student.organization_id,
+      admission_no: student.admission_no,
+      student_name: `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim(),
+      student_email: student.student_email,
+      guardian_name: student.guardian_name,
+      guardian_email: student.guardian_email,
+      guardian_phone: student.guardian_phone,
+      risk_level: student.risk_level,
+      classroom: relationName(student.classrooms),
+      relationship: "PARENT",
+    }));
+  }
+
+  if (!students.length && relationship === "STUDENT") {
+    const { data, error } = await client
+      .from("students")
+      .select("id,organization_id,admission_no,first_name,last_name,student_email,guardian_name,guardian_email,guardian_phone,risk_level,classrooms(name)")
+      .eq("student_email", userEmail.toLowerCase());
+    if (error) throw error;
+    students = (data ?? []).map((student) => ({
+      student_id: student.id,
+      organization_id: student.organization_id,
+      admission_no: student.admission_no,
+      student_name: `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim(),
+      student_email: student.student_email,
+      guardian_name: student.guardian_name,
+      guardian_email: student.guardian_email,
+      guardian_phone: student.guardian_phone,
+      risk_level: student.risk_level,
+      classroom: relationName(student.classrooms),
+      relationship: "STUDENT",
+    }));
+  }
+
+  return { profile, students };
+}
+
+export async function getStudentPortalBundle(client: SupabaseClient, userEmail: string, relationship: "PARENT" | "STUDENT") {
+  const portal = await getPortalStudentsForUser(client, userEmail, relationship);
+  const studentIds = portal.students.map((student) => String(student.student_id)).filter(Boolean);
+  if (!studentIds.length) return { ...portal, invoices: [], results: [], attendance: [] };
+
+  const [invoicesResult, resultsResult, attendanceResult] = await Promise.all([
+    client.from("invoices").select("id,invoice_no,title,amount,amount_paid,status,due_date,student_id").in("student_id", studentIds),
+    client.from("results").select("id,student_id,term,session,ca_score,exam_score,total_score,grade,remark,status,subjects(name)").in("student_id", studentIds),
+    client.from("attendance_records").select("id,student_id,attendance_date,period,status,note").in("student_id", studentIds).order("attendance_date", { ascending: false }).limit(50),
+  ]);
+  if (invoicesResult.error) throw invoicesResult.error;
+  if (resultsResult.error) throw resultsResult.error;
+  if (attendanceResult.error) throw attendanceResult.error;
+
+  return {
+    ...portal,
+    invoices: invoicesResult.data ?? [],
+    results: resultsResult.data ?? [],
+    attendance: attendanceResult.data ?? [],
+  };
 }

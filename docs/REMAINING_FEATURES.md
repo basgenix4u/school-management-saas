@@ -105,13 +105,13 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 
 ## Priority 9 — Parent and Student Portals
 
-- Parent authentication
+- Parent authentication ✅ supported through Supabase Auth and invitations
 - Parent-child linking
 - View child attendance
 - View child report cards
 - View and pay invoices
 - Parent messaging with school
-- Student authentication
+- Student authentication ✅ supported through Supabase Auth and invitations
 - Student assignments/tasks
 - Student progress tracking
 - Student announcements

@@ -1,35 +1,70 @@
-import Link from "next/link";
-import { ArrowRight, Bell, CreditCard, GraduationCap, MessageCircle, ShieldCheck, UsersRound } from "lucide-react";
-import { money, parentAnnouncements, parentInvoices, parentMessages, parentProfile } from "@/lib/portal-data";
+"use client";
 
-function statusClass(status: string) {
-  if (status === "Paid") return "good";
-  if (status === "Partial") return "warn";
-  return "bad";
-}
+import { useEffect, useMemo, useState } from "react";
+import { AlertCircle, Bell, CreditCard, GraduationCap, Loader2, MessageCircle, ShieldCheck } from "lucide-react";
+import { money } from "@/lib/portal-data";
+
+type PortalPayload = {
+  status: string;
+  profile?: { name?: string; email?: string; role?: string } | null;
+  students?: Array<Record<string, unknown>>;
+  invoices?: Array<Record<string, unknown>>;
+  results?: Array<Record<string, unknown>>;
+  attendance?: Array<Record<string, unknown>>;
+  message?: string;
+};
+
+function studentName(row: Record<string, unknown>) { return String(row.student_name ?? row.admission_no ?? "Student"); }
+function invoiceBalance(row: Record<string, unknown>) { return Number(row.amount ?? 0) - Number(row.amount_paid ?? 0); }
 
 export function ParentPortal() {
-  const totalBalance = parentInvoices.reduce((sum, invoice) => sum + (invoice.amount - invoice.paid), 0);
-  const avgAttendance = Math.round(parentProfile.children.reduce((sum, child) => sum + child.attendance, 0) / parentProfile.children.length);
-  const avgPerformance = Math.round(parentProfile.children.reduce((sum, child) => sum + child.average, 0) / parentProfile.children.length);
+  const [data, setData] = useState<PortalPayload>({ status: "loading", students: [], invoices: [], results: [], attendance: [] });
+  const [loading, setLoading] = useState(true);
+
+  async function load() {
+    setLoading(true);
+    try {
+      const response = await fetch("/api/portal/parent", { cache: "no-store" });
+      const payload = await response.json() as PortalPayload;
+      setData(payload);
+    } catch (error) {
+      setData({ status: "error", message: error instanceof Error ? error.message : "Unable to load parent portal", students: [], invoices: [], results: [], attendance: [] });
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  useEffect(() => { const timer = window.setTimeout(() => { void load(); }, 0); return () => window.clearTimeout(timer); }, []);
+
+  const students = useMemo(() => data.students ?? [], [data.students]);
+  const invoices = useMemo(() => data.invoices ?? [], [data.invoices]);
+  const totalBalance = useMemo(() => invoices.reduce((sum, invoice) => sum + invoiceBalance(invoice), 0), [invoices]);
+  const attendanceCount = data.attendance?.length ?? 0;
+  const resultsCount = data.results?.length ?? 0;
 
   return (
     <main className="portal-shell">
       <section className="portal-hero card-aurora">
         <div>
-          <span className="premium-kicker"><UsersRound size={14} /> Parent Portal</span>
-          <h1>Everything a parent needs, in one calm mobile-first portal.</h1>
-          <p>Fees, report cards, attendance, announcements and school messages are presented clearly for busy parents and guardians.</p>
-          <div className="role-metrics"><span>{parentProfile.name}</span><span>{parentProfile.children.length} children</span><span>{money(totalBalance)} balance</span></div>
+          <span className="premium-kicker"><GraduationCap size={14} /> Parent Portal</span>
+          <h1>Stay connected to your child’s school life.</h1>
+          <p>View linked children, invoices, attendance activity and academic updates from one secure parent workspace.</p>
+          <div className="role-metrics"><span>{data.profile?.name ?? "Parent account"}</span><span>{students.length} linked child(ren)</span><span>{money(totalBalance)} balance</span></div>
         </div>
-        <div className="portal-live-card"><strong>{avgPerformance}%</strong><span>Average child performance</span><small>{avgAttendance}% average attendance</small></div>
+        <div className="portal-live-card"><strong>{students.length}</strong><span>Linked children</span><small>{loading ? "Loading..." : data.status}</small></div>
+      </section>
+
+      <section className="live-status-card">
+        {loading ? <Loader2 className="spin" size={18} /> : data.status === "ok" ? <ShieldCheck size={18} /> : <AlertCircle size={18} />}
+        <span>{data.message ?? (data.status === "ok" ? "Parent portal data loaded." : "Portal is ready once records are linked.")}</span>
+        <button type="button" onClick={load}>Refresh</button>
       </section>
 
       <section className="premium-metrics">
-        <article className="premium-metric tone-blue"><div className="metric-icon"><GraduationCap /></div><span>Children</span><strong>{parentProfile.children.length}</strong><small>linked profiles</small><p>All child records under one guardian account.</p></article>
-        <article className="premium-metric tone-emerald"><div className="metric-icon"><ShieldCheck /></div><span>Attendance</span><strong>{avgAttendance}%</strong><small>healthy</small><p>Average attendance across linked children.</p></article>
-        <article className="premium-metric tone-amber"><div className="metric-icon"><CreditCard /></div><span>Balance</span><strong>{money(totalBalance)}</strong><small>remaining</small><p>Outstanding fee balance requiring payment follow-up.</p></article>
-        <article className="premium-metric tone-violet"><div className="metric-icon"><MessageCircle /></div><span>Messages</span><strong>{parentMessages.length}</strong><small>updates</small><p>Recent school communication and notifications.</p></article>
+        <article className="premium-metric tone-blue"><div className="metric-icon"><GraduationCap /></div><span>Children</span><strong>{students.length}</strong><small>linked profiles</small><p>Children connected to your parent account.</p></article>
+        <article className="premium-metric tone-emerald"><div className="metric-icon"><ShieldCheck /></div><span>Attendance records</span><strong>{attendanceCount}</strong><small>available</small><p>Recent attendance records for linked children.</p></article>
+        <article className="premium-metric tone-amber"><div className="metric-icon"><CreditCard /></div><span>Balance</span><strong>{money(totalBalance)}</strong><small>remaining</small><p>Outstanding invoice balance for linked children.</p></article>
+        <article className="premium-metric tone-violet"><div className="metric-icon"><MessageCircle /></div><span>Results</span><strong>{resultsCount}</strong><small>subject records</small><p>Academic results available to this account.</p></article>
       </section>
 
       <section className="premium-grid-2 align-start">
@@ -37,13 +72,8 @@ export function ParentPortal() {
           <span className="premium-kicker"><GraduationCap size={14} /> Children Overview</span>
           <h2>Linked students</h2>
           <div className="portal-child-list">
-            {parentProfile.children.map((child) => (
-              <article key={child.id}>
-                <div className="student-avatar mini">{child.avatar}</div>
-                <div><strong>{child.name}</strong><span>{child.id} • {child.className}</span><p>{child.latestResult} • Next: {child.nextClass}</p></div>
-                <Link className="mini-link" href={`/dashboard/students/${child.slug}`}>View <ArrowRight size={14} /></Link>
-              </article>
-            ))}
+            {students.length === 0 ? <div className="empty-state-card">No children are linked to this account yet. Ask the school to link your parent email to the student record.</div> : null}
+            {students.map((child) => <article key={String(child.student_id)}><div className="student-avatar mini">{studentName(child).slice(0,2).toUpperCase()}</div><div><strong>{studentName(child)}</strong><span>{String(child.admission_no ?? "")} • {String(child.classroom ?? "No class assigned")}</span><p>Risk level: {String(child.risk_level ?? "Not set")}</p></div></article>)}
           </div>
         </div>
 
@@ -51,27 +81,16 @@ export function ParentPortal() {
           <span className="premium-kicker"><CreditCard size={14} /> Fees</span>
           <h2>Invoices and balances</h2>
           <div className="portal-invoice-list">
-            {parentInvoices.map((invoice) => (
-              <article key={invoice.id}>
-                <div><strong>{invoice.title}</strong><span>{invoice.child} • Due {invoice.due}</span></div>
-                <div><strong>{money(invoice.amount - invoice.paid)}</strong><span className={`status ${statusClass(invoice.status)}`}>{invoice.status}</span></div>
-              </article>
-            ))}
+            {invoices.length === 0 ? <div className="empty-state-card">No invoices are available yet.</div> : null}
+            {invoices.map((invoice) => <article key={String(invoice.id)}><div><strong>{String(invoice.title ?? "Invoice")}</strong><span>{String(invoice.invoice_no ?? "")} • Due {String(invoice.due_date ?? "not set")}</span></div><div><strong>{money(invoiceBalance(invoice))}</strong><span className="status warn">{String(invoice.status ?? "PENDING")}</span></div></article>)}
           </div>
         </div>
       </section>
 
-      <section className="premium-grid-2 align-start">
-        <div className="card premium-panel">
-          <span className="premium-kicker"><Bell size={14} /> Messages</span>
-          <h2>School communication</h2>
-          <div className="signal-list">{parentMessages.map((message) => <article className="signal-item" key={message.id}><div><strong>{message.title}</strong><p>{message.body}</p><small>{message.from} • {message.time}</small></div></article>)}</div>
-        </div>
-        <div className="card premium-panel">
-          <span className="premium-kicker">Announcements</span>
-          <h2>Important updates</h2>
-          <div className="trust-list">{parentAnnouncements.map((item) => <article key={item.title}><div><strong>{item.title}</strong><p>{item.body}</p></div><span>{item.tag}</span></article>)}</div>
-        </div>
+      <section className="card premium-panel">
+        <span className="premium-kicker"><Bell size={14} /> Academic activity</span>
+        <h2>Results and attendance</h2>
+        <div className="portal-activity-grid"><div><strong>{resultsCount}</strong><span>Result records</span></div><div><strong>{attendanceCount}</strong><span>Attendance records</span></div></div>
       </section>
     </main>
   );

@@ -25,8 +25,8 @@ Why first: real schools need to invite principals, teachers, accountants, parent
 
 ## Batch 2 — Live Portal Data
 
-3. Parent portal connected to authenticated parent records
-4. Student portal connected to authenticated student records
+3. Parent portal connected to authenticated parent records ✅ complete
+4. Student portal connected to authenticated student records ✅ complete
 
 Why: parents/students must see only their own data.
 
