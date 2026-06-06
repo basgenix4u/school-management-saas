@@ -358,3 +358,38 @@ Before using real school data:
 5. Run smoke test.
 6. Record screenshots and product video.
 7. Add live product link to GitHub README.
+
+
+## Paystack Payment Setup
+
+Add these Vercel environment variables before enabling online payments:
+
+```txt
+PAYSTACK_SECRET_KEY
+NEXT_PUBLIC_PAYSTACK_PUBLIC_KEY
+```
+
+In Paystack dashboard, configure webhook URL:
+
+```txt
+https://your-vercel-domain.vercel.app/api/payments/paystack/webhook
+```
+
+Payment test flow:
+
+1. Create a school profile.
+2. Add a student.
+3. Create an invoice for that student.
+4. Open `/dashboard/fees/[invoiceNo]`.
+5. Enter payer email and initialize Paystack payment.
+6. Paystack redirects to receipt page after successful payment.
+7. Webhook/verify API records payment and receipt.
+
+Payment APIs:
+
+```txt
+POST /api/payments/paystack/initialize
+POST /api/payments/paystack/verify
+POST /api/payments/paystack/webhook
+GET  /api/receipts/[reference]
+```

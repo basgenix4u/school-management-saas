@@ -46,6 +46,7 @@ type InvoiceRow = {
   due_date: string | null;
   payment_probability: number;
   student_id: string;
+  organization_id: string;
 };
 
 type SubjectRow = { id: string; name: string; organization_id: string; classroom_id: string | null };
@@ -242,7 +243,7 @@ export async function createLiveAttendance(client: SupabaseClient, input: Attend
 export async function listLiveInvoices(client: SupabaseClient) {
   const { data, error } = await client
     .from("invoices")
-    .select("id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name)")
+    .select("id,organization_id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name,guardian_email,student_email)")
     .order("created_at", { ascending: false })
     .returns<Array<InvoiceRow & { students: Record<string, unknown> | null }>>();
   if (error) throw error;
@@ -252,7 +253,7 @@ export async function listLiveInvoices(client: SupabaseClient) {
 export async function getLiveInvoice(client: SupabaseClient, invoiceNo: string) {
   const { data, error } = await client
     .from("invoices")
-    .select("id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name)")
+    .select("id,organization_id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name,guardian_email,student_email)")
     .eq("invoice_no", invoiceNo)
     .maybeSingle<InvoiceRow & { students: Record<string, unknown> | null }>();
   if (error) throw error;
@@ -705,4 +706,72 @@ export async function getStudentPortalBundle(client: SupabaseClient, userEmail: 
     results: resultsResult.data ?? [],
     attendance: attendanceResult.data ?? [],
   };
+}
+
+export async function recordVerifiedPayment(client: SupabaseClient, input: {
+  invoiceNo: string;
+  reference: string;
+  amount: number;
+  provider: string;
+  payerEmail?: string;
+  metadata?: Record<string, unknown>;
+}) {
+  const invoice = await getLiveInvoice(client, input.invoiceNo);
+  if (!invoice) throw new Error("Invoice not found");
+
+  const paid = Number(invoice.amount_paid ?? 0);
+  const amount = Number(invoice.amount ?? 0);
+  const nextPaid = Math.min(amount, paid + input.amount);
+  const status = nextPaid >= amount ? "PAID" : nextPaid > 0 ? "PARTIAL" : "PENDING";
+
+  const { data: payment, error: paymentError } = await client
+    .from("payments")
+    .upsert({
+      organization_id: invoice.organization_id,
+      invoice_id: invoice.id,
+      amount: input.amount,
+      provider: input.provider,
+      reference: input.reference,
+      paid_at: new Date().toISOString(),
+      metadata: input.metadata ?? {},
+    }, { onConflict: "reference" })
+    .select("*")
+    .single();
+  if (paymentError) throw paymentError;
+
+  const { error: invoiceError } = await client
+    .from("invoices")
+    .update({ amount_paid: nextPaid, status })
+    .eq("id", invoice.id);
+  if (invoiceError) throw invoiceError;
+
+  const receiptNo = `RCPT-${input.reference}`;
+  const { data: receipt, error: receiptError } = await client
+    .from("payment_receipts")
+    .upsert({
+      organization_id: payment.organization_id,
+      invoice_id: invoice.id,
+      payment_id: payment.id,
+      receipt_no: receiptNo,
+      payer_email: input.payerEmail ?? null,
+      amount: input.amount,
+      provider: input.provider,
+      reference: input.reference,
+      metadata: input.metadata ?? {},
+    }, { onConflict: "reference" })
+    .select("*")
+    .single();
+  if (receiptError) throw receiptError;
+
+  return { payment, receipt, invoiceStatus: status, amountPaid: nextPaid };
+}
+
+export async function getReceiptByReference(client: SupabaseClient, reference: string) {
+  const { data, error } = await client
+    .from("v_payment_receipts")
+    .select("*")
+    .eq("reference", reference)
+    .maybeSingle();
+  if (error) throw error;
+  return data;
 }

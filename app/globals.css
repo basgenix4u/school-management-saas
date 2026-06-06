@@ -2030,3 +2030,6 @@ section#platform.ds-section {
   height: auto;
   min-height: 50px;
 }
+
+.single-column-form { grid-template-columns: 1fr; }
+.single-column-form button { justify-self: start; }

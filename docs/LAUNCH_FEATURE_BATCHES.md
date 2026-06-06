@@ -39,8 +39,8 @@ Why: real schools cannot enter hundreds of records one by one.
 
 ## Batch 4 — Finance Launch
 
-7. Paystack payment integration
-8. Payment verification webhook + receipt records
+7. Paystack payment integration ✅ initial API/UI complete
+8. Payment verification webhook + receipt records ✅ initial API/database complete
 
 Why: payments create revenue and product value.
 
