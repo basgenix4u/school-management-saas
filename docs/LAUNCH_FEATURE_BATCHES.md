@@ -32,8 +32,8 @@ Why: parents/students must see only their own data.
 
 ## Batch 3 — School Setup Completion
 
-5. Multi-record class/staff/student bulk entry inside setup
-6. CSV import for students and staff
+5. Multi-record class/staff/student bulk entry inside setup ✅ complete
+6. CSV import for students and staff ✅ complete
 
 Why: real schools cannot enter hundreds of records one by one.
 

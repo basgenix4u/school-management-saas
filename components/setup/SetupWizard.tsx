@@ -24,6 +24,52 @@ type Readiness = {
   academic_sessions_count?: number;
 };
 
+
+function parseCsvLine(line: string) {
+  const values: string[] = [];
+  let current = "";
+  let quoted = false;
+  for (let index = 0; index < line.length; index += 1) {
+    const char = line[index];
+    if (char === '"') {
+      quoted = !quoted;
+    } else if (char === "," && !quoted) {
+      values.push(current.trim());
+      current = "";
+    } else {
+      current += char;
+    }
+  }
+  values.push(current.trim());
+  return values;
+}
+
+function parseCsv(text: string) {
+  return text
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean)
+    .map(parseCsvLine);
+}
+
+async function fileText(form: FormData, key: string) {
+  const file = form.get(key);
+  if (file instanceof File && file.size > 0) return file.text();
+  return "";
+}
+
+function classesFromRows(rows: string[][]) {
+  return rows.map(([name, level, arm, capacity]) => ({ name, level, arm, capacity: Number(capacity || 0) || undefined })).filter((item) => item.name);
+}
+
+function teachersFromRows(rows: string[][]) {
+  return rows.map(([staffNo, name, email, phone, department, title]) => ({ staffNo, name, email, phone, department, title })).filter((item) => item.staffNo && item.name);
+}
+
+function studentsFromRows(rows: string[][]) {
+  return rows.map(([admissionNo, firstName, lastName, className, gender, guardianName, guardianPhone, guardianEmail, studentEmail]) => ({ admissionNo, firstName, lastName, className, gender, guardianName, guardianPhone, guardianEmail, studentEmail })).filter((item) => item.admissionNo && item.firstName && item.lastName);
+}
+
 async function postJson(url: string, body: unknown) {
   const response = await fetch(url, { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify(body) });
   const payload = await response.json();
@@ -66,16 +112,22 @@ export function SetupWizard() {
         setMessage("Academic session saved.");
       }
       if (step === 2) {
-        await postJson("/api/setup/classes", { classes: [{ name: form.get("name"), level: form.get("level"), arm: form.get("arm"), capacity: Number(form.get("capacity") || 0) || undefined }] });
-        setMessage("Class saved.");
+        const rows = [...parseCsv(String(form.get("bulkClasses") || "")), ...parseCsv(await fileText(form, "classesFile"))];
+        const classes = rows.length ? classesFromRows(rows) : [{ name: String(form.get("name") || ""), level: String(form.get("level") || ""), arm: String(form.get("arm") || ""), capacity: Number(form.get("capacity") || 0) || undefined }].filter((item) => item.name);
+        await postJson("/api/setup/classes", { classes });
+        setMessage(`${classes.length} class record(s) saved.`);
       }
       if (step === 3) {
-        await postJson("/api/setup/teachers", { teachers: [{ staffNo: form.get("staffNo"), name: form.get("name"), email: form.get("email"), phone: form.get("phone"), department: form.get("department"), title: form.get("title") }] });
-        setMessage("Staff member saved.");
+        const rows = [...parseCsv(String(form.get("bulkTeachers") || "")), ...parseCsv(await fileText(form, "teachersFile"))];
+        const teachers = rows.length ? teachersFromRows(rows) : [{ staffNo: String(form.get("staffNo") || ""), name: String(form.get("name") || ""), email: String(form.get("email") || ""), phone: String(form.get("phone") || ""), department: String(form.get("department") || ""), title: String(form.get("title") || "") }].filter((item) => item.staffNo && item.name);
+        await postJson("/api/setup/teachers", { teachers });
+        setMessage(`${teachers.length} staff record(s) saved.`);
       }
       if (step === 4) {
-        await postJson("/api/setup/students", { students: [{ firstName: form.get("firstName"), lastName: form.get("lastName"), admissionNo: form.get("admissionNo"), className: form.get("className"), gender: form.get("gender"), guardianName: form.get("guardianName"), guardianPhone: form.get("guardianPhone"), guardianEmail: form.get("guardianEmail"), studentEmail: form.get("studentEmail") }] });
-        setMessage("Student saved.");
+        const rows = [...parseCsv(String(form.get("bulkStudents") || "")), ...parseCsv(await fileText(form, "studentsFile"))];
+        const students = rows.length ? studentsFromRows(rows) : [{ firstName: String(form.get("firstName") || ""), lastName: String(form.get("lastName") || ""), admissionNo: String(form.get("admissionNo") || ""), className: String(form.get("className") || ""), gender: String(form.get("gender") || ""), guardianName: String(form.get("guardianName") || ""), guardianPhone: String(form.get("guardianPhone") || ""), guardianEmail: String(form.get("guardianEmail") || ""), studentEmail: String(form.get("studentEmail") || "") }].filter((item) => item.firstName && item.lastName && item.admissionNo);
+        await postJson("/api/setup/students", { students });
+        setMessage(`${students.length} student record(s) saved.`);
       }
       if (step === 5) {
         await postJson("/api/setup/fees", { fees: [{ name: form.get("name"), amount: Number(form.get("amount") || 0), billingCycle: form.get("billingCycle"), required: form.get("required") === "on" }] });
@@ -150,9 +202,10 @@ function Field({ name, label, placeholder, type = "text", required = false }: { 
 }
 function SchoolProfileFields() { return <><span className="premium-kicker">Step 1</span><h2>School profile</h2><div className="live-form-grid"><Field name="name" label="School name" required placeholder="Example International School" /><Field name="slug" label="Workspace slug" placeholder="example-school" /><Field name="email" label="School email" type="email" /><Field name="phone" label="Phone" /><label className="full"><span>Address</span><textarea name="address" placeholder="School address" /></label></div></>; }
 function SessionFields() { return <><span className="premium-kicker">Step 2</span><h2>Academic session</h2><div className="live-form-grid"><Field name="name" label="Session" required placeholder="2026/2027" /><Field name="currentTerm" label="Current term" required placeholder="First Term" /><Field name="startsOn" label="Start date" type="date" /><Field name="endsOn" label="End date" type="date" /></div></>; }
-function ClassFields() { return <><span className="premium-kicker">Step 3</span><h2>Classes and arms</h2><div className="live-form-grid"><Field name="name" label="Class name" required placeholder="SS2 Science" /><Field name="level" label="Level" placeholder="Senior Secondary" /><Field name="arm" label="Arm" placeholder="Science" /><Field name="capacity" label="Capacity" type="number" /></div></>; }
-function StaffFields() { return <><span className="premium-kicker">Step 4</span><h2>Staff member</h2><div className="live-form-grid"><Field name="staffNo" label="Staff number" required placeholder="TCH-001" /><Field name="name" label="Full name" required /><Field name="email" label="Email" type="email" /><Field name="phone" label="Phone" /><Field name="department" label="Department" /><Field name="title" label="Title" placeholder="Mathematics Teacher" /></div></>; }
-function StudentFields() { return <><span className="premium-kicker">Step 5</span><h2>Student record</h2><div className="live-form-grid"><Field name="firstName" label="First name" required /><Field name="lastName" label="Last name" required /><Field name="admissionNo" label="Admission no." required placeholder="STU-001" /><Field name="className" label="Class" placeholder="SS2 Science" /><Field name="gender" label="Gender" /><Field name="guardianName" label="Guardian name" /><Field name="guardianPhone" label="Guardian phone" /><Field name="guardianEmail" label="Guardian email" type="email" /><Field name="studentEmail" label="Student login email" type="email" /></div></>; }
+function ClassFields() { return <><span className="premium-kicker">Step 3</span><h2>Classes and arms</h2><p className="setup-help">Add one class below, or paste/upload CSV rows: class name, level, arm, capacity.</p><div className="live-form-grid"><Field name="name" label="Class name" placeholder="SS2 Science" /><Field name="level" label="Level" placeholder="Senior Secondary" /><Field name="arm" label="Arm" placeholder="Science" /><Field name="capacity" label="Capacity" type="number" /><label className="full"><span>Paste class CSV rows</span><textarea name="bulkClasses" placeholder="SS2 Science,Senior Secondary,Science,45
+JSS3 Gold,Junior Secondary,Gold,40" /></label><label className="full"><span>Upload class CSV</span><input name="classesFile" type="file" accept=".csv,text/csv" /></label></div></>; }
+function StaffFields() { return <><span className="premium-kicker">Step 4</span><h2>Staff members</h2><p className="setup-help">Add one staff member below, or paste/upload CSV rows: staff no, name, email, phone, department, title.</p><div className="live-form-grid"><Field name="staffNo" label="Staff number" placeholder="TCH-001" /><Field name="name" label="Full name" /><Field name="email" label="Email" type="email" /><Field name="phone" label="Phone" /><Field name="department" label="Department" /><Field name="title" label="Title" placeholder="Mathematics Teacher" /><label className="full"><span>Paste staff CSV rows</span><textarea name="bulkTeachers" placeholder="TCH-001,Amina Musa,amina@school.com,+234...,Science,Physics Teacher" /></label><label className="full"><span>Upload staff CSV</span><input name="teachersFile" type="file" accept=".csv,text/csv" /></label></div></>; }
+function StudentFields() { return <><span className="premium-kicker">Step 5</span><h2>Student records</h2><p className="setup-help">Add one student below, or paste/upload CSV rows: admission no, first name, last name, class, gender, guardian name, guardian phone, guardian email, student email.</p><div className="live-form-grid"><Field name="firstName" label="First name" /><Field name="lastName" label="Last name" /><Field name="admissionNo" label="Admission no." placeholder="STU-001" /><Field name="className" label="Class" placeholder="SS2 Science" /><Field name="gender" label="Gender" /><Field name="guardianName" label="Guardian name" /><Field name="guardianPhone" label="Guardian phone" /><Field name="guardianEmail" label="Guardian email" type="email" /><Field name="studentEmail" label="Student login email" type="email" /><label className="full"><span>Paste student CSV rows</span><textarea name="bulkStudents" placeholder="STU-001,Amina,Yusuf,SS2 Science,Female,Mr Yusuf,+234...,parent@school.com,student@school.com" /></label><label className="full"><span>Upload student CSV</span><input name="studentsFile" type="file" accept=".csv,text/csv" /></label></div></>; }
 function FeeFields() { return <><span className="premium-kicker">Step 6</span><h2>Fee category</h2><div className="live-form-grid"><Field name="name" label="Fee name" required placeholder="Tuition" /><Field name="amount" label="Amount" type="number" required /><Field name="billingCycle" label="Billing cycle" placeholder="termly" /><label className="setup-checkbox"><input name="required" type="checkbox" defaultChecked /> Required fee</label></div></>; }
 function ReadinessItem({ label, value }: { label: string; value: string }) { return <article><span>{label}</span><strong>{value}</strong></article>; }
 function LaunchStep({ readiness }: { readiness: Readiness | null }) { return <div className="setup-launch-step"><Rocket size={42} /><h2>Setup review</h2><p>Your readiness score is {readiness?.readiness_score ?? 0}%. Continue adding real records until every core module is ready.</p><div className="hero-actions"><Link className="btn btn-primary" href="/dashboard">Open command center</Link><Link className="btn btn-secondary" href="/dashboard/students">Manage students</Link></div></div>; }

@@ -180,7 +180,7 @@ export async function createLiveStudent(client: SupabaseClient, input: StudentCr
     student_email: input.studentEmail ?? null,
     risk_level: input.riskLevel ?? "Low",
   };
-  const { data, error } = await client.from("students").insert(payload).select("*").single<StudentRow>();
+  const { data, error } = await client.from("students").upsert(payload, { onConflict: "organization_id,admission_no" }).select("*").single<StudentRow>();
   if (error) throw error;
   await linkExistingUsersForStudent(client, data).catch(() => []);
   return data;

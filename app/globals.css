@@ -2018,3 +2018,15 @@ section#platform.ds-section {
 .invitation-list span { display: block; color: #64748b; font-weight: 850; margin-top: 4px; }
 .invitation-list button { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #dbeafe; background: #eff6ff; color: #1d4ed8; border-radius: 999px; padding: 9px 12px; font-weight: 950; cursor: pointer; }
 @media (max-width: 760px) { .invitation-list article { flex-direction: column; align-items: flex-start; } }
+
+.setup-help {
+  color: #64748b;
+  line-height: 1.65;
+  margin: 8px 0 18px;
+  font-weight: 850;
+}
+.live-form-grid input[type="file"] {
+  padding: 12px;
+  height: auto;
+  min-height: 50px;
+}

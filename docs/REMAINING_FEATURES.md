@@ -28,8 +28,8 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 
 ## Priority 3 — Student Management
 
-- Student create/edit forms
-- Bulk CSV import
+- Student create/edit forms ✅ setup create flow complete
+- Bulk CSV import ✅ initial setup CSV import complete
 - Student document uploads
 - Guardian linking
 - Student transfer between classes
