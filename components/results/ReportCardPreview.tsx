@@ -102,7 +102,7 @@ export function ReportCardPreview({ student = resultStudents[0] }: { student?: M
         <span>{message} Source: {source === "supabase" ? "live" : "not connected"}.</span>
         <button type="button" onClick={loadReport}>Refresh</button>
       </section>
-      <div className="report-card-actions"><button className="btn btn-primary" type="button"><Printer size={18} /> Print</button><button className="btn btn-secondary" type="button"><Download size={18} /> Download PDF</button></div>
+      <div className="report-card-actions"><button className="btn btn-primary" type="button" onClick={() => window.print()}><Printer size={18} /> Print</button><a className="btn btn-secondary" href={`/api/results/${report.id}/pdf`} target="_blank" rel="noreferrer"><Download size={18} /> Download PDF</a></div>
       <article className="report-card">
         <header>
           <div className="report-logo brand-report-logo"><EduManageLogo href="" uploaded /></div>

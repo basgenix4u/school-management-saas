@@ -68,9 +68,9 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 - Grade scale configuration per school
 - Result approval workflow
 - Principal digital approval
-- Report card PDF generation
+- Report card PDF generation ✅ complete
 - Parent/student result publishing
-- Result locking after publication
+- Result locking after publication ✅ complete
 - Class performance analytics
 - Position/ranking calculation
 - Term/session result archive

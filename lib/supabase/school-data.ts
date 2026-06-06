@@ -775,3 +775,57 @@ export async function getReceiptByReference(client: SupabaseClient, reference: s
   if (error) throw error;
   return data;
 }
+
+export type ResultPublishInput = {
+  admissionNo: string;
+  term: string;
+  session: string;
+  action: "publish" | "unlock";
+  actorEmail?: string;
+  note?: string;
+};
+
+export async function publishOrUnlockResults(client: SupabaseClient, input: ResultPublishInput) {
+  const organization = await getOrganizationForWrite(client);
+  const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
+  if (!student) throw new Error(`Student ${input.admissionNo} not found`);
+
+  const update = input.action === "publish"
+    ? { status: "PUBLISHED", published_at: new Date().toISOString(), locked_at: new Date().toISOString(), unlocked_at: null, lock_reason: input.note ?? "Published by authorized user" }
+    : { status: "REVIEW", unlocked_at: new Date().toISOString(), locked_at: null, lock_reason: input.note ?? "Unlocked for correction" };
+
+  const { data, error } = await client
+    .from("results")
+    .update(update)
+    .eq("student_id", student.id)
+    .eq("term", input.term)
+    .eq("session", input.session)
+    .select("*");
+  if (error) throw error;
+  if (!data?.length) throw new Error("No result records found for this student, term and session");
+
+  const { error: eventError } = await client.from("result_publication_events").insert({
+    organization_id: organization.id,
+    student_id: student.id,
+    term: input.term,
+    session: input.session,
+    action: input.action,
+    actor_email: input.actorEmail ?? null,
+    note: input.note ?? null,
+  });
+  if (eventError) throw eventError;
+
+  return { student, updated: data.length, action: input.action };
+}
+
+export async function getResultPublicationEvents(client: SupabaseClient) {
+  const organization = await getOrganizationForWrite(client);
+  const { data, error } = await client
+    .from("result_publication_events")
+    .select("id,student_id,term,session,action,actor_email,note,created_at")
+    .eq("organization_id", organization.id)
+    .order("created_at", { ascending: false })
+    .limit(50);
+  if (error) throw error;
+  return data ?? [];
+}

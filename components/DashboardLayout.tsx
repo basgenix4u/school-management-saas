@@ -23,6 +23,7 @@ const nav = [
   { href: "/dashboard/attendance/mark", label: "Mark Attendance", icon: ClipboardCheck },
   { href: "/dashboard/results", label: "Results", icon: BookOpenCheck },
   { href: "/dashboard/results/entry", label: "Score Entry", icon: ClipboardCheck },
+  { href: "/dashboard/results/publish", label: "Publish Results", icon: LockKeyhole },
   { href: "/dashboard/fees", label: "Fees", icon: CreditCard },
 ];
 

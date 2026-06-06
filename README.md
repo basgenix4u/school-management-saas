@@ -165,6 +165,7 @@ Open http://localhost:3000.
 /dashboard/attendance   Attendance overview
 /dashboard/results      Results command center
 /dashboard/results/entry Score entry matrix
+/dashboard/results/publish Result publishing and locking
 /dashboard/results/report-card/[student] Report card preview
 /dashboard/fees         Finance command center
 /dashboard/fees/invoices Invoice intelligence board

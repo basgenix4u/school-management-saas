@@ -46,8 +46,8 @@ Why: payments create revenue and product value.
 
 ## Batch 5 — Results Launch
 
-9. PDF report card generation
-10. Result publishing/locking workflow
+9. PDF report card generation ✅ complete
+10. Result publishing/locking workflow ✅ complete
 
 Why: report cards are one of the highest-value school workflows.
 
