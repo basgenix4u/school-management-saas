@@ -2,42 +2,58 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { roleExperiences, roleLabels, UserRole } from "@/lib/rbac";
 import { EduManageLogo } from "@/components/brand/EduManageLogo";
 import { createBrowserSupabaseClient, hasBrowserSupabaseConfig } from "@/lib/supabase/browser";
 
 export function LoginExperience() {
   const [role, setRole] = useState<UserRole>("SCHOOL_OWNER");
+  const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [showPassword, setShowPassword] = useState(false);
+  const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [message, setMessage] = useState("Sign in with your school account.");
+  const [message, setMessage] = useState("Sign in with your school account, or create the first owner account for a new school.");
   const [loading, setLoading] = useState(false);
   const selected = useMemo(() => roleExperiences.find((item) => item.role === role) ?? roleExperiences[0], [role]);
 
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setMessage("Checking Supabase Auth...");
+    setMessage(mode === "signin" ? "Signing in..." : "Creating account...");
 
     try {
       if (!hasBrowserSupabaseConfig()) {
-        setMessage("Authentication is not configured yet. Add Supabase environment variables to enable sign in.");
+        setMessage("Authentication is not configured yet. Add Supabase environment variables to enable access.");
         return;
       }
 
       const supabase = createBrowserSupabaseClient();
-      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (mode === "signin") {
+        const { error } = await supabase.auth.signInWithPassword({ email, password });
+        if (error) {
+          setMessage(error.message);
+          return;
+        }
+        const next = new URLSearchParams(window.location.search).get("next") ?? "/dashboard";
+        window.location.href = next;
+        return;
+      }
+
+      const { error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: { data: { name, role } },
+      });
       if (error) {
         setMessage(error.message);
         return;
       }
-
-      const next = new URLSearchParams(window.location.search).get("next") ?? "/dashboard";
-      window.location.href = next;
+      setMessage("Account created. If email confirmation is required, check your inbox. Otherwise, continue to school setup.");
+      window.setTimeout(() => { window.location.href = "/dashboard/setup"; }, 900);
     } catch (error) {
-      setMessage(error instanceof Error ? error.message : "Unable to sign in.");
+      setMessage(error instanceof Error ? error.message : "Unable to continue.");
     } finally {
       setLoading(false);
     }
@@ -59,11 +75,16 @@ export function LoginExperience() {
 
       <section className="login-card">
         <span className="premium-kicker">Secure Access</span>
-        <h2>Sign in to EduManage</h2>
-        <p>Sign in with your school account. Role access is managed by your school administrator.</p>
+        <h2>{mode === "signin" ? "Sign in to EduManage" : "Create school owner account"}</h2>
+        <p>{mode === "signin" ? "Access your school workspace." : "Create the first account, then set up your school profile."}</p>
+
+        <div className="auth-mode-switch" role="tablist" aria-label="Authentication mode">
+          <button type="button" className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")}>Sign in</button>
+          <button type="button" className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>Create account</button>
+        </div>
 
         <div className="role-select-grid">
-          {roleExperiences.map((item) => (
+          {roleExperiences.filter((item) => mode === "signup" ? item.role === "SCHOOL_OWNER" : true).map((item) => (
             <button key={item.role} type="button" onClick={() => setRole(item.role)} className={item.role === role ? "active" : ""}>
               {roleLabels[item.role]}
             </button>
@@ -71,16 +92,22 @@ export function LoginExperience() {
         </div>
 
         <form onSubmit={handleSubmit}>
+          {mode === "signup" ? (
+            <label className="field-label">
+              <span>Full name</span>
+              <div><UserRound size={18} /><input value={name} onChange={(event) => setName(event.target.value)} type="text" required placeholder="School owner name" /></div>
+            </label>
+          ) : null}
           <label className="field-label">
             <span>Email address</span>
-            <div><Mail size={18} /><input value={email} onChange={(event) => setEmail(event.target.value)} type="email" /></div>
+            <div><Mail size={18} /><input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required placeholder="you@school.com" /></div>
           </label>
           <label className="field-label">
             <span>Password</span>
-            <div><LockKeyhole size={18} /><input value={password} onChange={(event) => setPassword(event.target.value)} type={showPassword ? "text" : "password"} /><button type="button" onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
+            <div><LockKeyhole size={18} /><input value={password} onChange={(event) => setPassword(event.target.value)} type={showPassword ? "text" : "password"} required minLength={6} placeholder="Minimum 6 characters" /><button type="button" onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
           </label>
 
-          <button className="btn btn-primary login-submit" type="submit" disabled={loading}>{loading ? <Loader2 className="spin" size={18} /> : <ArrowRight size={18} />} Sign in with Supabase</button>
+          <button className="btn btn-primary login-submit" type="submit" disabled={loading}>{loading ? <Loader2 className="spin" size={18} /> : <ArrowRight size={18} />} {mode === "signin" ? "Sign in" : "Create account"}</button>
         </form>
         <p className="auth-message">{message}</p>
         <Link className="login-secondary" href="/contact">Need access? Contact your school administrator</Link>
