@@ -8,7 +8,11 @@ export async function GET() {
     const [announcements, deliveries, summary] = await Promise.all([listAnnouncements(supabase), listCommunicationDeliveries(supabase), getCommunicationSummary(supabase)]);
     return NextResponse.json({ status: "ok", announcements, deliveries, summary });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to load communications" }, { status: 500 });
+    const message = error instanceof Error ? error.message : "Unable to load communications";
+    if (message.includes("Create a school profile")) {
+      return NextResponse.json({ status: "setup_required", announcements: [], deliveries: [], summary: null, message });
+    }
+    return NextResponse.json({ status: "error", message }, { status: 500 });
   }
 }
 
