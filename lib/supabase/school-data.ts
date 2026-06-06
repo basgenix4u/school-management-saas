@@ -53,6 +53,7 @@ type SubjectRow = { id: string; name: string; organization_id: string; classroom
 
 type ResultRow = {
   id: string;
+  organization_id: string;
   student_id: string;
   subject_id: string;
   term: string;
@@ -184,6 +185,7 @@ export async function createLiveStudent(client: SupabaseClient, input: StudentCr
   const { data, error } = await client.from("students").upsert(payload, { onConflict: "organization_id,admission_no" }).select("*").single<StudentRow>();
   if (error) throw error;
   await linkExistingUsersForStudent(client, data).catch(() => []);
+  await writeAuditEvent(client, { organizationId: data.organization_id, action: "student.upsert", resourceType: "student", resourceId: data.id, riskLevel: "Medium", metadata: { admissionNo: data.admission_no } });
   return data;
 }
 
@@ -209,6 +211,7 @@ export async function updateLiveStudent(client: SupabaseClient, admissionNo: str
     .select("*")
     .single<StudentRow>();
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId: data.organization_id, action: "student.update", resourceType: "student", resourceId: data.id, riskLevel: "Medium", metadata: { admissionNo: data.admission_no } });
   return data;
 }
 
@@ -237,6 +240,7 @@ export async function createLiveAttendance(client: SupabaseClient, input: Attend
   };
   const { data, error } = await client.from("attendance_records").upsert(payload, { onConflict: "student_id,attendance_date,period" }).select("*").single();
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId: data.organization_id, action: "attendance.upsert", resourceType: "attendance", resourceId: data.id, metadata: { status: data.status } });
   return data;
 }
 
@@ -277,6 +281,7 @@ export async function createLiveInvoice(client: SupabaseClient, input: InvoiceCr
   };
   const { data, error } = await client.from("invoices").insert(payload).select("*").single<InvoiceRow>();
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId: data.organization_id, action: "invoice.create", resourceType: "invoice", resourceId: data.id, riskLevel: "Medium", metadata: { invoiceNo: data.invoice_no, amount: data.amount } });
   return data;
 }
 
@@ -348,6 +353,7 @@ export async function upsertLiveResult(client: SupabaseClient, input: ResultUpse
     .select("*")
     .single<ResultRow>();
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId: data.organization_id, action: "result.upsert", resourceType: "result", resourceId: data.id, riskLevel: "Medium", metadata: { term: data.term, session: data.session, total: data.total_score } });
   return data;
 }
 
@@ -440,6 +446,7 @@ export async function upsertOrganization(client: SupabaseClient, input: Organiza
     active: true,
   }, { onConflict: "slug" }).select("id,name,slug").single<OrganizationRow>();
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId: data.id, action: "organization.upsert", resourceType: "organization", resourceId: data.id, riskLevel: "Medium", metadata: { slug: data.slug } });
   return data;
 }
 
@@ -453,6 +460,7 @@ export async function upsertAcademicSession(client: SupabaseClient, organization
     active: true,
   }, { onConflict: "organization_id,name" }).select("*").single();
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId, action: "academic_session.upsert", resourceType: "academic_session", resourceId: data.id, metadata: { name: input.name, currentTerm: input.currentTerm } });
   return data;
 }
 
@@ -467,6 +475,7 @@ export async function upsertClassrooms(client: SupabaseClient, organizationId: s
   if (!rows.length) return [];
   const { data, error } = await client.from("classrooms").upsert(rows, { onConflict: "organization_id,name" }).select("*");
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId, action: "classrooms.upsert_bulk", resourceType: "classrooms", riskLevel: "Medium", metadata: { count: rows.length } });
   return data ?? [];
 }
 
@@ -484,6 +493,7 @@ export async function upsertTeachers(client: SupabaseClient, organizationId: str
   if (!rows.length) return [];
   const { data, error } = await client.from("teachers").upsert(rows, { onConflict: "organization_id,staff_no" }).select("*");
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId, action: "teachers.upsert_bulk", resourceType: "teachers", riskLevel: "Medium", metadata: { count: rows.length } });
   return data ?? [];
 }
 
@@ -499,6 +509,7 @@ export async function upsertFeeCategories(client: SupabaseClient, organizationId
   if (!rows.length) return [];
   const { data, error } = await client.from("fee_categories").upsert(rows, { onConflict: "organization_id,name" }).select("*");
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId, action: "fee_categories.upsert_bulk", resourceType: "fee_categories", riskLevel: "Medium", metadata: { count: rows.length } });
   return data ?? [];
 }
 
@@ -524,7 +535,7 @@ export async function listInvitations(client: SupabaseClient) {
   const organization = await getOrganizationForWrite(client);
   const { data, error } = await client
     .from("user_invitations")
-    .select("id,email,name,role,status,token,expires_at,created_at")
+    .select("id,organization_id,email,name,role,status,token,expires_at,created_at")
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -543,9 +554,10 @@ export async function createInvitation(client: SupabaseClient, input: Invitation
       status: "pending",
       expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
     }, { onConflict: "organization_id,email" })
-    .select("id,email,name,role,status,token,expires_at,created_at")
+    .select("id,organization_id,email,name,role,status,token,expires_at,created_at")
     .single();
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId: data.organization_id, action: "invitation.create", resourceType: "invitation", resourceId: data.id, riskLevel: "Medium", metadata: { email: data.email, role: data.role } });
   return data;
 }
 
@@ -580,6 +592,7 @@ export async function acceptInvitation(client: SupabaseClient, token: string, au
     .update({ status: "accepted", accepted_at: new Date().toISOString() })
     .eq("id", invitation.id);
   if (updateError) throw updateError;
+  await writeAuditEvent(client, { organizationId: invitation.organization_id, action: "invitation.accept", resourceType: "invitation", resourceId: invitation.id, riskLevel: "Medium", metadata: { email, role: invitation.role } });
 
   return profile;
 }
@@ -762,6 +775,7 @@ export async function recordVerifiedPayment(client: SupabaseClient, input: {
     .select("*")
     .single();
   if (receiptError) throw receiptError;
+  await writeAuditEvent(client, { organizationId: payment.organization_id, action: "payment.verified", resourceType: "payment", resourceId: payment.id, riskLevel: "High", metadata: { invoiceNo: input.invoiceNo, reference: input.reference, amount: input.amount, status } });
 
   return { payment, receipt, invoiceStatus: status, amountPaid: nextPaid };
 }
@@ -814,6 +828,7 @@ export async function publishOrUnlockResults(client: SupabaseClient, input: Resu
     note: input.note ?? null,
   });
   if (eventError) throw eventError;
+  await writeAuditEvent(client, { organizationId: organization.id, action: `results.${input.action}`, resourceType: "results", resourceId: student.id, riskLevel: input.action === "publish" ? "High" : "Medium", metadata: { admissionNo: student.admission_no, term: input.term, session: input.session } });
 
   return { student, updated: data.length, action: input.action };
 }
@@ -841,7 +856,7 @@ export async function listAnnouncements(client: SupabaseClient) {
   const organization = await getOrganizationForWrite(client);
   const { data, error } = await client
     .from("announcements")
-    .select("id,title,body,audience,published_at,created_at")
+    .select("id,organization_id,title,body,audience,published_at,created_at")
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -859,9 +874,10 @@ export async function createAnnouncement(client: SupabaseClient, input: Announce
       audience: input.audience ?? "ALL",
       published_at: input.publish ? new Date().toISOString() : null,
     })
-    .select("id,title,body,audience,published_at,created_at")
+    .select("id,organization_id,title,body,audience,published_at,created_at")
     .single();
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId: data.organization_id, action: "announcement.create", resourceType: "announcement", resourceId: data.id, metadata: { audience: data.audience, published: Boolean(data.published_at) } });
   return data;
 }
 
@@ -875,7 +891,7 @@ export async function listCommunicationDeliveries(client: SupabaseClient) {
   const organization = await getOrganizationForWrite(client);
   const { data, error } = await client
     .from("communication_deliveries")
-    .select("id,announcement_id,channel,recipient_email,subject,status,provider,provider_message_id,error_message,sent_at,created_at")
+    .select("id,organization_id,announcement_id,channel,recipient_email,subject,status,provider,provider_message_id,error_message,sent_at,created_at")
     .eq("organization_id", organization.id)
     .order("created_at", { ascending: false })
     .limit(100);
@@ -912,5 +928,34 @@ export async function recordCommunicationDelivery(client: SupabaseClient, input:
     .select("*")
     .single();
   if (error) throw error;
+  await writeAuditEvent(client, { organizationId: data.organization_id, action: `communication.delivery.${input.status}`, resourceType: "communication_delivery", resourceId: data.id, riskLevel: input.status === "failed" ? "Medium" : "Low", metadata: { recipientEmail: input.recipientEmail, subject: input.subject } });
   return data;
+}
+
+export async function writeAuditEvent(client: SupabaseClient, input: {
+  organizationId?: string;
+  actorEmail?: string;
+  actorRole?: string;
+  action: string;
+  resourceType?: string;
+  resourceId?: string;
+  riskLevel?: "Low" | "Medium" | "High";
+  metadata?: Record<string, unknown>;
+}) {
+  let organizationId = input.organizationId;
+  if (!organizationId) {
+    const organization = await getPrimaryOrganization(client).catch(() => null);
+    organizationId = organization?.id;
+  }
+  const { error } = await client.from("audit_events").insert({
+    organization_id: organizationId ?? null,
+    actor_name: input.actorEmail ?? null,
+    actor_role: input.actorRole ?? null,
+    action: input.action,
+    resource_type: input.resourceType ?? null,
+    resource_id: input.resourceId ?? null,
+    risk_level: input.riskLevel ?? "Low",
+    metadata: input.metadata ?? {},
+  });
+  if (error) console.error("audit_event_failed", error.message);
 }

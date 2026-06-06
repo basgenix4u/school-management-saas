@@ -103,3 +103,34 @@ GET  /api/live/command-center
 ```
 
 These endpoints are the bridge from premium UI prototypes to production database-backed workflows.
+
+
+## Strict RLS and Audit Hardening
+
+Batch 7 adds strict organization-scoped RLS helpers and policies:
+
+```txt
+current_app_user_org_id()
+current_app_user_role()
+is_org_member(target_org)
+```
+
+The broad setup/demo read policies were replaced with organization-scoped read policies for core school tables.
+
+Core server mutations now write audit events to `audit_events`, including:
+
+- school setup
+- academic sessions
+- classes
+- teachers
+- students
+- attendance
+- invoices
+- results
+- invitations
+- payments
+- announcements
+- communication deliveries
+- result publishing/unlocking
+
+Server APIs still use the service role key and enforce business logic in server routes. Direct client-side access is constrained by RLS.

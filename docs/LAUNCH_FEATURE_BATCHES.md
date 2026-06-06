@@ -60,8 +60,8 @@ Why: communication drives daily usage and parent trust.
 
 ## Batch 7 — Security Hardening
 
-13. Strict organization-scoped RLS policies
-14. Audit logging for all mutations
+13. Strict organization-scoped RLS policies ✅ complete
+14. Audit logging for core mutations ✅ complete
 
 Why: needed before real school data.
 
