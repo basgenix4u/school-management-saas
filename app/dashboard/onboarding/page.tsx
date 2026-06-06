@@ -12,7 +12,7 @@ export default function OnboardingPage() {
 
       <section className="premium-grid-2 align-start">
         <div className="card premium-panel">
-          <span className="premium-kicker"><Building2 size={14} /> Greenfield International School</span>
+          <span className="premium-kicker"><Building2 size={14} /> Your School</span>
           <h2>Launch readiness</h2>
           <div className="launch-list">
             {launchChecklist.map((item) => (

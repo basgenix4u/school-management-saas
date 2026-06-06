@@ -49,17 +49,17 @@ Fixes:
 - Role-based use cases.
 - Product modules explained by outcomes.
 - Security and reliability proof.
-- Strong CTAs for demo and contact.
+- Strong CTAs for product and contact.
 
 ### Login Flow
 
 UX problems:
 - Users need clarity on whether they are signing into a real account or previewing a role.
-- Demo role preview and production login must not be confused.
+- Product role preview and production login must not be confused.
 
 Fixes:
 - Supabase Auth login foundation.
-- Demo preview still available.
+- Product preview still available.
 - Session badge added to dashboard.
 - Protected routes added.
 
@@ -155,7 +155,7 @@ Primary conversion goals:
 
 Primary CTAs:
 - Explore platform
-- Open secure demo
+- Open secure product
 - Contact sales/support
 
 ## Retention Strategy

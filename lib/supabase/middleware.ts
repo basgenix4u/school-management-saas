@@ -7,7 +7,7 @@ export async function updateSession(request: NextRequest) {
   const supabaseUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
   const supabaseAnonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
 
-  // Demo/dev mode: if env vars are missing, do not block routes.
+  // Product/dev mode: if env vars are missing, do not block routes.
   if (!supabaseUrl || !supabaseAnonKey) {
     return response;
   }

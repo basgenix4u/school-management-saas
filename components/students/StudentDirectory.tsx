@@ -3,7 +3,6 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowRight, CheckCircle2, Filter, Loader2, Search, Upload, UserPlus } from "lucide-react";
-import { getStudentSummary, studentRecords } from "@/lib/student-360";
 
 type StudentCard = {
   id: string;
@@ -20,7 +19,7 @@ type StudentCard = {
 
 type StudentApiResponse = {
   status: string;
-  source?: "mock" | "supabase";
+  source?: "none" | "supabase";
   summary?: Record<string, number>;
   data?: Array<Record<string, unknown>>;
   message?: string;
@@ -74,9 +73,9 @@ function normalizeStudent(row: Record<string, unknown>): StudentCard {
 export function StudentDirectory() {
   const [query, setQuery] = useState("");
   const [risk, setRisk] = useState("All");
-  const [students, setStudents] = useState<StudentCard[]>(studentRecords.map((student) => normalizeStudent(student as unknown as Record<string, unknown>)));
-  const [summary, setSummary] = useState<Record<string, number>>(getStudentSummary() as unknown as Record<string, number>);
-  const [source, setSource] = useState("mock");
+  const [students, setStudents] = useState<StudentCard[]>([]);
+  const [summary, setSummary] = useState<Record<string, number>>({ total: 0, highRisk: 0, withBalance: 0 });
+  const [source, setSource] = useState("none");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("Loading student records...");
@@ -89,10 +88,10 @@ export function StudentDirectory() {
       const response = await fetch("/api/students", { cache: "no-store" });
       const payload = await response.json() as StudentApiResponse;
       if (!response.ok) throw new Error(payload.message ?? "Unable to load students");
-      setSource(payload.source ?? "mock");
+      setSource(payload.source ?? "none");
       setSummary(payload.summary ?? {});
       setStudents((payload.data ?? []).map(normalizeStudent));
-      setMessage(payload.source === "supabase" ? "Live Supabase student data loaded." : "Demo student data loaded.");
+      setMessage(payload.source === "supabase" ? "Student records loaded." : (payload.message ?? "Connect your database to load student records."));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Student records unavailable.");
     } finally {

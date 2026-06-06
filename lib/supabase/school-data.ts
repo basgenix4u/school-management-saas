@@ -1,6 +1,6 @@
 import { createServerSupabaseClient, hasSupabaseConfig } from "@/lib/supabase/server";
 
-export const DEFAULT_ORG_SLUG = "greenfield-school";
+export const DEFAULT_ORG_SLUG = "your-school";
 
 type SupabaseClient = ReturnType<typeof createServerSupabaseClient>;
 

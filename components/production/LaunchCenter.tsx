@@ -1,5 +1,5 @@
 import { CheckCircle2, Rocket, ShieldCheck, Video } from "lucide-react";
-import { clientDemoScript, deploymentChecklist, launchReadiness } from "@/lib/launch-readiness";
+import { clientProductScript, deploymentChecklist, launchReadiness } from "@/lib/launch-readiness";
 import { RadialScore } from "@/components/premium/RadialScore";
 
 export function LaunchCenter() {
@@ -9,8 +9,8 @@ export function LaunchCenter() {
       <section className="card-aurora launch-hero">
         <div>
           <span className="premium-kicker"><Rocket size={14} /> Production Launch Center</span>
-          <h1>Prepare the SaaS for deployment, demos and client handover.</h1>
-          <p>A professional product needs a launch checklist, readiness scoring, demo flow and deployment plan so clients can understand the value quickly.</p>
+          <h1>Prepare the SaaS for deployment, school onboarding and client handover.</h1>
+          <p>A professional product needs a launch checklist, readiness scoring, product flow and deployment plan so clients can understand the value quickly.</p>
         </div>
         <div className="launch-score-card"><RadialScore score={overall} label="Ready" /></div>
       </section>
@@ -30,9 +30,9 @@ export function LaunchCenter() {
       </section>
 
       <section className="card premium-panel">
-        <span className="premium-kicker"><Video size={14} /> Client Demo Script</span>
+        <span className="premium-kicker"><Video size={14} /> Client Product Script</span>
         <h2>How to present this SaaS to schools and clients</h2>
-        <div className="demo-script-grid">{clientDemoScript.map((step, index) => <article key={step}><span>{String(index + 1).padStart(2, "0")}</span><p>{step}</p></article>)}</div>
+        <div className="product-script-grid">{clientProductScript.map((step, index) => <article key={step}><span>{String(index + 1).padStart(2, "0")}</span><p>{step}</p></article>)}</div>
       </section>
     </div>
   );

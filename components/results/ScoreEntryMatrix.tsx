@@ -40,7 +40,7 @@ export function ScoreEntryMatrix() {
       const payload = await response.json();
       if (!response.ok) throw new Error(payload.message ?? "Unable to save result");
       setSaved(true);
-      setMessage(payload.source === "supabase" ? "Result saved to Supabase successfully." : "Result accepted in demo mode.");
+      setMessage(payload.source === "supabase" ? "Result saved to Supabase successfully." : "Result accepted in configuration mode.");
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to save result.");
     } finally {

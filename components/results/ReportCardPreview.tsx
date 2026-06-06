@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
-import { Award, CalendarCheck, Download, Loader2, Printer } from "lucide-react";
+import { CalendarCheck, Download, Loader2, Printer } from "lucide-react";
+import { EduManageLogo } from "@/components/brand/EduManageLogo";
 import { getAverage, getGrade, resultStudents } from "@/lib/results-center";
 
 type MockStudent = typeof resultStudents[number];
@@ -22,7 +23,7 @@ type LiveReport = {
 
 type ResultApiResponse = {
   status: string;
-  source?: "mock" | "supabase";
+  source?: "none" | "supabase";
   data?: {
     student?: Record<string, unknown>;
     results?: Array<Record<string, unknown>>;
@@ -64,7 +65,7 @@ function normalizeLiveReport(payload: ResultApiResponse, fallback: MockStudent):
 
 export function ReportCardPreview({ student = resultStudents[0] }: { student?: MockStudent }) {
   const [report, setReport] = useState<LiveReport>(student);
-  const [source, setSource] = useState("mock");
+  const [source, setSource] = useState("none");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("Loading report card...");
 
@@ -75,9 +76,9 @@ export function ReportCardPreview({ student = resultStudents[0] }: { student?: M
       const response = await fetch(`/api/results/${student.id}`, { cache: "no-store" });
       const payload = await response.json() as ResultApiResponse;
       if (!response.ok) throw new Error(payload.message ?? "Unable to load report card");
-      setSource(payload.source ?? "mock");
+      setSource(payload.source ?? "none");
       setReport(normalizeLiveReport(payload, student));
-      setMessage(payload.source === "supabase" ? "Live Supabase report card loaded." : "Demo report card loaded.");
+      setMessage(payload.source === "supabase" ? "Report card loaded." : (payload.message ?? "Connect your database to load report cards."));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Report card unavailable.");
       setReport(student);
@@ -98,14 +99,14 @@ export function ReportCardPreview({ student = resultStudents[0] }: { student?: M
     <div className="report-card-shell">
       <section className="live-status-card">
         {loading ? <Loader2 className="spin" size={18} /> : <CalendarCheck size={18} />}
-        <span>{message} Source: {source}.</span>
+        <span>{message} Source: {source === "supabase" ? "live" : "not connected"}.</span>
         <button type="button" onClick={loadReport}>Refresh</button>
       </section>
       <div className="report-card-actions"><button className="btn btn-primary" type="button"><Printer size={18} /> Print</button><button className="btn btn-secondary" type="button"><Download size={18} /> Download PDF</button></div>
       <article className="report-card">
         <header>
-          <div className="report-logo"><Award /></div>
-          <div><h1>Greenfield International School</h1><p>Academic Report Card • {report.term} • {report.session}</p></div>
+          <div className="report-logo brand-report-logo"><EduManageLogo href="" uploaded /></div>
+          <div><h1>School Academic Report</h1><p>Academic Report Card • {report.term} • {report.session}</p></div>
           <span className="status good">{report.status}</span>
         </header>
         <section className="report-student-grid">

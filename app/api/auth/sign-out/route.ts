@@ -4,7 +4,7 @@ import { createCookieSupabaseClient } from "@/lib/auth/session";
 
 export async function POST() {
   if (!hasSupabaseConfig()) {
-    return NextResponse.json({ status: "ok", mode: "demo", message: "Demo mode has no server session." });
+    return NextResponse.json({ status: "ok", mode: "not_configured", message: "Authentication is not configured in this runtime." });
   }
 
   const supabase = await createCookieSupabaseClient();

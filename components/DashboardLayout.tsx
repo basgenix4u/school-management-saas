@@ -1,7 +1,8 @@
 import Link from "next/link";
+import { EduManageLogo } from "@/components/brand/EduManageLogo";
 import { CommandPalette } from "@/components/premium/CommandPalette";
 import { SessionBadge } from "@/components/auth/SessionBadge";
-import { BarChart3, BookOpenCheck, BriefcaseBusiness, BrainCircuit, CalendarCheck, ClipboardCheck, Database, KeyRound, CreditCard, GraduationCap, History, LayoutDashboard, LockKeyhole, Megaphone, Rocket, UsersRound } from "lucide-react";
+import { BookOpenCheck, BriefcaseBusiness, BrainCircuit, CalendarCheck, ClipboardCheck, Database, KeyRound, CreditCard, GraduationCap, History, LayoutDashboard, LockKeyhole, Megaphone, Rocket, UsersRound } from "lucide-react";
 
 const nav = [
   { href: "/dashboard", label: "Command Center", icon: LayoutDashboard },
@@ -27,12 +28,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
   return (
     <div className="dashboard-shell premium-shell">
       <aside className="sidebar premium-sidebar">
-        <div className="sidebar-brand">
-          <div className="brand-mark"><BarChart3 /></div>
-          <div>
-            <strong>EduManage</strong>
-            <span>School OS</span>
-          </div>
+        <div className="sidebar-brand sidebar-brand-logo">
+          <EduManageLogo href="/dashboard" uploaded />
         </div>
         <nav>
           {nav.map((item) => {
@@ -46,8 +43,8 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
         </nav>
         <div className="sidebar-status">
           <span className="status-dot" />
-          <strong>Demo Workspace</strong>
-          <p>Greenfield International School</p>
+          <strong>School Workspace</strong>
+          <p>Set up your school profile to begin live operations.</p>
         </div>
       </aside>
       <main className="main premium-main"><div className="top-command-row"><SessionBadge /><CommandPalette /></div>{children}</main>

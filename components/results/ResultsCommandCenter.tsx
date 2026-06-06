@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowRight, Award, BookOpenCheck, CheckCircle2, ClipboardCheck, FileText, GraduationCap, Loader2, Send, ShieldCheck } from "lucide-react";
-import { approvalSteps, getAverage, getGrade, getResultSummary, resultInsights, resultStudents, subjectAverages } from "@/lib/results-center";
+import { approvalSteps, getGrade, resultInsights, subjectAverages } from "@/lib/results-center";
 
 type ResultApiRow = Record<string, unknown>;
 type ResultBoardStudent = {
@@ -18,7 +18,7 @@ type ResultBoardStudent = {
 
 type ResultsApiResponse = {
   status: string;
-  source?: "mock" | "supabase";
+  source?: "none" | "supabase";
   summary?: Record<string, number>;
   data?: ResultApiRow[];
   insights?: typeof resultInsights;
@@ -29,18 +29,6 @@ function statusClass(status: string) {
   if (status === "APPROVED" || status === "PUBLISHED") return "good";
   if (status === "REVIEW") return "warn";
   return "bad";
-}
-
-function normalizeMockResults(): ResultBoardStudent[] {
-  return resultStudents.map((student) => ({
-    id: student.id,
-    slug: student.slug,
-    name: student.name,
-    className: student.className,
-    average: getAverage(student.subjects),
-    status: student.status,
-    subjectCount: student.subjects.length,
-  }));
 }
 
 function groupLiveResults(rows: ResultApiRow[]): ResultBoardStudent[] {
@@ -63,8 +51,8 @@ function groupLiveResults(rows: ResultApiRow[]): ResultBoardStudent[] {
 }
 
 export function ResultsCommandCenter() {
-  const [students, setStudents] = useState<ResultBoardStudent[]>(normalizeMockResults());
-  const [source, setSource] = useState("mock");
+  const [students, setStudents] = useState<ResultBoardStudent[]>([]);
+  const [source, setSource] = useState("none");
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("Loading academic records...");
 
@@ -75,10 +63,10 @@ export function ResultsCommandCenter() {
       const response = await fetch("/api/results", { cache: "no-store" });
       const payload = await response.json() as ResultsApiResponse;
       if (!response.ok) throw new Error(payload.message ?? "Unable to load results");
-      setSource(payload.source ?? "mock");
+      setSource(payload.source ?? "none");
       const rows = payload.data ?? [];
-      setStudents(payload.source === "supabase" ? groupLiveResults(rows) : normalizeMockResults());
-      setMessage(payload.source === "supabase" ? "Live Supabase results loaded." : "Demo result data loaded.");
+      setStudents(payload.source === "supabase" ? groupLiveResults(rows) : []);
+      setMessage(payload.source === "supabase" ? "Result records loaded." : (payload.message ?? "Connect your database to load results."));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Results unavailable.");
     } finally {
@@ -96,7 +84,7 @@ export function ResultsCommandCenter() {
     const approved = students.filter((student) => student.status === "APPROVED" || student.status === "PUBLISHED").length;
     const review = students.filter((student) => student.status === "REVIEW").length;
     const draft = students.filter((student) => student.status === "DRAFT").length;
-    const average = total ? Math.round(students.reduce((sum, student) => sum + student.average, 0) / total) : getResultSummary().average;
+    const average = total ? Math.round(students.reduce((sum, student) => sum + student.average, 0) / total) : 0;
     return { total, approved, review, draft, average };
   }, [students]);
 

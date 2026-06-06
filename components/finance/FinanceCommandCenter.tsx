@@ -3,7 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { AlertCircle, ArrowRight, Banknote, BellRing, CheckCircle2, CreditCard, FileText, Loader2, PlusCircle, ShieldAlert, WalletCards } from "lucide-react";
-import { collectionForecast, currency, financeInsights, financeMetrics, getFinanceSummary, invoices as mockInvoices, paymentTimeline } from "@/lib/finance-center";
+import { collectionForecast, currency, financeInsights, paymentTimeline } from "@/lib/finance-center";
 import { TrendLine } from "@/components/premium/TrendLine";
 
 type InvoiceCard = {
@@ -20,7 +20,7 @@ type InvoiceCard = {
 
 type InvoiceApiResponse = {
   status: string;
-  source?: "mock" | "supabase";
+  source?: "none" | "supabase";
   summary?: Record<string, number>;
   data?: Array<Record<string, unknown>>;
   message?: string;
@@ -74,9 +74,8 @@ function normalizeInvoice(row: Record<string, unknown>): InvoiceCard {
 }
 
 export function FinanceCommandCenter() {
-  const mockSummary = getFinanceSummary();
-  const [invoiceRows, setInvoiceRows] = useState<InvoiceCard[]>(mockInvoices.map((invoice) => normalizeInvoice(invoice as unknown as Record<string, unknown>)));
-  const [source, setSource] = useState("mock");
+  const [invoiceRows, setInvoiceRows] = useState<InvoiceCard[]>([]);
+  const [source, setSource] = useState("none");
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -88,8 +87,8 @@ export function FinanceCommandCenter() {
     const outstanding = total - paid;
     const overdue = invoiceRows.filter((invoice) => invoice.status === "OVERDUE" || invoice.status === "Overdue").reduce((sum, invoice) => sum + invoice.amount - invoice.paid, 0);
     const collectionRate = total > 0 ? Math.round((paid / total) * 100) : 0;
-    return invoiceRows.length ? { total, paid, outstanding, overdue, collectionRate } : mockSummary;
-  }, [invoiceRows, mockSummary]);
+    return { total, paid, outstanding, overdue, collectionRate };
+  }, [invoiceRows]);
 
   async function loadInvoices() {
     setLoading(true);
@@ -98,9 +97,9 @@ export function FinanceCommandCenter() {
       const response = await fetch("/api/finance/invoices", { cache: "no-store" });
       const payload = await response.json() as InvoiceApiResponse;
       if (!response.ok) throw new Error(payload.message ?? "Unable to load invoices");
-      setSource(payload.source ?? "mock");
+      setSource(payload.source ?? "none");
       setInvoiceRows((payload.data ?? []).map(normalizeInvoice));
-      setMessage(payload.source === "supabase" ? "Live Supabase invoices loaded." : "Demo invoice data loaded.");
+      setMessage(payload.source === "supabase" ? "Invoice records loaded." : (payload.message ?? "Connect your database to load invoices."));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Invoices unavailable.");
     } finally {
@@ -190,7 +189,7 @@ export function FinanceCommandCenter() {
       ) : null}
 
       <section className="premium-metrics">
-        {(source === "mock" ? financeMetrics : dynamicMetrics).map((metric) => <article className={`premium-metric ${toneClass(metric.tone)}`} key={metric.label}><div className="metric-icon"><CreditCard /></div><span>{metric.label}</span><strong>{metric.value}</strong><small>{metric.change}</small><p>Finance operations metric for the current academic term.</p></article>)}
+        {dynamicMetrics.map((metric) => <article className={`premium-metric ${toneClass(metric.tone)}`} key={metric.label}><div className="metric-icon"><CreditCard /></div><span>{metric.label}</span><strong>{metric.value}</strong><small>{metric.change}</small><p>Finance operations metric for the current academic term.</p></article>)}
       </section>
 
       <section className="premium-grid-2 align-start">

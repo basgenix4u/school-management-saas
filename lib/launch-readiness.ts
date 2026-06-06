@@ -1,6 +1,6 @@
 export const launchReadiness = [
   { area: "Product UX", status: "Advanced", score: 96, detail: "Premium command center, portals, role UX and operational modules are in place." },
-  { area: "Database", status: "Connected", score: 88, detail: "Supabase schema, RLS foundation, seed data and intelligence views are available." },
+  { area: "Database", status: "Connected", score: 88, detail: "Database schema, access-control foundation and intelligence views are available." },
   { area: "Authentication", status: "Designed", score: 72, detail: "RBAC architecture exists; production auth provider wiring is next." },
   { area: "Payments", status: "Designed", score: 70, detail: "Finance and invoice UX exists; Paystack/Stripe integration is next." },
   { area: "Reports", status: "Ready for PDF", score: 82, detail: "Report card designer exists; server PDF export is next." },
@@ -15,10 +15,10 @@ export const deploymentChecklist = [
   { title: "Enable real authentication", done: false },
   { title: "Connect live CRUD modules", done: false },
   { title: "Integrate payment provider", done: false },
-  { title: "Generate screenshots and demo video", done: false },
+  { title: "Generate screenshots and product video", done: false },
 ];
 
-export const clientDemoScript = [
+export const clientProductScript = [
   "Open the premium landing page and explain the School OS concept.",
   "Show the executive command center and intelligence layer.",
   "Open Student 360 and explain risk/guardian/finance/attendance context.",

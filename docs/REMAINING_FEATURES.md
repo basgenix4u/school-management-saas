@@ -8,7 +8,7 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 - Session-based route protection
 - Role-based server-side permission checks
 - Organization-scoped data access on every query
-- Replace demo RLS policies with strict production RLS
+- Replace product RLS policies with strict production RLS
 - User invitation flow for school owners, principals, teachers, accountants, parents and students
 - Password reset and email verification
 - Account settings and profile management
@@ -168,8 +168,8 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 ## Priority 14 — Portfolio and Client Presentation
 
 - Screenshots for every major module
-- Demo video walkthrough
-- Live demo credentials
+- Product video walkthrough
+- Live access credentials
 - Case study README section
 - Architecture diagram
 - Product brochure PDF
@@ -185,5 +185,5 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 4. Live invoice creation and Paystack payment verification
 5. Live result entry and report card PDF generation
 6. Parent/student authenticated portal data
-7. Vercel deployment and demo credentials
+7. Vercel deployment and access credentials
 8. Screenshots/video/case study for GitHub and LinkedIn

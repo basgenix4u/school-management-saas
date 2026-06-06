@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { attendanceRegister, getAttendanceSummary } from "@/lib/teacher-workspace";
 import { AttendanceCreateInput, configuredOrNull, createLiveAttendance, listLiveAttendance } from "@/lib/supabase/school-data";
 
 export async function GET() {
   const supabase = configuredOrNull();
-  if (!supabase) {
-    return NextResponse.json({ status: "ok", source: "mock", summary: getAttendanceSummary(), register: attendanceRegister });
-  }
+  if (!supabase) return NextResponse.json({ status: "not_configured", source: "none", register: [], message: "Connect Supabase environment variables to load attendance." });
 
   try {
     const register = await listLiveAttendance(supabase);
@@ -18,14 +15,10 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const supabase = configuredOrNull();
-  if (!supabase) {
-    return NextResponse.json({ status: "not_configured", message: "Supabase env vars are required for attendance persistence." }, { status: 503 });
-  }
+  if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before saving attendance." }, { status: 503 });
 
   const body = await request.json().catch(() => null) as Partial<AttendanceCreateInput> | null;
-  if (!body?.admissionNo || !body?.status) {
-    return NextResponse.json({ status: "error", message: "admissionNo and status are required." }, { status: 400 });
-  }
+  if (!body?.admissionNo || !body?.status) return NextResponse.json({ status: "error", message: "admissionNo and status are required." }, { status: 400 });
 
   try {
     const record = await createLiveAttendance(supabase, body as AttendanceCreateInput);

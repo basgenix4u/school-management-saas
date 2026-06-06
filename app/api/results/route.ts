@@ -1,12 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getResultSummary, resultInsights, resultStudents } from "@/lib/results-center";
 import { configuredOrNull, listLiveResults, ResultUpsertInput, upsertLiveResult } from "@/lib/supabase/school-data";
 
 export async function GET() {
   const supabase = configuredOrNull();
-  if (!supabase) {
-    return NextResponse.json({ status: "ok", source: "mock", summary: getResultSummary(), insights: resultInsights, data: resultStudents });
-  }
+  if (!supabase) return NextResponse.json({ status: "not_configured", source: "none", data: [], message: "Connect Supabase environment variables to load results." });
 
   try {
     const data = await listLiveResults(supabase);
@@ -18,9 +15,7 @@ export async function GET() {
 
 export async function POST(request: NextRequest) {
   const supabase = configuredOrNull();
-  if (!supabase) {
-    return NextResponse.json({ status: "not_configured", message: "Supabase env vars are required for result persistence." }, { status: 503 });
-  }
+  if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before saving results." }, { status: 503 });
 
   const body = await request.json().catch(() => null) as Partial<ResultUpsertInput> | null;
   if (!body?.admissionNo || !body?.subjectName || !body?.term || !body?.session || typeof body.caScore !== "number" || typeof body.examScore !== "number") {

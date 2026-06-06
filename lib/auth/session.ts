@@ -5,7 +5,7 @@ import { permissionsByRole, roleLabels, type UserRole } from "@/lib/rbac";
 
 export type AppSession = {
   authenticated: boolean;
-  mode: "live" | "demo";
+  mode: "live" | "product";
   user?: {
     id: string;
     email?: string;
@@ -44,8 +44,8 @@ export async function getAppSession(): Promise<AppSession> {
   if (!hasSupabaseConfig()) {
     return {
       authenticated: false,
-      mode: "demo",
-      message: "Supabase environment variables are not configured; app is running in demo mode.",
+      mode: "product",
+      message: "Supabase environment variables are not configured; app is running in configuration mode.",
     };
   }
 

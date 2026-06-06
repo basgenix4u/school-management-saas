@@ -4,14 +4,14 @@ import { configuredOrNull } from "@/lib/supabase/school-data";
 export async function GET() {
   const supabase = configuredOrNull();
   if (!supabase) {
-    return NextResponse.json({ status: "not_configured", message: "Supabase env vars are required for live command center data." }, { status: 503 });
+    return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables to load command center data." }, { status: 503 });
   }
 
   try {
-    const { data, error } = await supabase.rpc("get_school_command_center", { org_slug: "greenfield-school" });
+    const { data, error } = await supabase.from("v_command_center_summary").select("*").limit(10);
     if (error) throw error;
-    return NextResponse.json({ status: "ok", source: "supabase-rpc", data });
+    return NextResponse.json({ status: "ok", source: "supabase-view", data });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase-rpc", message: error instanceof Error ? error.message : "Failed to load live command center" }, { status: 500 });
+    return NextResponse.json({ status: "error", source: "supabase-view", message: error instanceof Error ? error.message : "Failed to load command center" }, { status: 500 });
   }
 }

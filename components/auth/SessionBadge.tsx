@@ -7,7 +7,7 @@ import { LogOut, ShieldCheck, UserRound } from "lucide-react";
 type SessionResponse = {
   session?: {
     authenticated: boolean;
-    mode: "live" | "demo";
+    mode: "live" | "product";
     user?: {
       name?: string;
       email?: string;
@@ -25,7 +25,7 @@ export function SessionBadge() {
       fetch("/api/auth/session", { cache: "no-store" })
         .then((response) => response.json())
         .then((data: SessionResponse) => setSession(data.session))
-        .catch(() => setSession({ authenticated: false, mode: "demo", message: "Session unavailable" }));
+        .catch(() => setSession({ authenticated: false, mode: "product", message: "Session unavailable" }));
     }, 0);
     return () => window.clearTimeout(timer);
   }, []);
@@ -40,7 +40,7 @@ export function SessionBadge() {
   }
 
   if (!session.authenticated) {
-    return <Link className="session-badge" href="/login"><ShieldCheck size={15} /> {session.mode === "demo" ? "Demo mode" : "Sign in"}</Link>;
+    return <Link className="session-badge" href="/login"><ShieldCheck size={15} /> {session.mode === "product" ? "Configuration required" : "Sign in"}</Link>;
   }
 
   return (

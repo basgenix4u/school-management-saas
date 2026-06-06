@@ -20,7 +20,7 @@ const actions = [
   { href: "/dashboard/fees", title: "Open Finance Command Center", hint: "Fees, payments and finance intelligence", icon: CreditCard, tags: "fees payment invoices finance" },
   { href: "/dashboard/fees/invoices", title: "Open Invoice Board", hint: "All invoices and payment probabilities", icon: CreditCard, tags: "invoice board balances collection" },
   { href: "/dashboard/database", title: "Open Database Control Room", hint: "Supabase health and live data views", icon: Database, tags: "database supabase health live data" },
-  { href: "/dashboard/launch", title: "Open Launch Center", hint: "Production readiness and demo checklist", icon: Rocket, tags: "launch production deployment readiness" },
+  { href: "/dashboard/launch", title: "Open Launch Center", hint: "Production readiness and product checklist", icon: Rocket, tags: "launch production deployment readiness" },
   { href: "/dashboard/communications", title: "Open Communication Center", hint: "Announcements, reminders and parent campaigns", icon: Megaphone, tags: "communication messages announcements campaigns" },
   { href: "/dashboard/communications/campaigns", title: "Open Campaign Manager", hint: "Parent campaign board", icon: Megaphone, tags: "campaign manager parent messages" },
   { href: "/portal/parent", title: "Open Parent Portal", hint: "Guardian view for fees, results and messages", icon: UsersRound, tags: "parent guardian portal invoices messages" },

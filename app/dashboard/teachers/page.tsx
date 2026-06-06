@@ -1,14 +1,20 @@
-import { teachers } from "@/lib/mock-data";
+import Link from "next/link";
+import { BriefcaseBusiness, UsersRound } from "lucide-react";
 
 export default function TeachersPage() {
   return (
-    <section className="card" style={{ padding: 24 }}>
-      <h1 style={{ marginTop: 0 }}>Teachers</h1>
-      <p style={{ color: "#64748b" }}>Manage teacher profiles, subjects, classes and availability.</p>
-      <table className="table">
-        <thead><tr><th>ID</th><th>Name</th><th>Subject</th><th>Classes</th><th>Status</th></tr></thead>
-        <tbody>{teachers.map((teacher) => <tr key={teacher.id}><td>{teacher.id}</td><td>{teacher.name}</td><td>{teacher.subject}</td><td>{teacher.classes}</td><td><span className="status good">{teacher.status}</span></td></tr>)}</tbody>
-      </table>
-    </section>
+    <div className="premium-dashboard">
+      <section className="card-aurora intelligence-hero">
+        <span className="premium-kicker"><UsersRound size={14} /> Teachers</span>
+        <h1>Build your teaching team workspace.</h1>
+        <p>Teacher profiles, assigned classes, subjects and workload insights will appear here once your school setup is completed.</p>
+      </section>
+      <section className="card premium-panel empty-module-panel">
+        <BriefcaseBusiness size={34} />
+        <h2>No teachers added yet</h2>
+        <p>Add teacher profiles and assign classes to activate teacher dashboards, attendance workflows and result entry.</p>
+        <Link className="btn btn-primary" href="/dashboard/teacher-desk">Open teacher desk</Link>
+      </section>
+    </div>
   );
 }

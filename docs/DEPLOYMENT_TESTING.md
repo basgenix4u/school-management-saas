@@ -17,10 +17,10 @@ https://github.com/basgenix4u/school-management-saas
 Already completed in the Supabase project:
 
 - Initial database schema
-- Demo seed data
+- Product production records
 - Database intelligence views
-- Auth profile seed rows
-- Demo Supabase Auth users
+- Auth profile profile rows
+- Product Supabase Auth users
 
 Project metadata:
 
@@ -152,23 +152,23 @@ node scripts/smoke-test.mjs https://your-vercel-domain.vercel.app
 
 The smoke test checks important pages and APIs.
 
-## 7. Demo Credentials
+## 7. Initial Access Credentials
 
-Demo users created in Supabase Auth:
+Application users created in Supabase Auth:
 
 ```txt
-admin@greenfield.test       School Owner
-principal@greenfield.test   Principal
-teacher@greenfield.test     Teacher
-accountant@greenfield.test  Accountant
-parent@greenfield.test      Parent
-student@greenfield.test     Student
+       School Owner
+   Principal
+     Teacher
+  Accountant
+      Parent
+     Student
 ```
 
-Demo password:
+Product password:
 
 ```txt
-ChangeMe123!
+
 ```
 
 Security note: rotate/delete these before using real school data.
@@ -184,7 +184,7 @@ Security note: rotate/delete these before using real school data.
 
 ### Authentication
 
-- Login with `admin@greenfield.test`
+- Login with ``
 - Confirm redirect to `/dashboard`
 - Confirm session badge appears
 - Confirm sign out works
@@ -226,7 +226,7 @@ Expected:
 
 - Directory loads
 - Profile loads
-- API returns mock or Supabase data depending on environment
+- API returns live data when the database is configured
 
 ### Attendance
 
@@ -339,9 +339,9 @@ npm run build
 Before using real school data:
 
 - Rotate all shared tokens.
-- Rotate demo password.
-- Delete or disable demo users.
-- Replace demo RLS policies with strict org-scoped policies.
+- Rotate product password.
+- Delete or disable application users.
+- Replace product RLS policies with strict org-scoped policies.
 - Confirm service role key exists only on the server.
 - Add audit logs to every mutation.
 - Add rate limiting to public APIs.
@@ -354,7 +354,7 @@ Before using real school data:
 1. Deploy to Vercel.
 2. Add Vercel env variables.
 3. Add Vercel URL to Supabase Auth redirect URLs.
-4. Login with demo credentials.
+4. Login with access credentials.
 5. Run smoke test.
-6. Record screenshots and demo video.
-7. Add live demo link to GitHub README.
+6. Record screenshots and product video.
+7. Add live product link to GitHub README.

@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState } from "react";
 import { AlertTriangle, Bell, BookOpenCheck, CalendarCheck, CheckCircle2, ClipboardCheck, Clock, Loader2, Send, Sparkles, UsersRound } from "lucide-react";
-import { attendanceHeatmap, attendanceRegister, AttendanceStatus, getAttendanceSummary, lessonPlan, teacherClasses, teacherInsights, teacherProfile } from "@/lib/teacher-workspace";
+import { attendanceHeatmap, AttendanceStatus, getAttendanceSummary, lessonPlan, teacherClasses, teacherInsights, teacherProfile } from "@/lib/teacher-workspace";
 
 const statuses: AttendanceStatus[] = ["PRESENT", "ABSENT", "LATE", "EXCUSED"];
 
@@ -18,7 +18,7 @@ type RegisterStudent = {
 
 type AttendanceApiResponse = {
   status: string;
-  source?: "mock" | "supabase";
+  source?: "none" | "supabase";
   summary?: Record<string, number>;
   register?: Array<Record<string, unknown>>;
   message?: string;
@@ -58,11 +58,11 @@ function normalizeAttendance(row: Record<string, unknown>): RegisterStudent {
 
 export function TeacherDailyWorkspace() {
   const [selectedClass, setSelectedClass] = useState(teacherClasses[0].id);
-  const [register, setRegister] = useState<RegisterStudent[]>(attendanceRegister);
+  const [register, setRegister] = useState<RegisterStudent[]>([]);
   const [submitted, setSubmitted] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
-  const [source, setSource] = useState("mock");
+  const [source, setSource] = useState("none");
   const [message, setMessage] = useState("Loading attendance register...");
 
   const activeClass = useMemo(() => teacherClasses.find((item) => item.id === selectedClass) ?? teacherClasses[0], [selectedClass]);
@@ -83,9 +83,9 @@ export function TeacherDailyWorkspace() {
       const response = await fetch("/api/attendance", { cache: "no-store" });
       const payload = await response.json() as AttendanceApiResponse;
       if (!response.ok) throw new Error(payload.message ?? "Unable to load attendance");
-      setSource(payload.source ?? "mock");
+      setSource(payload.source ?? "none");
       setRegister((payload.register ?? []).map(normalizeAttendance));
-      setMessage(payload.source === "supabase" ? "Live Supabase attendance loaded." : "Demo attendance register loaded.");
+      setMessage(payload.source === "supabase" ? "Attendance records loaded." : (payload.message ?? "Connect your database to load attendance."));
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Attendance unavailable.");
     } finally {
@@ -210,7 +210,7 @@ export function AttendanceMarkingWorkspace() {
         <p>Designed for teachers to capture present, absent, late and excused statuses with immediate risk visibility and admin follow-up readiness.</p>
       </section>
       <section className="premium-metrics">
-        <article className="premium-metric tone-emerald"><div className="metric-icon"><CheckCircle2 /></div><span>Present</span><strong>{summary.present}</strong><small>{summary.rate}% rate</small><p>Students marked present in demo register.</p></article>
+        <article className="premium-metric tone-emerald"><div className="metric-icon"><CheckCircle2 /></div><span>Present</span><strong>{summary.present}</strong><small>{summary.rate}% rate</small><p>Students marked present in product register.</p></article>
         <article className="premium-metric tone-rose"><div className="metric-icon"><AlertTriangle /></div><span>Absent</span><strong>{summary.absent}</strong><small>follow-up</small><p>Absences that should flow to intervention queue.</p></article>
         <article className="premium-metric tone-amber"><div className="metric-icon"><Clock /></div><span>Late</span><strong>{summary.late}</strong><small>pattern watch</small><p>Late arrivals tracked for discipline and parent engagement.</p></article>
         <article className="premium-metric tone-blue"><div className="metric-icon"><CalendarCheck /></div><span>Excused</span><strong>{summary.excused}</strong><small>verified</small><p>Admin or guardian-approved attendance exceptions.</p></article>

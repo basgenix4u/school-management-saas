@@ -1,16 +1,10 @@
 import { NextResponse } from "next/server";
-import { getStudentResult } from "@/lib/results-center";
 import { configuredOrNull, getLiveResultByStudent } from "@/lib/supabase/school-data";
 
 export async function GET(_request: Request, { params }: { params: Promise<{ student: string }> }) {
   const { student } = await params;
   const supabase = configuredOrNull();
-
-  if (!supabase) {
-    const result = getStudentResult(student);
-    if (!result) return NextResponse.json({ status: "error", source: "mock", message: "Result not found" }, { status: 404 });
-    return NextResponse.json({ status: "ok", source: "mock", data: result });
-  }
+  if (!supabase) return NextResponse.json({ status: "not_configured", source: "none", message: "Connect Supabase environment variables to load result records." }, { status: 503 });
 
   try {
     const result = await getLiveResultByStudent(supabase, student.toUpperCase());

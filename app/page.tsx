@@ -39,7 +39,7 @@ const proof = ["Secure role-based access", "Parent and student portals", "Fees a
 const faqs = [
   { q: "Is EduManage only a dashboard?", a: "No. It is structured as a school operating system covering academics, finance, attendance, communication, portals, trust and launch readiness." },
   { q: "Can it support multiple roles?", a: "Yes. The architecture includes school owner, principal, teacher, accountant, parent, student and super admin role planning." },
-  { q: "Is it ready for Cloud?", a: "Yes. The project includes Cloud migrations, auth foundation, CRUD APIs, database views and demo users." },
+  { q: "Is it ready for Cloud?", a: "Yes. The project includes Cloud migrations, auth foundation, CRUD APIs, database views and application users." },
   { q: "Can this become a paid SaaS?", a: "Yes. Remaining work includes final security hardening, payments, PDF exports, support workflows and production monitoring before onboarding real schools." },
 ];
 

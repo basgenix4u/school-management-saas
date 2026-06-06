@@ -4,7 +4,7 @@ import { EduManageLogo } from "@/components/brand/EduManageLogo";
 
 const supportPaths = [
   { title: "Deployment help", body: "Use the deployment guide to configure Vercel, Supabase and environment variables.", href: "/dashboard/launch" },
-  { title: "Account and login", body: "Check Supabase Auth configuration, redirect URLs and demo credentials.", href: "/login" },
+  { title: "Account and login", body: "Check Supabase Auth configuration, redirect URLs and access credentials.", href: "/login" },
   { title: "Product documentation", body: "Review the product roadmap, design system, deployment guide and Supabase setup docs.", href: "https://github.com/basgenix4u/school-management-saas/tree/main/docs" },
 ];
 

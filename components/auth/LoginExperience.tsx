@@ -2,16 +2,17 @@
 
 import { FormEvent, useMemo, useState } from "react";
 import Link from "next/link";
-import { ArrowRight, Eye, EyeOff, GraduationCap, Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
+import { ArrowRight, Eye, EyeOff, Loader2, LockKeyhole, Mail, ShieldCheck } from "lucide-react";
 import { roleExperiences, roleLabels, UserRole } from "@/lib/rbac";
+import { EduManageLogo } from "@/components/brand/EduManageLogo";
 import { createBrowserSupabaseClient, hasBrowserSupabaseConfig } from "@/lib/supabase/browser";
 
 export function LoginExperience() {
   const [role, setRole] = useState<UserRole>("SCHOOL_OWNER");
   const [showPassword, setShowPassword] = useState(false);
-  const [email, setEmail] = useState("admin@greenfield.test");
-  const [password, setPassword] = useState("ChangeMe123!");
-  const [message, setMessage] = useState("Use demo access if Supabase Auth is not configured yet.");
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [message, setMessage] = useState("Sign in with your school account.");
   const [loading, setLoading] = useState(false);
   const selected = useMemo(() => roleExperiences.find((item) => item.role === role) ?? roleExperiences[0], [role]);
 
@@ -22,7 +23,7 @@ export function LoginExperience() {
 
     try {
       if (!hasBrowserSupabaseConfig()) {
-        setMessage("Demo mode: Supabase public env variables are not configured in this runtime.");
+        setMessage("Authentication is not configured yet. Add Supabase environment variables to enable sign in.");
         return;
       }
 
@@ -45,7 +46,7 @@ export function LoginExperience() {
   return (
     <main className="login-shell">
       <section className="login-brand-panel">
-        <div className="login-logo"><GraduationCap size={30} /></div>
+        <div className="login-brand-logo"><EduManageLogo href="" uploaded /></div>
         <span className="premium-kicker"><ShieldCheck size={14} /> Secure School OS</span>
         <h1>Role-aware access built for serious school operations.</h1>
         <p>EduManage is designed for owners, principals, teachers, accountants, parents and students — each with a focused workspace and permission boundary.</p>
@@ -59,7 +60,7 @@ export function LoginExperience() {
       <section className="login-card">
         <span className="premium-kicker">Secure Access</span>
         <h2>Sign in to EduManage</h2>
-        <p>Select a role preview, then sign in with Supabase Auth or continue in demo mode.</p>
+        <p>Sign in with your school account. Role access is managed by your school administrator.</p>
 
         <div className="role-select-grid">
           {roleExperiences.map((item) => (
@@ -82,8 +83,7 @@ export function LoginExperience() {
           <button className="btn btn-primary login-submit" type="submit" disabled={loading}>{loading ? <Loader2 className="spin" size={18} /> : <ArrowRight size={18} />} Sign in with Supabase</button>
         </form>
         <p className="auth-message">{message}</p>
-        <Link className="btn btn-secondary login-submit" href="/dashboard/access">Preview as {roleLabels[role]}</Link>
-        <Link className="login-secondary" href="/dashboard">Continue to command center demo</Link>
+        <Link className="login-secondary" href="/contact">Need access? Contact your school administrator</Link>
       </section>
     </main>
   );

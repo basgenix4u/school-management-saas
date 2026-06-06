@@ -31,7 +31,7 @@ It creates:
 - announcements
 - audit_events
 
-It also adds indexes, update triggers, RLS, demo read policies and demo seed data.
+It also adds indexes, update triggers, RLS, product read policies and product production records.
 
 ## Security
 
@@ -48,7 +48,7 @@ DATABASE_URL
 
 ## Production RLS Plan
 
-The migration enables RLS and adds demo authenticated-read policies. Before production launch, replace demo policies with strict organization-scoped policies based on `auth.uid()` and role membership.
+The migration enables RLS and adds product authenticated-read policies. Before production launch, replace product policies with strict organization-scoped policies based on `auth.uid()` and role membership.
 
 
 ## Database Intelligence Views
@@ -64,7 +64,7 @@ v_results_summary
 get_school_command_center(org_slug)
 ```
 
-These views prepare the app for live dashboard metrics and replace mock data progressively.
+These views prepare the app for live dashboard metrics and replace empty production states progressively.
 
 ## Runtime API Integration
 
@@ -80,7 +80,7 @@ These routes use environment variables and safely return `not_configured` if Sup
 
 ## CRUD API Layer
 
-The project now includes Supabase-aware CRUD endpoints. They fall back to mock data when runtime environment variables are missing, and use Supabase when configured.
+The project now includes Supabase-aware CRUD endpoints. They fall back to empty production states when runtime environment variables are missing, and use Supabase when configured.
 
 ```txt
 GET  /api/students

@@ -1,34 +1,4 @@
--- EduManage School OS - Auth profile seed and helpers
-
-insert into public.app_users(organization_id, name, email, role)
-select id, 'Greenfield Demo Owner', 'admin@greenfield.test', 'SCHOOL_OWNER'
-from public.organizations where slug='greenfield-school'
-on conflict (email) do update set role=excluded.role, organization_id=excluded.organization_id, updated_at=now();
-
-insert into public.app_users(organization_id, name, email, role)
-select id, 'Principal Office', 'principal@greenfield.test', 'PRINCIPAL'
-from public.organizations where slug='greenfield-school'
-on conflict (email) do update set role=excluded.role, organization_id=excluded.organization_id, updated_at=now();
-
-insert into public.app_users(organization_id, name, email, role)
-select id, 'Mr. Ibrahim Musa', 'teacher@greenfield.test', 'TEACHER'
-from public.organizations where slug='greenfield-school'
-on conflict (email) do update set role=excluded.role, organization_id=excluded.organization_id, updated_at=now();
-
-insert into public.app_users(organization_id, name, email, role)
-select id, 'Accounts Department', 'accountant@greenfield.test', 'ACCOUNTANT'
-from public.organizations where slug='greenfield-school'
-on conflict (email) do update set role=excluded.role, organization_id=excluded.organization_id, updated_at=now();
-
-insert into public.app_users(organization_id, name, email, role)
-select id, 'Mrs. Yusuf', 'parent@greenfield.test', 'PARENT'
-from public.organizations where slug='greenfield-school'
-on conflict (email) do update set role=excluded.role, organization_id=excluded.organization_id, updated_at=now();
-
-insert into public.app_users(organization_id, name, email, role)
-select id, 'Amina Yusuf', 'student@greenfield.test', 'STUDENT'
-from public.organizations where slug='greenfield-school'
-on conflict (email) do update set role=excluded.role, organization_id=excluded.organization_id, updated_at=now();
+-- EduManage School OS - Auth profile helpers (no seeded users)
 
 create or replace function public.link_current_auth_user_to_profile()
 returns public.app_users
