@@ -143,6 +143,7 @@ Open http://localhost:3000.
 /                       Landing page
 /dashboard              Executive command center
 /dashboard/setup        First-run school setup wizard
+/dashboard/users        User invitations and access management
 /dashboard/intelligence Intelligence center and AI-style copilot
 /dashboard/onboarding   Workspace launch onboarding
 /dashboard/launch       Production launch center

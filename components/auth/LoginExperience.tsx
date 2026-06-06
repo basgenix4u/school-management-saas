@@ -18,6 +18,18 @@ export function LoginExperience() {
   const [loading, setLoading] = useState(false);
   const selected = useMemo(() => roleExperiences.find((item) => item.role === role) ?? roleExperiences[0], [role]);
 
+  async function acceptInviteIfPresent() {
+    const token = new URLSearchParams(window.location.search).get("invite");
+    if (!token) return;
+    const response = await fetch("/api/invitations/accept", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ token }),
+    });
+    const payload = await response.json().catch(() => ({}));
+    if (!response.ok) throw new Error(payload.message ?? "Unable to accept invitation");
+  }
+
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
@@ -36,6 +48,7 @@ export function LoginExperience() {
           setMessage(error.message);
           return;
         }
+        await acceptInviteIfPresent();
         const next = new URLSearchParams(window.location.search).get("next") ?? "/dashboard";
         window.location.href = next;
         return;
@@ -50,8 +63,9 @@ export function LoginExperience() {
         setMessage(error.message);
         return;
       }
+      await acceptInviteIfPresent().catch(() => undefined);
       setMessage("Account created. If email confirmation is required, check your inbox. Otherwise, continue to school setup.");
-      window.setTimeout(() => { window.location.href = "/dashboard/setup"; }, 900);
+      window.setTimeout(() => { window.location.href = new URLSearchParams(window.location.search).get("invite") ? "/dashboard" : "/dashboard/setup"; }, 900);
     } catch (error) {
       setMessage(error instanceof Error ? error.message : "Unable to continue.");
     } finally {

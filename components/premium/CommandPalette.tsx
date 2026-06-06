@@ -9,6 +9,7 @@ const actions = [
   { href: "/dashboard/intelligence", title: "Open Intelligence Center", hint: "AI-style insights and decision queue", icon: BrainCircuit, BriefcaseBusiness, tags: "ai insights risk signals copilot" },
   { href: "/dashboard/setup", title: "Open School Setup", hint: "Create school profile, classes, staff, students and fees", icon: Rocket, tags: "school setup onboarding classes staff students fees" },
   { href: "/dashboard/onboarding", title: "Launch School Workspace", hint: "Workspace setup checklist", icon: Rocket, tags: "setup onboarding launch school" },
+  { href: "/dashboard/users", title: "Open Users & Invites", hint: "Invite staff, parents and students", icon: UsersRound, tags: "users invites staff parents students roles" },
   { href: "/dashboard/access", title: "Open Access Control", hint: "Roles, permissions and RBAC matrix", icon: KeyRound, tags: "auth access roles rbac permissions" },
   { href: "/dashboard/audit", title: "Open Audit Trail", hint: "Trace sensitive actions and risk events", icon: History, tags: "audit logs security events" },
   { href: "/dashboard/trust", title: "Open Trust Center", hint: "Security controls and readiness", icon: LockKeyhole, tags: "trust security compliance privacy" },

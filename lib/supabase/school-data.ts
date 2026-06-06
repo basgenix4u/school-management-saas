@@ -493,3 +493,79 @@ export async function getSetupReadiness(client: SupabaseClient) {
   if (error) throw error;
   return data;
 }
+
+export type InvitationInput = {
+  email: string;
+  name?: string;
+  role: "SCHOOL_OWNER" | "PRINCIPAL" | "TEACHER" | "ACCOUNTANT" | "PARENT" | "STUDENT" | "SUPER_ADMIN";
+};
+
+export async function getAccessSummary(client: SupabaseClient) {
+  const { data, error } = await client.from("v_user_access_summary").select("*").limit(1).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function listInvitations(client: SupabaseClient) {
+  const organization = await getOrganizationForWrite(client);
+  const { data, error } = await client
+    .from("user_invitations")
+    .select("id,email,name,role,status,token,expires_at,created_at")
+    .eq("organization_id", organization.id)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createInvitation(client: SupabaseClient, input: InvitationInput) {
+  const organization = await getOrganizationForWrite(client);
+  const { data, error } = await client
+    .from("user_invitations")
+    .upsert({
+      organization_id: organization.id,
+      email: input.email.toLowerCase().trim(),
+      name: input.name ?? null,
+      role: input.role,
+      status: "pending",
+      expires_at: new Date(Date.now() + 14 * 24 * 60 * 60 * 1000).toISOString(),
+    }, { onConflict: "organization_id,email" })
+    .select("id,email,name,role,status,token,expires_at,created_at")
+    .single();
+  if (error) throw error;
+  return data;
+}
+
+export async function acceptInvitation(client: SupabaseClient, token: string, authUserId: string, email: string) {
+  const { data: invitation, error: inviteError } = await client
+    .from("user_invitations")
+    .select("id,organization_id,email,name,role,status,expires_at")
+    .eq("token", token)
+    .maybeSingle<{ id: string; organization_id: string; email: string; name: string | null; role: string; status: string; expires_at: string }>();
+  if (inviteError) throw inviteError;
+  if (!invitation) throw new Error("Invitation not found");
+  if (invitation.status !== "pending") throw new Error("Invitation is no longer pending");
+  if (new Date(invitation.expires_at).getTime() < Date.now()) throw new Error("Invitation has expired");
+  if (invitation.email.toLowerCase() !== email.toLowerCase()) throw new Error("Invitation email does not match authenticated user");
+
+  const { data: profile, error: profileError } = await client
+    .from("app_users")
+    .upsert({
+      organization_id: invitation.organization_id,
+      auth_user_id: authUserId,
+      email: invitation.email.toLowerCase(),
+      name: invitation.name ?? email,
+      role: invitation.role,
+      active: true,
+    }, { onConflict: "email" })
+    .select("*")
+    .single();
+  if (profileError) throw profileError;
+
+  const { error: updateError } = await client
+    .from("user_invitations")
+    .update({ status: "accepted", accepted_at: new Date().toISOString() })
+    .eq("id", invitation.id);
+  if (updateError) throw updateError;
+
+  return profile;
+}

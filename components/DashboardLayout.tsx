@@ -12,6 +12,7 @@ const nav = [
   { href: "/dashboard/launch", label: "Launch Center", icon: Rocket },
   { href: "/dashboard/database", label: "Database", icon: Database },
   { href: "/dashboard/communications", label: "Communications", icon: Megaphone },
+  { href: "/dashboard/users", label: "Users & Invites", icon: UsersRound },
   { href: "/dashboard/access", label: "Access Control", icon: KeyRound },
   { href: "/dashboard/audit", label: "Audit Trail", icon: History },
   { href: "/dashboard/trust", label: "Trust Center", icon: LockKeyhole },

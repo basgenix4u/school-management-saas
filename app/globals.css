@@ -2011,3 +2011,10 @@ section#platform.ds-section {
   color: #1d4ed8;
   box-shadow: 0 10px 24px rgba(15,23,42,.08);
 }
+
+.invitation-list { display: grid; gap: 12px; margin-top: 16px; }
+.invitation-list article { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 16px; border: 1px solid #e2e8f0; border-radius: 18px; background: #f8fafc; }
+.invitation-list strong { display: block; }
+.invitation-list span { display: block; color: #64748b; font-weight: 850; margin-top: 4px; }
+.invitation-list button { display: inline-flex; align-items: center; gap: 7px; border: 1px solid #dbeafe; background: #eff6ff; color: #1d4ed8; border-radius: 999px; padding: 9px 12px; font-weight: 950; cursor: pointer; }
+@media (max-width: 760px) { .invitation-list article { flex-direction: column; align-items: flex-start; } }
