@@ -39,9 +39,9 @@ export function ExecutiveCommandCenter() {
 
   useEffect(() => { const timer = window.setTimeout(() => { void loadInsights(); }, 0); return () => window.clearTimeout(timer); }, []);
 
-  const metrics = payload.metrics ?? [];
-  const signals = payload.signals ?? [];
-  const summary = payload.summary ?? {};
+  const metrics = useMemo(() => payload.metrics ?? [], [payload.metrics]);
+  const signals = useMemo(() => payload.signals ?? [], [payload.signals]);
+  const summary = useMemo(() => payload.summary ?? {}, [payload.summary]);
   const healthScore = useMemo(() => Number(String(metrics[0]?.value ?? "0").replace(/[^0-9]/g, "")) || 0, [metrics]);
   const attendanceTrend = payload.trends?.attendance?.length ? payload.trends.attendance : [0, 0, 0, 0, 0];
   const financeTrend = payload.trends?.finance?.length ? payload.trends.finance : [0, 0, 0];
