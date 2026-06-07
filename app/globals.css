@@ -2198,3 +2198,25 @@ section#platform.ds-section {
     width: 92vw;
   }
 }
+
+.auth-recovery-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  justify-content: center;
+  margin-top: 12px;
+}
+.auth-recovery-actions button {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-height: 38px;
+  border-radius: 999px;
+  border: 1px solid #dbeafe;
+  background: #eff6ff;
+  color: #1d4ed8;
+  font-weight: 900;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+.auth-recovery-actions button:disabled { opacity: .65; cursor: not-allowed; }
