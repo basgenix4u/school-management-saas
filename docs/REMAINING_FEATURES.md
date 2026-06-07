@@ -115,7 +115,7 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 - Student assignments/tasks
 - Student progress tracking
 - Student announcements
-- Mobile-first portal optimization
+- Mobile-first portal optimization ✅ dashboard navigation improved
 
 ## Priority 10 — SaaS Multi-Tenancy
 
@@ -188,3 +188,9 @@ This roadmap lists the remaining features to take EduManage School OS from premi
 6. Parent/student authenticated portal data
 7. Vercel deployment and access credentials
 8. Screenshots/video/case study for GitHub and LinkedIn
+
+
+## Batch 8 Completed
+
+- Role-based dashboard navigation ✅ complete
+- Mobile dashboard navigation redesign ✅ complete

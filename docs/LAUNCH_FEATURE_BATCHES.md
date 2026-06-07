@@ -67,8 +67,8 @@ Why: needed before real school data.
 
 ## Batch 8 — Dashboard UX
 
-15. Role-based dashboard navigation
-16. Mobile dashboard navigation redesign
+15. Role-based dashboard navigation ✅ complete
+16. Mobile dashboard navigation redesign ✅ complete
 
 Why: different users need different workflows; mobile matters.
 
