@@ -959,3 +959,83 @@ export async function writeAuditEvent(client: SupabaseClient, input: {
   });
   if (error) console.error("audit_event_failed", error.message);
 }
+
+export type SupportTicketInput = {
+  requesterEmail?: string;
+  requesterName?: string;
+  category?: string;
+  priority?: string;
+  subject: string;
+  description: string;
+  path?: string;
+};
+
+export type ErrorEventInput = {
+  userEmail?: string;
+  source?: string;
+  severity?: string;
+  message: string;
+  stack?: string;
+  path?: string;
+  userAgent?: string;
+  metadata?: Record<string, unknown>;
+};
+
+export async function recordAppError(client: SupabaseClient, input: ErrorEventInput) {
+  const organization = await getPrimaryOrganization(client).catch(() => null);
+  const { data, error } = await client.from("app_error_events").insert({
+    organization_id: organization?.id ?? null,
+    user_email: input.userEmail ?? null,
+    source: input.source ?? "server",
+    severity: input.severity ?? "error",
+    message: input.message,
+    stack: input.stack ?? null,
+    path: input.path ?? null,
+    user_agent: input.userAgent ?? null,
+    metadata: input.metadata ?? {},
+  }).select("*").single();
+  if (error) throw error;
+  return data;
+}
+
+export async function listAppErrors(client: SupabaseClient) {
+  const organization = await getPrimaryOrganization(client).catch(() => null);
+  let query = client.from("app_error_events").select("id,user_email,source,severity,message,path,resolved,created_at").order("created_at", { ascending: false }).limit(100);
+  if (organization?.id) query = query.eq("organization_id", organization.id);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function createSupportTicket(client: SupabaseClient, input: SupportTicketInput) {
+  const organization = await getPrimaryOrganization(client).catch(() => null);
+  const { data, error } = await client.from("support_tickets").insert({
+    organization_id: organization?.id ?? null,
+    requester_email: input.requesterEmail ?? null,
+    requester_name: input.requesterName ?? null,
+    category: input.category ?? "general",
+    priority: input.priority ?? "normal",
+    subject: input.subject,
+    description: input.description,
+    status: "open",
+    metadata: { path: input.path ?? null },
+  }).select("*").single();
+  if (error) throw error;
+  await writeAuditEvent(client, { organizationId: organization?.id, action: "support.ticket.create", resourceType: "support_ticket", resourceId: data.id, riskLevel: input.priority === "urgent" ? "High" : "Low", metadata: { subject: input.subject, category: input.category } });
+  return data;
+}
+
+export async function listSupportTickets(client: SupabaseClient) {
+  const organization = await getPrimaryOrganization(client).catch(() => null);
+  let query = client.from("support_tickets").select("id,requester_email,requester_name,category,priority,subject,description,status,created_at,updated_at").order("created_at", { ascending: false }).limit(100);
+  if (organization?.id) query = query.eq("organization_id", organization.id);
+  const { data, error } = await query;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getSupportSummary(client: SupabaseClient) {
+  const { data, error } = await client.from("v_support_operations_summary").select("*").limit(1).maybeSingle();
+  if (error) throw error;
+  return data;
+}

@@ -155,3 +155,29 @@ The risk engine considers:
 - manually assigned student risk level
 
 The command center reads these views through `/api/insights`.
+
+
+## Monitoring and Support Operations
+
+Batch 10 adds production operations tables:
+
+```txt
+app_error_events
+support_tickets
+v_support_operations_summary
+```
+
+APIs:
+
+```txt
+GET  /api/monitoring/errors
+POST /api/monitoring/errors
+GET  /api/support/tickets
+POST /api/support/tickets
+```
+
+Dashboard:
+
+```txt
+/dashboard/support-center
+```

@@ -81,8 +81,8 @@ Why: this makes the product feel intelligent and valuable.
 
 ## Batch 10 — Product Ops
 
-19. Error monitoring/logging foundation
-20. Admin support/contact workflow
+19. Error monitoring/logging foundation ✅ complete
+20. Admin support/contact workflow ✅ complete
 
 Why: needed for operating a live SaaS.
 

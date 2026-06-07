@@ -14,6 +14,7 @@ import {
   Megaphone,
   Receipt,
   Rocket,
+  LifeBuoy,
   UsersRound,
   type LucideIcon,
 } from "lucide-react";
@@ -66,6 +67,7 @@ export const navItems: NavItem[] = [
   { href: "/portal/parent", label: "Parent Portal", title: "Open Parent Portal", hint: "Guardian view for fees, results and messages", icon: UsersRound, tags: "parent guardian portal invoices messages", roles: ["PARENT"], group: "Portals" },
   { href: "/portal/student", label: "Student Portal", title: "Open Student Portal", hint: "Student learning progress dashboard", icon: GraduationCap, tags: "student portal progress tasks", roles: ["STUDENT"], group: "Portals" },
 
+  { href: "/dashboard/support-center", label: "Support", title: "Open Support Center", hint: "Support tickets and error monitoring", icon: LifeBuoy, tags: "support tickets errors monitoring operations", roles: ownerRoles, group: "System" },
   { href: "/dashboard/database", label: "Database", title: "Open Database Control Room", hint: "Database health and live data views", icon: Database, tags: "database health live data", roles: ownerRoles, group: "System" },
   { href: "/dashboard/launch", label: "Launch Center", title: "Open Launch Center", hint: "Production readiness and product checklist", icon: Rocket, tags: "launch production deployment readiness", roles: ownerRoles, group: "System" },
 ];
