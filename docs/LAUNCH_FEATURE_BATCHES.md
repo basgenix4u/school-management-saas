@@ -74,8 +74,8 @@ Why: different users need different workflows; mobile matters.
 
 ## Batch 9 — Analytics and Intelligence
 
-17. Live command center metrics from database views
-18. Risk scoring engine for students, fees and attendance
+17. Live command center metrics from database views ✅ complete
+18. Risk scoring engine for students, fees and attendance ✅ complete
 
 Why: this makes the product feel intelligent and valuable.
 

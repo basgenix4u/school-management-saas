@@ -134,3 +134,24 @@ Core server mutations now write audit events to `audit_events`, including:
 - result publishing/unlocking
 
 Server APIs still use the service role key and enforce business logic in server routes. Direct client-side access is constrained by RLS.
+
+
+## Risk Scoring Views
+
+Batch 9 adds live analytics and risk scoring views:
+
+```txt
+v_student_risk_scores
+v_school_operating_metrics
+```
+
+The risk engine considers:
+
+- attendance rate
+- absences and late arrivals
+- outstanding invoice balance
+- overdue invoices
+- academic average
+- manually assigned student risk level
+
+The command center reads these views through `/api/insights`.
