@@ -1,52 +1,56 @@
+import { DashboardLayout } from "@/components/DashboardLayout";
 import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft, Bell, CreditCard, GraduationCap, Phone, ShieldAlert } from "lucide-react";
-import { getStudentBySlug } from "@/lib/student-360";
 
-function riskClass(risk: string) {
-  if (risk === "High") return "bad";
-  if (risk === "Medium") return "warn";
-  return "good";
-}
-
-export default async function StudentProfilePage({ params }: { params: Promise<{ id: string }> }) {
-  const { id } = await params;
-  const student = getStudentBySlug(id);
-  if (!student) notFound();
-
+export default function StudentProfile({ params }: { params: { id: string } }) {
   return (
-    <div className="premium-dashboard">
-      <Link className="back-link" href="/dashboard/students"><ArrowLeft size={16} /> Back to students</Link>
-      <section className="card-aurora student-profile-hero">
-        <div className="student-profile-avatar">{student.name.split(" ").map((part) => part[0]).join("")}</div>
-        <div>
-          <span className="premium-kicker"><GraduationCap size={14} /> Student 360 Profile</span>
-          <h1>{student.name}</h1>
-          <p>{student.id} • {student.className} • {student.gender}</p>
-          <div className="role-metrics"><span>{student.status}</span><span>{student.guardian}</span><span>{student.guardianPhone}</span></div>
-        </div>
-        <span className={`status ${riskClass(student.risk)}`}>{student.risk} Risk</span>
-      </section>
+    <DashboardLayout>
+      <div className="max-w-4xl">
+        <Link href="/dashboard/students" className="text-sm text-zinc-500 hover:text-zinc-700">← Back to Students</Link>
 
-      <section className="premium-metrics">
-        <article className="premium-metric tone-emerald"><div className="metric-icon"><GraduationCap /></div><span>Academic Average</span><strong>{student.average}%</strong><small>current term</small><p>Performance snapshot for academic intervention planning.</p></article>
-        <article className="premium-metric tone-blue"><div className="metric-icon"><Bell /></div><span>Attendance</span><strong>{student.attendance}%</strong><small>term rate</small><p>Attendance performance with risk scoring potential.</p></article>
-        <article className="premium-metric tone-amber"><div className="metric-icon"><CreditCard /></div><span>Fee Balance</span><strong>{student.balance}</strong><small>{student.fee}</small><p>Payment status for finance and parent follow-up.</p></article>
-        <article className="premium-metric tone-violet"><div className="metric-icon"><Phone /></div><span>Guardian</span><strong style={{ fontSize: 22 }}>{student.guardian}</strong><small>{student.guardianPhone}</small><p>Guardian contact for communication workflows.</p></article>
-      </section>
+        <div className="mt-6 flex items-center gap-6">
+          <div className="w-20 h-20 rounded-2xl bg-zinc-200" />
+          <div>
+            <h1 className="text-4xl font-semibold tracking-tight">Aisha Bello</h1>
+            <p className="text-lg text-zinc-600">JSS 2 • EDU-2024-0842</p>
+          </div>
+        </div>
 
-      <section className="premium-grid-2 align-start">
-        <div className="card premium-panel">
-          <span className="premium-kicker"><ShieldAlert size={14} /> Intervention Plan</span>
-          <h2>Recommended actions</h2>
-          <div className="trust-list">{student.interventions.map((item) => <article key={item}><div><strong>{item}</strong><p>Action generated from student profile context.</p></div><span>Recommended</span></article>)}</div>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mt-10">
+          <div className="card">
+            <div className="text-sm text-zinc-500 mb-1">Attendance Rate</div>
+            <div className="text-5xl font-semibold tracking-tighter">96%</div>
+            <div className="text-emerald-600 text-sm mt-1">Excellent</div>
+          </div>
+          <div className="card">
+            <div className="text-sm text-zinc-500 mb-1">Current Term Average</div>
+            <div className="text-5xl font-semibold tracking-tighter">82.4</div>
+            <div className="text-emerald-600 text-sm mt-1">+4.2 from last term</div>
+          </div>
+          <div className="card">
+            <div className="text-sm text-zinc-500 mb-1">Fee Status</div>
+            <div className="text-5xl font-semibold tracking-tighter">Paid</div>
+            <div className="text-emerald-600 text-sm mt-1">Up to date</div>
+          </div>
         </div>
-        <div className="card premium-panel">
-          <span className="premium-kicker">Strength Profile</span>
-          <h2>What the student is good at</h2>
-          <div className="role-grid single-role-grid">{student.strengths.map((strength) => <article key={strength}><strong>{strength}</strong><p>Use this strength to personalize learning and motivation.</p></article>)}</div>
+
+        <div className="mt-10">
+          <h3 className="font-semibold text-xl mb-4">Recent Activity</h3>
+          <div className="card space-y-4 text-sm">
+            <div className="flex justify-between py-1 border-b">
+              <span>Marked present in Mathematics</span>
+              <span className="text-zinc-500">Today</span>
+            </div>
+            <div className="flex justify-between py-1 border-b">
+              <span>Result published for English</span>
+              <span className="text-zinc-500">2 days ago</span>
+            </div>
+            <div className="flex justify-between py-1">
+              <span>Invoice paid (Term 2)</span>
+              <span className="text-zinc-500">Jan 12</span>
+            </div>
+          </div>
         </div>
-      </section>
-    </div>
+      </div>
+    </DashboardLayout>
   );
 }
