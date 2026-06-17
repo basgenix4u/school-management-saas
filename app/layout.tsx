@@ -3,9 +3,9 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  title: "EduCore School OS | Premium School Management SaaS",
-  description: "EduCore is a secure school operating system for academics, attendance, fees, results, parent communication and executive analytics.",
-  applicationName: "EduCore School OS",
+  title: "EduCore — Modern School Management",
+  description: "The modern school management platform. Simple. Powerful. Built for real schools.",
+  applicationName: "EduCore",
   manifest: "/site.webmanifest",
   icons: {
     icon: [
