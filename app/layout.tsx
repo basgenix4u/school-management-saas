@@ -3,9 +3,9 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000"),
-  title: "EduManage School OS | Premium School Management SaaS",
-  description: "EduManage is a secure school operating system for academics, attendance, fees, results, parent communication and executive analytics.",
-  applicationName: "EduManage School OS",
+  title: "EduCore School OS | Premium School Management SaaS",
+  description: "EduCore is a secure school operating system for academics, attendance, fees, results, parent communication and executive analytics.",
+  applicationName: "EduCore School OS",
   manifest: "/site.webmanifest",
   icons: {
     icon: [
@@ -17,9 +17,9 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "EduManage School OS",
+    title: "EduCore School OS",
     description: "A premium school operating system for modern institutions.",
-    images: [{ url: "/marketing/platform-intelligence.webp", width: 1376, height: 768, alt: "EduManage platform intelligence dashboard" }],
+    images: [{ url: "/marketing/platform-intelligence.webp", width: 1376, height: 768, alt: "EduCore platform intelligence dashboard" }],
   },
 };
 

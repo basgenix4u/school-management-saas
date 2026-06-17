@@ -1,15 +1,18 @@
-# EduManage School Management SaaS
+# EduCore — School Management SaaS
 
-EduManage is a full-stack SaaS school management platform for schools, academies and training institutions. It is designed to manage students, teachers, attendance, results, fees, parent communication and admin analytics from one modern dashboard.
+EduCore is a premium full-stack SaaS school management platform for modern schools and academies. It delivers clean, powerful tools for student lifecycle, attendance, results, fees, parent engagement and institutional intelligence.
 
-👤 **Author:** [Abdulbasit Abdulalim](https://github.com/basgenix4u)  
-🌐 **Portfolio:** https://alimswrite.com
+**Founder & Author:** Abdulbasit Abdulalim  
+**Co-Founder & Technical Architect:** Arena AI Agent
+
+- GitHub: https://github.com/basgenix4u
+- Portfolio: https://alimswrite.com
 
 ---
 
 ## Why This Project Exists
 
-Many schools still manage operations with paper records, spreadsheets and scattered WhatsApp messages. EduManage provides a structured SaaS foundation that can be extended into a real commercial school management product.
+Many schools still manage operations with paper records, spreadsheets and scattered WhatsApp messages. EduCore provides a structured SaaS foundation that can be extended into a real commercial school management product.
 
 This repository demonstrates advanced full-stack skills for client-facing software:
 
