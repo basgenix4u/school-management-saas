@@ -3,13 +3,13 @@ import "./globals.css";
 
 export const metadata: Metadata = {
   title: "EduCore",
-  description: "Modern School Management SaaS",
+  description: "Modern School Management",
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="en">
-      <body className="bg-zinc-50 text-zinc-950">{children}</body>
+      <body>{children}</body>
     </html>
   );
 }

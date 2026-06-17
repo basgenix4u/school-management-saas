@@ -2,11 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-:root {
-  --background: #fafafa;
-  --foreground: #0a0a0a;
-}
-
 body {
   font-family: var(--font-geist-sans);
 }
