@@ -1,52 +1,133 @@
-import Link from "next/link";
+import { ArrowLeft, Bell, CreditCard, GraduationCap, Phone } from "lucide-react";
 import { notFound } from "next/navigation";
-import { ArrowLeft, Bell, CreditCard, GraduationCap, Phone, ShieldAlert } from "lucide-react";
-import { getStudentBySlug } from "@/lib/student-360";
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { getStudentProfile } from "@/lib/supabase/school-data";
+import { formatDate, formatNairaCompact, formatPhoneForDisplay } from "@/lib/format";
+import { Alert } from "@/components/ui/Alert";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Metric, MetricGrid } from "@/components/ui/Metric";
+import { Table } from "@/components/ui/Table";
 
-function riskClass(risk: string) {
-  if (risk === "High") return "bad";
-  if (risk === "Medium") return "warn";
-  return "good";
+/**
+ * Student 360 profile, assembled from live records.
+ *
+ * Biodata, computed risk, invoices, recent registers and result averages —
+ * each section states plainly when its records do not exist yet.
+ */
+export const dynamic = "force-dynamic";
+
+function riskTone(risk: string): BadgeTone {
+  if (risk === "High") return "danger";
+  if (risk === "Medium") return "warning";
+  return "success";
+}
+
+function attendanceTone(status: string): BadgeTone {
+  if (status === "PRESENT") return "success";
+  if (status === "ABSENT") return "danger";
+  if (status === "LATE") return "warning";
+  return "neutral";
 }
 
 export default async function StudentProfilePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const student = getStudentBySlug(id);
-  if (!student) notFound();
+  const supabase = await requestClientOrNull();
+  if (!supabase) {
+    return (
+      <div className="page">
+        <Alert tone="info"><p>Connect your database to load student profiles.</p></Alert>
+      </div>
+    );
+  }
+
+  const profile = await getStudentProfile(supabase, id).catch(() => null);
+  if (!profile) notFound();
+
+  const { student } = profile;
+  const name = `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim() || student.admission_no;
+  const balance = profile.invoices.reduce((sum, row) => sum + Math.max(0, row.amount - row.paid), 0);
+  const risk = profile.risk?.level ?? student.risk_level ?? "Low";
+  const presentCount = profile.attendance.filter((row) => row.status === "PRESENT").length;
 
   return (
-    <div className="premium-dashboard">
-      <Link className="back-link" href="/dashboard/students"><ArrowLeft size={16} /> Back to students</Link>
-      <section className="card-aurora student-profile-hero">
-        <div className="student-profile-avatar">{student.name.split(" ").map((part) => part[0]).join("")}</div>
-        <div>
-          <span className="premium-kicker"><GraduationCap size={14} /> Student 360 Profile</span>
-          <h1>{student.name}</h1>
-          <p>{student.id} • {student.className} • {student.gender}</p>
-          <div className="role-metrics"><span>{student.status}</span><span>{student.guardian}</span><span>{student.guardianPhone}</span></div>
-        </div>
-        <span className={`status ${riskClass(student.risk)}`}>{student.risk} Risk</span>
-      </section>
+    <div className="page">
+      <p><Button variant="ghost" size="sm" href="/dashboard/students"><ArrowLeft size={16} /> Back to students</Button></p>
+      <header className="page-head">
+        <p className="page-eyebrow">{student.admission_no} · {profile.student.classroom}</p>
+        <h1 className="page-title">{name}</h1>
+        <p className="page-subtitle">
+          {student.gender ?? "—"} · Guardian: {student.guardian_name ?? "not linked"}
+          {student.guardian_phone ? ` (${formatPhoneForDisplay(student.guardian_phone)})` : ""}
+        </p>
+      </header>
 
-      <section className="premium-metrics">
-        <article className="premium-metric tone-emerald"><div className="metric-icon"><GraduationCap /></div><span>Academic Average</span><strong>{student.average}%</strong><small>current term</small><p>Performance snapshot for academic intervention planning.</p></article>
-        <article className="premium-metric tone-blue"><div className="metric-icon"><Bell /></div><span>Attendance</span><strong>{student.attendance}%</strong><small>term rate</small><p>Attendance performance with risk scoring potential.</p></article>
-        <article className="premium-metric tone-amber"><div className="metric-icon"><CreditCard /></div><span>Fee Balance</span><strong>{student.balance}</strong><small>{student.fee}</small><p>Payment status for finance and parent follow-up.</p></article>
-        <article className="premium-metric tone-violet"><div className="metric-icon"><Phone /></div><span>Guardian</span><strong style={{ fontSize: 22 }}>{student.guardian}</strong><small>{student.guardianPhone}</small><p>Guardian contact for communication workflows.</p></article>
-      </section>
+      <p><Badge tone={riskTone(risk)}>{risk} risk</Badge></p>
 
-      <section className="premium-grid-2 align-start">
-        <div className="card premium-panel">
-          <span className="premium-kicker"><ShieldAlert size={14} /> Intervention Plan</span>
-          <h2>Recommended actions</h2>
-          <div className="trust-list">{student.interventions.map((item) => <article key={item}><div><strong>{item}</strong><p>Action generated from student profile context.</p></div><span>Recommended</span></article>)}</div>
-        </div>
-        <div className="card premium-panel">
-          <span className="premium-kicker">Strength Profile</span>
-          <h2>What the student is good at</h2>
-          <div className="role-grid single-role-grid">{student.strengths.map((strength) => <article key={strength}><strong>{strength}</strong><p>Use this strength to personalize learning and motivation.</p></article>)}</div>
-        </div>
-      </section>
+      <MetricGrid>
+        <Metric icon={<GraduationCap size={20} />} label="Academic average" value={profile.results.subjects ? `${profile.results.average}%` : "—"} caption={`${profile.results.subjects} subject records`} />
+        <Metric icon={<Bell size={20} />} label="Registers" value={profile.attendance.length ? `${presentCount}/${profile.attendance.length}` : "—"} caption="recent present marks" />
+        <Metric icon={<CreditCard size={20} />} label="Fee balance" value={formatNairaCompact(balance)} caption={`${profile.invoices.length} invoices`} />
+        <Metric icon={<Phone size={20} />} label="Guardian" value={student.guardian_name ?? "Not linked"} caption={student.guardian_phone ? formatPhoneForDisplay(student.guardian_phone) : "no phone on record"} />
+      </MetricGrid>
+
+      <div className="premium-grid-2 align-start">
+        <Card title="Invoices" subtitle={profile.invoices.length ? "Newest first." : "No invoices raised for this student."}>
+          {profile.invoices.length === 0 ? (
+            <EmptyState icon={<CreditCard size={22} />} title="No invoices" body="Raise one from the finance desk when fees are due." />
+          ) : (
+            <Table>
+              <thead><tr><th>Invoice</th><th className="numeric">Balance</th><th>Status</th></tr></thead>
+              <tbody>
+                {profile.invoices.slice(0, 6).map((row) => (
+                  <tr key={row.invoice_no}>
+                    <td><a href={`/dashboard/fees/${row.invoice_no}`}>{row.invoice_no}</a><br /><small>{row.title}</small></td>
+                    <td className="numeric">{formatNairaCompact(Math.max(0, row.amount - row.paid))}</td>
+                    <td>{row.status}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Card>
+
+        <Card title="Recent registers" subtitle={profile.attendance.length ? "Latest 10 marks." : "No registers submitted for this student."}>
+          {profile.attendance.length === 0 ? (
+            <EmptyState icon={<Bell size={22} />} title="No attendance yet" body="Marks appear once teachers submit registers." />
+          ) : (
+            <Table>
+              <thead><tr><th>Date</th><th>Period</th><th>Status</th></tr></thead>
+              <tbody>
+                {profile.attendance.slice(0, 10).map((row, index) => (
+                  <tr key={`${row.date}-${index}`}>
+                    <td style={{ whiteSpace: "nowrap" }}>{formatDate(row.date)}</td>
+                    <td>{row.period ?? "—"}</td>
+                    <td><Badge tone={attendanceTone(row.status)}>{row.status}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </Card>
+      </div>
+
+      <Card title="Risk signals" subtitle="Computed from attendance, fees and results together.">
+        {!profile.risk ? (
+          <EmptyState icon={<GraduationCap size={22} />} title="Not yet assessed" body="Risk computes once registers, invoices or scores exist." />
+        ) : (
+          <Table>
+            <thead><tr><th>Signal</th><th>Value</th></tr></thead>
+            <tbody>
+              <tr><td>Risk score</td><td>{profile.risk.score} / 100</td></tr>
+              <tr><td>Attendance rate</td><td>{profile.risk.attendanceRate}% ({profile.risk.absent} absences)</td></tr>
+              <tr><td>Outstanding balance</td><td>{formatNairaCompact(profile.risk.balance)} ({profile.risk.overdue} overdue)</td></tr>
+              <tr><td>Result average</td><td>{profile.risk.average}%</td></tr>
+            </tbody>
+          </Table>
+        )}
+      </Card>
     </div>
   );
 }

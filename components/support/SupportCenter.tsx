@@ -1,13 +1,30 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import { AlertTriangle, CheckCircle2, LifeBuoy, Loader2, ServerCrash, ShieldCheck } from "lucide-react";
+import { AlertTriangle, LifeBuoy, Loader2, ServerCrash, ShieldCheck } from "lucide-react";
+import { formatDateTime } from "@/lib/format";
+import { Alert } from "@/components/ui/Alert";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
+import { Metric, MetricGrid } from "@/components/ui/Metric";
+import { Select } from "@/components/ui/Select";
+import { Textarea } from "@/components/ui/Textarea";
 
 type Ticket = { id: string; requester_email?: string; category: string; priority: string; subject: string; description: string; status: string; created_at: string };
 type ErrorEvent = { id: string; severity: string; message: string; path?: string; resolved: boolean; created_at: string };
 
 type TicketPayload = { status: string; tickets?: Ticket[]; summary?: Record<string, number | string | null> | null; message?: string };
 type ErrorPayload = { status: string; errors?: ErrorEvent[]; message?: string };
+
+function priorityTone(priority: string): BadgeTone {
+  if (priority === "urgent") return "danger";
+  if (priority === "high") return "warning";
+  return "neutral";
+}
 
 export function SupportCenter() {
   const [tickets, setTickets] = useState<Ticket[]>([]);
@@ -64,54 +81,90 @@ export function SupportCenter() {
   }
 
   return (
-    <div className="premium-dashboard">
-      <section className="card-aurora setup-hero">
-        <div>
-          <span className="premium-kicker"><LifeBuoy size={14} /> Support Operations</span>
-          <h1>Track support requests and product issues.</h1>
-          <p>Capture support tickets, monitor application errors and keep operational issues visible before they affect school trust.</p>
-        </div>
-        <div className="setup-score-card"><strong>{summary?.open_tickets ?? tickets.length}</strong><span>Open tickets</span><small>{errors.length} recent error event(s)</small></div>
-      </section>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow">Support operations</p>
+        <h1 className="page-title">Tickets and error events.</h1>
+        <p className="page-subtitle">Keep issues visible before they affect school trust.</p>
+      </header>
 
-      <section className="live-status-card">
-        {loading || saving ? <Loader2 className="spin" size={18} /> : <CheckCircle2 size={18} />}
-        <span>{message}</span>
-        <button type="button" onClick={load}>Refresh</button>
-      </section>
+      <Alert tone={loading || saving ? "info" : "success"}>
+        <p>{message}</p>
+        <p><Button variant="secondary" size="sm" onClick={load} disabled={loading}>Refresh</Button></p>
+      </Alert>
 
-      <section className="premium-metrics">
-        <article className="premium-metric tone-blue"><div className="metric-icon"><LifeBuoy /></div><span>Tickets</span><strong>{summary?.ticket_count ?? tickets.length}</strong><small>total</small><p>Support tickets raised by users or internal teams.</p></article>
-        <article className="premium-metric tone-amber"><div className="metric-icon"><AlertTriangle /></div><span>Priority</span><strong>{summary?.priority_tickets ?? 0}</strong><small>high/urgent</small><p>Tickets needing fast attention.</p></article>
-        <article className="premium-metric tone-rose"><div className="metric-icon"><ServerCrash /></div><span>Errors</span><strong>{summary?.unresolved_errors ?? errors.length}</strong><small>unresolved</small><p>Application errors captured by monitoring APIs.</p></article>
-        <article className="premium-metric tone-emerald"><div className="metric-icon"><ShieldCheck /></div><span>Status</span><strong>Live</strong><small>ops-ready</small><p>Support workflow is enabled for production operations.</p></article>
-      </section>
+      <MetricGrid>
+        <Metric icon={<LifeBuoy size={20} />} label="Tickets" value={String(summary?.ticket_count ?? tickets.length)} caption="total raised" />
+        <Metric icon={<AlertTriangle size={20} />} label="Priority" value={String(summary?.priority_tickets ?? tickets.filter((ticket) => ticket.priority === "high" || ticket.priority === "urgent").length)} caption="high and urgent" />
+        <Metric icon={<ServerCrash size={20} />} label="Errors" value={String(summary?.unresolved_errors ?? errors.filter((error) => !error.resolved).length)} caption="unresolved" />
+        <Metric icon={<ShieldCheck size={20} />} label="Open tickets" value={String(summary?.open_tickets ?? tickets.filter((ticket) => ticket.status === "open").length)} caption="awaiting action" />
+      </MetricGrid>
 
-      <section className="premium-grid-2 align-start">
-        <form className="card premium-panel setup-form" onSubmit={createTicket}>
-          <span className="premium-kicker">New support ticket</span>
-          <h2>Create ticket</h2>
-          <div className="live-form-grid">
-            <label><span>Category</span><select name="category" defaultValue="general"><option>general</option><option>billing</option><option>login</option><option>data</option><option>bug</option><option>feature</option></select></label>
-            <label><span>Priority</span><select name="priority" defaultValue="normal"><option>low</option><option>normal</option><option>high</option><option>urgent</option></select></label>
-            <label className="full"><span>Subject</span><input name="subject" required placeholder="Short summary" /></label>
-            <label className="full"><span>Description</span><textarea name="description" required placeholder="Describe the issue or request" /></label>
-            <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? <Loader2 className="spin" size={18} /> : <LifeBuoy size={18} />} Create ticket</button>
+      <div className="premium-grid-2 align-start">
+        <Card title="Create ticket" subtitle="Describe the issue; it lands in the queue below.">
+          <form className="ui-form" onSubmit={createTicket}>
+            <Field label="Category">
+              {(id) => (
+                <Select id={id} name="category" defaultValue="general">
+                  <option value="general">General</option>
+                  <option value="billing">Billing</option>
+                  <option value="login">Login</option>
+                  <option value="data">Data</option>
+                  <option value="bug">Bug</option>
+                  <option value="feature">Feature request</option>
+                </Select>
+              )}
+            </Field>
+            <Field label="Priority">
+              {(id) => (
+                <Select id={id} name="priority" defaultValue="normal">
+                  <option value="low">Low</option>
+                  <option value="normal">Normal</option>
+                  <option value="high">High</option>
+                  <option value="urgent">Urgent</option>
+                </Select>
+              )}
+            </Field>
+            <Field label="Subject" required>{(id) => <Input id={id} name="subject" required placeholder="Short summary" autoComplete="off" />}</Field>
+            <Field label="Description" required>{(id) => <Textarea id={id} name="description" required rows={3} placeholder="Describe the issue or request" />}</Field>
+            <div>
+              <Button type="submit" disabled={saving}>
+                {saving ? <Loader2 className="spin" size={18} /> : <LifeBuoy size={18} />} Create ticket
+              </Button>
+            </div>
+          </form>
+        </Card>
+
+        <Card title="Support queue" subtitle={tickets.length ? "Latest 8 tickets." : "Tickets land here when raised."}>
+          {tickets.length === 0 ? (
+            <EmptyState icon={<LifeBuoy size={22} />} title="No tickets" body="Raise the first one with the form." />
+          ) : (
+            <div className="trust-list">
+              {tickets.slice(0, 8).map((ticket) => (
+                <article key={ticket.id}>
+                  <div><strong>{ticket.subject}</strong><p>{ticket.category} · {ticket.requester_email ?? "unknown"} · {formatDateTime(ticket.created_at)}</p></div>
+                  <Badge tone={priorityTone(ticket.priority)}>{ticket.priority}</Badge>
+                </article>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
+
+      <Card title="Recent error events" subtitle={errors.length ? "Latest 10 events." : "A clean record so far."}>
+        {errors.length === 0 ? (
+          <EmptyState icon={<ServerCrash size={22} />} title="No errors recorded" body="Application errors reported by monitoring will appear here." />
+        ) : (
+          <div className="trust-list">
+            {errors.slice(0, 10).map((error) => (
+              <article key={error.id}>
+                <div><strong>{error.message}</strong><p>{error.path ?? "No path"} · {formatDateTime(error.created_at)}</p></div>
+                <Badge tone={error.resolved ? "success" : "danger"}>{error.resolved ? "Resolved" : error.severity}</Badge>
+              </article>
+            ))}
           </div>
-        </form>
-
-        <section className="card premium-panel">
-          <span className="premium-kicker">Recent tickets</span>
-          <h2>Support queue</h2>
-          <div className="trust-list">{tickets.length === 0 ? <article><div><strong>No tickets yet</strong><p>Support tickets will appear here when users report issues.</p></div><span>Empty</span></article> : tickets.slice(0, 8).map((ticket) => <article key={ticket.id}><div><strong>{ticket.subject}</strong><p>{ticket.category} • {ticket.requester_email ?? "unknown"}</p></div><span>{ticket.priority}</span></article>)}</div>
-        </section>
-      </section>
-
-      <section className="card premium-panel">
-        <span className="premium-kicker">Application monitoring</span>
-        <h2>Recent error events</h2>
-        <div className="trust-list">{errors.length === 0 ? <article><div><strong>No errors recorded</strong><p>Application errors will appear here when reported by server or client monitoring APIs.</p></div><span>Healthy</span></article> : errors.slice(0, 10).map((error) => <article key={error.id}><div><strong>{error.message}</strong><p>{error.path ?? "No path"} • {new Date(error.created_at).toLocaleString()}</p></div><span>{error.severity}</span></article>)}</div>
-      </section>
+        )}
+      </Card>
     </div>
   );
 }

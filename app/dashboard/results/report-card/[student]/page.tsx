@@ -1,17 +1,103 @@
-import Link from "next/link";
-import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
-import { ReportCardPreview } from "@/components/results/ReportCardPreview";
-import { getStudentResult } from "@/lib/results-center";
+import { ArrowLeft, Award } from "lucide-react";
+import { EduCoreLogo } from "@/components/brand/EduCoreLogo";
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { getReportCardBundle } from "@/lib/supabase/school-data";
+import { getGrade } from "@/lib/results/grading";
+import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { PrintButton } from "@/components/ui/PrintButton";
+
+/**
+ * Student report card, rendered from live records.
+ *
+ * Scores, average, attendance rate and class position all compute from the
+ * school's data; anything without underlying records is marked plainly
+ * rather than filled with sample figures. Prints cleanly for paper records.
+ */
+export const dynamic = "force-dynamic";
 
 export default async function ReportCardPage({ params }: { params: Promise<{ student: string }> }) {
-  const { student: slug } = await params;
-  const student = getStudentResult(slug);
-  if (!student) notFound();
+  const { student: admissionNo } = await params;
+  const supabase = await requestClientOrNull();
+  const bundle = supabase ? await getReportCardBundle(supabase, admissionNo.toUpperCase()).catch(() => null) : null;
+  const grade = bundle ? getGrade(bundle.average) : null;
+
+  if (!supabase) {
+    return (
+      <div className="page">
+        <Alert tone="info"><p>Connect your database to load report cards.</p></Alert>
+      </div>
+    );
+  }
+
+  if (!bundle) {
+    return (
+      <div className="page">
+        <p><Button variant="ghost" size="sm" href="/dashboard/results"><ArrowLeft size={16} /> Back to results</Button></p>
+        <EmptyState
+          icon={<Award size={22} />}
+          title="No report card yet"
+          body="This student has no saved results. Scores appear here once teachers enter them."
+          action={<Button href="/dashboard/results/entry">Enter scores</Button>}
+        />
+      </div>
+    );
+  }
+
   return (
-    <div className="premium-dashboard">
-      <Link className="back-link" href="/dashboard/results"><ArrowLeft size={16} /> Back to results</Link>
-      <ReportCardPreview student={student} />
+    <div className="page">
+      <p className="no-print"><Button variant="ghost" size="sm" href="/dashboard/results"><ArrowLeft size={16} /> Back to results</Button></p>
+      <div className="report-card-actions no-print">
+        <PrintButton />
+        <Button variant="secondary" href={`/api/results/${bundle.student.admission_no}/pdf`}>Download PDF</Button>
+      </div>
+
+      <article className="report-card">
+        <header>
+          <div className="report-logo"><EduCoreLogo href="" /></div>
+          <div>
+            <h1>{bundle.organizationName ?? "School Academic Report"}</h1>
+            <p>Academic Report Card • {bundle.term} • {bundle.session}</p>
+          </div>
+          <span className={`status ${bundle.status === "PUBLISHED" || bundle.status === "APPROVED" ? "good" : bundle.status === "REVIEW" ? "warn" : "bad"}`}>{bundle.status}</span>
+        </header>
+
+        <section className="report-student-grid">
+          <div><span>Student</span><strong>{bundle.student.name}</strong></div>
+          <div><span>Admission No.</span><strong>{bundle.student.admission_no}</strong></div>
+          <div><span>Class</span><strong>{bundle.student.classroom}</strong></div>
+          <div><span>Position</span><strong>{bundle.position ?? "—"}</strong></div>
+          <div><span>Attendance</span><strong>{bundle.attendanceRate === null ? "—" : `${bundle.attendanceRate}%`}</strong></div>
+          <div><span>Average</span><strong>{bundle.average}% • {grade?.grade}</strong></div>
+        </section>
+
+        <table className="report-table">
+          <thead><tr><th>Subject</th><th>CA</th><th>Exam</th><th>Total</th><th>Grade</th><th>Remark</th></tr></thead>
+          <tbody>
+            {bundle.subjects.map((subject) => {
+              const band = getGrade(subject.total);
+              return (
+                <tr key={subject.name}>
+                  <td>{subject.name}</td>
+                  <td>{subject.ca}</td>
+                  <td>{subject.exam}</td>
+                  <td>{subject.total}</td>
+                  <td>{subject.grade ?? band.grade}</td>
+                  <td>{subject.remark ?? band.remark}</td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
+
+        <section className="report-comments">
+          <div><strong>Class Teacher Comment</strong><p>{bundle.teacherComment ?? "—"}</p></div>
+          <div><strong>Principal Comment</strong><p>{bundle.principalComment ?? "—"}</p></div>
+        </section>
+
+        <footer><span>Generated by EduCore</span></footer>
+      </article>
     </div>
   );
 }

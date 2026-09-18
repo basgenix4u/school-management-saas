@@ -1,8 +1,13 @@
 "use client";
 
 import { FormEvent, useEffect, useState } from "react";
-import Link from "next/link";
-import { ArrowRight, Building2, CalendarDays, CheckCircle2, GraduationCap, Loader2, Receipt, Rocket, School, UsersRound } from "lucide-react";
+import { ArrowRight, Building2, CalendarDays, GraduationCap, Loader2, Receipt, Rocket, School, UsersRound } from "lucide-react";
+import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
+import { Textarea } from "@/components/ui/Textarea";
 
 const steps = [
   { id: "school", label: "School profile", icon: Building2 },
@@ -23,7 +28,6 @@ type Readiness = {
   fee_categories_count?: number;
   academic_sessions_count?: number;
 };
-
 
 function parseCsvLine(line: string) {
   const values: string[] = [];
@@ -146,43 +150,58 @@ export function SetupWizard() {
   const score = readiness?.readiness_score ?? 0;
 
   return (
-    <div className="setup-wizard premium-dashboard">
-      <section className="card-aurora setup-hero">
-        <div>
-          <span className="premium-kicker"><Rocket size={14} /> First-run setup</span>
-          <h1>Set up your school before daily operations begin.</h1>
-          <p>Create the foundation your school needs: profile, session, classes, staff, students and fee categories. No fake records. Only your real school data.</p>
-        </div>
-        <div className="setup-score-card"><strong>{score}%</strong><span>Setup readiness</span><small>{readiness?.organization_name ?? "No school profile yet"}</small></div>
-      </section>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow">Setup · {score}% ready</p>
+        <h1 className="page-title">Set up your school.</h1>
+        <p className="page-subtitle">Profile, session, classes, staff, students and fees — only your real school data.</p>
+      </header>
 
-      <section className="setup-stepper card premium-panel">
+      <ol className="ui-steps" aria-label="Setup progress">
         {steps.map((item, index) => {
           const Icon = item.icon;
-          return <button key={item.id} type="button" className={index === step ? "active" : index < step ? "done" : ""} onClick={() => setStep(index)}><Icon size={17} /><span>{item.label}</span></button>;
+          const state = index === step ? "current" : index < step ? "done" : "todo";
+          return (
+            <li key={item.id} data-state={state}>
+              <button type="button" onClick={() => setStep(index)} aria-current={state === "current" ? "step" : undefined}>
+                <Icon size={17} aria-hidden="true" /><span>{item.label}</span>
+              </button>
+            </li>
+          );
         })}
-      </section>
+      </ol>
 
-      <section className="live-status-card">
-        {saving ? <Loader2 className="spin" size={18} /> : <CheckCircle2 size={18} />}
-        <span>{message}</span>
-      </section>
+      <Alert tone={saving ? "info" : "success"}><p>{message}</p></Alert>
 
-      <section className="premium-grid-2 align-start">
-        <form className="card premium-panel setup-form" onSubmit={handleSubmit}>
-          {step === 0 ? <SchoolProfileFields /> : null}
-          {step === 1 ? <SessionFields /> : null}
-          {step === 2 ? <ClassFields /> : null}
-          {step === 3 ? <StaffFields /> : null}
-          {step === 4 ? <StudentFields /> : null}
-          {step === 5 ? <FeeFields /> : null}
-          {step < 6 ? <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? <Loader2 className="spin" size={18} /> : <ArrowRight size={18} />} Save and continue</button> : <LaunchStep readiness={readiness} />}
-        </form>
+      <div className="premium-grid-2 align-start">
+        <Card title={step < 6 ? steps[step].label : "Setup review"} subtitle={readiness?.organization_name ?? "No school profile yet"}>
+          {step < 6 ? (
+            <form className="ui-form" onSubmit={handleSubmit}>
+              {step === 0 ? <SchoolProfileFields /> : null}
+              {step === 1 ? <SessionFields /> : null}
+              {step === 2 ? <ClassFields /> : null}
+              {step === 3 ? <StaffFields /> : null}
+              {step === 4 ? <StudentFields /> : null}
+              {step === 5 ? <FeeFields /> : null}
+              <div>
+                <Button type="submit" disabled={saving}>
+                  {saving ? <Loader2 className="spin" size={18} /> : <ArrowRight size={18} />} Save and continue
+                </Button>
+              </div>
+            </form>
+          ) : (
+            <div className="ui-form">
+              <p>Your readiness score is {score}%. Continue adding real records until every core module is ready.</p>
+              <div className="action-row">
+                <Button href="/dashboard">Open overview</Button>
+                <Button variant="secondary" href="/dashboard/students">Manage students</Button>
+              </div>
+            </div>
+          )}
+        </Card>
 
-        <aside className="card premium-panel setup-summary">
-          <span className="premium-kicker">Setup summary</span>
-          <h2>What is ready?</h2>
-          <div className="setup-readiness-list">
+        <Card title="What is ready?" subtitle="Counts update after every saved step.">
+          <div className="trust-list">
             <ReadinessItem label="School profile" value={readiness?.organization_name ? "Ready" : "Pending"} />
             <ReadinessItem label="Academic sessions" value={String(readiness?.academic_sessions_count ?? 0)} />
             <ReadinessItem label="Classes" value={String(readiness?.classes_count ?? 0)} />
@@ -190,22 +209,126 @@ export function SetupWizard() {
             <ReadinessItem label="Students" value={String(readiness?.students_count ?? 0)} />
             <ReadinessItem label="Fee categories" value={String(readiness?.fee_categories_count ?? 0)} />
           </div>
-          <p>When setup is complete, your live modules will begin showing real school records instead of empty states.</p>
-        </aside>
-      </section>
+          <p className="ui-hint">When setup is complete, your modules show real school records instead of empty states.</p>
+        </Card>
+      </div>
     </div>
   );
 }
 
-function Field({ name, label, placeholder, type = "text", required = false }: { name: string; label: string; placeholder?: string; type?: string; required?: boolean }) {
-  return <label><span>{label}</span><input name={name} type={type} placeholder={placeholder} required={required} /></label>;
+function TextField({ name, label, placeholder, type = "text", required = false }: { name: string; label: string; placeholder?: string; type?: string; required?: boolean }) {
+  return (
+    <Field label={label} required={required}>
+      {(id) => <Input id={id} name={name} type={type} placeholder={placeholder} required={required} autoComplete="off" />}
+    </Field>
+  );
 }
-function SchoolProfileFields() { return <><span className="premium-kicker">Step 1</span><h2>School profile</h2><div className="live-form-grid"><Field name="name" label="School name" required placeholder="Example International School" /><Field name="slug" label="Workspace slug" placeholder="example-school" /><Field name="email" label="School email" type="email" /><Field name="phone" label="Phone" /><label className="full"><span>Address</span><textarea name="address" placeholder="School address" /></label></div></>; }
-function SessionFields() { return <><span className="premium-kicker">Step 2</span><h2>Academic session</h2><div className="live-form-grid"><Field name="name" label="Session" required placeholder="2026/2027" /><Field name="currentTerm" label="Current term" required placeholder="First Term" /><Field name="startsOn" label="Start date" type="date" /><Field name="endsOn" label="End date" type="date" /></div></>; }
-function ClassFields() { return <><span className="premium-kicker">Step 3</span><h2>Classes and arms</h2><p className="setup-help">Add one class below, or paste/upload CSV rows: class name, level, arm, capacity.</p><div className="live-form-grid"><Field name="name" label="Class name" placeholder="SS2 Science" /><Field name="level" label="Level" placeholder="Senior Secondary" /><Field name="arm" label="Arm" placeholder="Science" /><Field name="capacity" label="Capacity" type="number" /><label className="full"><span>Paste class CSV rows</span><textarea name="bulkClasses" placeholder="SS2 Science,Senior Secondary,Science,45
-JSS3 Gold,Junior Secondary,Gold,40" /></label><label className="full"><span>Upload class CSV</span><input name="classesFile" type="file" accept=".csv,text/csv" /></label></div></>; }
-function StaffFields() { return <><span className="premium-kicker">Step 4</span><h2>Staff members</h2><p className="setup-help">Add one staff member below, or paste/upload CSV rows: staff no, name, email, phone, department, title.</p><div className="live-form-grid"><Field name="staffNo" label="Staff number" placeholder="TCH-001" /><Field name="name" label="Full name" /><Field name="email" label="Email" type="email" /><Field name="phone" label="Phone" /><Field name="department" label="Department" /><Field name="title" label="Title" placeholder="Mathematics Teacher" /><label className="full"><span>Paste staff CSV rows</span><textarea name="bulkTeachers" placeholder="TCH-001,Amina Musa,amina@school.com,+234...,Science,Physics Teacher" /></label><label className="full"><span>Upload staff CSV</span><input name="teachersFile" type="file" accept=".csv,text/csv" /></label></div></>; }
-function StudentFields() { return <><span className="premium-kicker">Step 5</span><h2>Student records</h2><p className="setup-help">Add one student below, or paste/upload CSV rows: admission no, first name, last name, class, gender, guardian name, guardian phone, guardian email, student email.</p><div className="live-form-grid"><Field name="firstName" label="First name" /><Field name="lastName" label="Last name" /><Field name="admissionNo" label="Admission no." placeholder="STU-001" /><Field name="className" label="Class" placeholder="SS2 Science" /><Field name="gender" label="Gender" /><Field name="guardianName" label="Guardian name" /><Field name="guardianPhone" label="Guardian phone" /><Field name="guardianEmail" label="Guardian email" type="email" /><Field name="studentEmail" label="Student login email" type="email" /><label className="full"><span>Paste student CSV rows</span><textarea name="bulkStudents" placeholder="STU-001,Amina,Yusuf,SS2 Science,Female,Mr Yusuf,+234...,parent@school.com,student@school.com" /></label><label className="full"><span>Upload student CSV</span><input name="studentsFile" type="file" accept=".csv,text/csv" /></label></div></>; }
-function FeeFields() { return <><span className="premium-kicker">Step 6</span><h2>Fee category</h2><div className="live-form-grid"><Field name="name" label="Fee name" required placeholder="Tuition" /><Field name="amount" label="Amount" type="number" required /><Field name="billingCycle" label="Billing cycle" placeholder="termly" /><label className="setup-checkbox"><input name="required" type="checkbox" defaultChecked /> Required fee</label></div></>; }
-function ReadinessItem({ label, value }: { label: string; value: string }) { return <article><span>{label}</span><strong>{value}</strong></article>; }
-function LaunchStep({ readiness }: { readiness: Readiness | null }) { return <div className="setup-launch-step"><Rocket size={42} /><h2>Setup review</h2><p>Your readiness score is {readiness?.readiness_score ?? 0}%. Continue adding real records until every core module is ready.</p><div className="hero-actions"><Link className="btn btn-primary" href="/dashboard">Open command center</Link><Link className="btn btn-secondary" href="/dashboard/students">Manage students</Link></div></div>; }
+
+function CsvField({ name, label, hint, placeholder }: { name: string; label: string; hint: string; placeholder: string }) {
+  return (
+    <Field label={label} hint={hint}>
+      {(id) => <Textarea id={id} name={name} rows={3} placeholder={placeholder} />}
+    </Field>
+  );
+}
+
+function FileField({ name, label }: { name: string; label: string }) {
+  return (
+    <Field label={label}>
+      {(id) => <Input id={id} name={name} type="file" />}
+    </Field>
+  );
+}
+
+function SchoolProfileFields() {
+  return (
+    <>
+      <TextField name="name" label="School name" required placeholder="Example International School" />
+      <TextField name="slug" label="Workspace slug" placeholder="example-school" />
+      <TextField name="email" label="School email" type="email" />
+      <TextField name="phone" label="Phone" />
+      <Field label="Address">{(id) => <Textarea id={id} name="address" rows={2} placeholder="School address" />}</Field>
+    </>
+  );
+}
+
+function SessionFields() {
+  return (
+    <>
+      <TextField name="name" label="Session" required placeholder="2026/2027" />
+      <TextField name="currentTerm" label="Current term" required placeholder="First Term" />
+      <TextField name="startsOn" label="Start date" type="date" />
+      <TextField name="endsOn" label="End date" type="date" />
+    </>
+  );
+}
+
+function ClassFields() {
+  return (
+    <>
+      <TextField name="name" label="Class name" placeholder="SS2 Science" />
+      <TextField name="level" label="Level" placeholder="Senior Secondary" />
+      <TextField name="arm" label="Arm" placeholder="Science" />
+      <TextField name="capacity" label="Capacity" type="number" />
+      <CsvField name="bulkClasses" label="Paste class CSV rows" hint="One per line: class name, level, arm, capacity." placeholder={"SS2 Science,Senior Secondary,Science,45\nJSS3 Gold,Junior Secondary,Gold,40"} />
+      <FileField name="classesFile" label="Upload class CSV" />
+    </>
+  );
+}
+
+function StaffFields() {
+  return (
+    <>
+      <TextField name="staffNo" label="Staff number" placeholder="TCH-001" />
+      <TextField name="name" label="Full name" />
+      <TextField name="email" label="Email" type="email" />
+      <TextField name="phone" label="Phone" />
+      <TextField name="department" label="Department" />
+      <TextField name="title" label="Title" placeholder="Mathematics Teacher" />
+      <CsvField name="bulkTeachers" label="Paste staff CSV rows" hint="One per line: staff no, name, email, phone, department, title." placeholder="TCH-001,Amina Musa,amina@example.com,+234...,Science,Physics Teacher" />
+      <FileField name="teachersFile" label="Upload staff CSV" />
+    </>
+  );
+}
+
+function StudentFields() {
+  return (
+    <>
+      <TextField name="firstName" label="First name" />
+      <TextField name="lastName" label="Last name" />
+      <TextField name="admissionNo" label="Admission no." placeholder="STU-001" />
+      <TextField name="className" label="Class" placeholder="SS2 Science" />
+      <TextField name="gender" label="Gender" />
+      <TextField name="guardianName" label="Guardian name" />
+      <TextField name="guardianPhone" label="Guardian phone" />
+      <TextField name="guardianEmail" label="Guardian email" type="email" />
+      <TextField name="studentEmail" label="Student login email" type="email" />
+      <CsvField name="bulkStudents" label="Paste student CSV rows" hint="One per line: admission no, first name, last name, class, gender, guardian name, guardian phone, guardian email, student email." placeholder="STU-001,Amina,Yusuf,SS2 Science,Female,Mr Yusuf,+234...,parent@example.com,student@example.com" />
+      <FileField name="studentsFile" label="Upload student CSV" />
+    </>
+  );
+}
+
+function FeeFields() {
+  return (
+    <>
+      <TextField name="name" label="Fee name" required placeholder="Tuition" />
+      <TextField name="amount" label="Amount (₦)" type="number" required />
+      <TextField name="billingCycle" label="Billing cycle" placeholder="termly" />
+      <div>
+        <label className="ui-label" style={{ display: "flex", gap: "8px", alignItems: "center", minHeight: "44px" }}>
+          <input name="required" type="checkbox" defaultChecked style={{ width: "20px", height: "20px" }} /> Required fee
+        </label>
+      </div>
+    </>
+  );
+}
+
+function ReadinessItem({ label, value }: { label: string; value: string }) {
+  return (
+    <article>
+      <div><strong>{label}</strong></div>
+      <span>{value}</span>
+    </article>
+  );
+}

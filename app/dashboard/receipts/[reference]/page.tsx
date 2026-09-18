@@ -6,7 +6,7 @@ import { Alert } from "@/components/ui/Alert";
 import { Button } from "@/components/ui/Button";
 import { Card } from "@/components/ui/Card";
 import { EmptyState } from "@/components/ui/EmptyState";
-import { PrintButton } from "@/components/finance/PrintButton";
+import { PrintButton } from "@/components/ui/PrintButton";
 
 /**
  * Official payment receipt.

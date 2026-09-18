@@ -1,20 +1,25 @@
-import Link from "next/link";
 import { CalendarCheck, ClipboardCheck } from "lucide-react";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 export default function AttendancePage() {
   return (
-    <div className="premium-dashboard">
-      <section className="card-aurora intelligence-hero">
-        <span className="premium-kicker"><CalendarCheck size={14} /> Attendance</span>
-        <h1>Track attendance once your school records are connected.</h1>
-        <p>Create your school workspace, add students and classes, then teachers can begin marking attendance from the live register.</p>
-      </section>
-      <section className="card premium-panel empty-module-panel">
-        <ClipboardCheck size={34} />
-        <h2>No attendance records yet</h2>
-        <p>Attendance records will appear here after teachers submit live class registers.</p>
-        <Link className="btn btn-primary" href="/dashboard/attendance/mark">Open attendance marking</Link>
-      </section>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow">Attendance</p>
+        <h1 className="page-title">Registers and reliability.</h1>
+        <p className="page-subtitle">Daily marking lives on the register; history builds as classes submit.</p>
+      </header>
+
+      <Card title="Attendance history" subtitle="Submitted registers will list here.">
+        <EmptyState
+          icon={<CalendarCheck size={22} />}
+          title="No registers submitted yet"
+          body="History appears here after teachers submit class registers."
+          action={<Button href="/dashboard/attendance/mark"><ClipboardCheck size={18} /> Open attendance marking</Button>}
+        />
+      </Card>
     </div>
   );
 }

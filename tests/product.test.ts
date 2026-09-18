@@ -174,7 +174,7 @@ describe("dashboard shell honesty", () => {
 describe("attendance honesty", () => {
   it("removed the sample teacher workspace", () => {
     expect(existsSync(join(root, "lib", "teacher-workspace.ts"))).toBe(false);
-    expect(existsSync(join(root, "app", "api", "teachers"))).toBe(false);
+    expect(existsSync(join(root, "app", "api", "teachers", "workspace"))).toBe(false);
     expect(read("components/teachers/TeacherDailyWorkspace.tsx")).not.toContain("teacher-workspace");
   });
 

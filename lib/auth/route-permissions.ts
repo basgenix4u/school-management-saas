@@ -20,7 +20,6 @@ const ROUTE_PERMISSIONS: ReadonlyArray<readonly [string, Permission]> = [
   ["/dashboard/audit", "audit.view"],
   ["/dashboard/intelligence", "analytics.view"],
   ["/dashboard/database", "workspace.manage"],
-  ["/dashboard/launch", "workspace.manage"],
   ["/dashboard/setup", "workspace.manage"],
   ["/dashboard/users", "workspace.manage"],
   ["/dashboard/onboarding", "workspace.manage"],

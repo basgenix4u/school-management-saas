@@ -1,20 +1,20 @@
 import { KeyRound, ShieldCheck } from "lucide-react";
 import { RoleAccessMatrix } from "@/components/auth/RoleAccessMatrix";
+import { Card } from "@/components/ui/Card";
 
 export default function AccessPage() {
   return (
-    <div className="premium-dashboard">
-      <section className="card-aurora intelligence-hero">
-        <span className="premium-kicker"><KeyRound size={14} /> Access Control</span>
-        <h1>Enterprise-grade role experience and permission architecture.</h1>
-        <p>EduCore separates school operations into clear roles so each user gets the right dashboard, the right actions and the right data boundaries.</p>
-      </section>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow"><KeyRound size={14} aria-hidden="true" /> Access control</p>
+        <h1 className="page-title">Roles and permissions.</h1>
+        <p className="page-subtitle">Each role opens its own workspace — explore what every role can do below.</p>
+      </header>
 
-      <section className="card premium-panel">
-        <span className="premium-kicker"><ShieldCheck size={14} /> RBAC Lab</span>
-        <h2>Role access matrix</h2>
+      <Card title="Role access matrix" subtitle="Live from the permission model that guards every page.">
+        <p className="ui-hint"><ShieldCheck size={14} aria-hidden="true" /> If you landed here after a refusal, your role does not include that area.</p>
         <RoleAccessMatrix />
-      </section>
+      </Card>
     </div>
   );
 }
