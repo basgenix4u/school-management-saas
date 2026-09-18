@@ -18,13 +18,13 @@ export const GET = withAuth("announcements.manage", async () => {
   }
 });
 
-export const POST = withAuth("announcements.manage", async (request: NextRequest) => {
+export const POST = withAuth("announcements.manage", async (request: NextRequest, context) => {
   const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before creating announcements." }, { status: 503 });
   const body = await request.json().catch(() => null) as Partial<AnnouncementInput> | null;
   if (!body?.title || !body?.body) return NextResponse.json({ status: "error", message: "Title and body are required." }, { status: 400 });
   try {
-    const announcement = await createAnnouncement(supabase, body as AnnouncementInput);
+    const announcement = await createAnnouncement(supabase, body as AnnouncementInput, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "created", announcement }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to create announcement" }, { status: 500 });

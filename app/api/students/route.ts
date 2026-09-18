@@ -30,7 +30,7 @@ export const GET = withAuth("students.manage", async () => {
   }
 });
 
-export const POST = withAuth("students.manage", async (request: NextRequest) => {
+export const POST = withAuth("students.manage", async (request: NextRequest, context) => {
   const supabase = await requestClientOrNull();
   if (!supabase) {
     return NextResponse.json({ status: "not_configured", message: NOT_CONFIGURED }, { status: 503 });
@@ -45,7 +45,7 @@ export const POST = withAuth("students.manage", async (request: NextRequest) => 
   }
 
   try {
-    const student = await createLiveStudent(supabase, body as StudentCreateInput);
+    const student = await createLiveStudent(supabase, body as StudentCreateInput, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "created", source: "supabase", data: student }, { status: 201 });
   } catch (error) {
     return NextResponse.json(

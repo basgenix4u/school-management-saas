@@ -475,3 +475,213 @@
     color: var(--ink-900);
   }
 }
+
+/* ---- Dashboard shell ------------------------------------------------ */
+@layer components {
+  .dash-shell {
+    display: flex;
+    min-height: 100vh;
+    background: var(--canvas);
+    color: var(--ink-900);
+  }
+  .dash-sidebar {
+    display: none;
+    width: var(--sidebar-width);
+    flex: none;
+    flex-direction: column;
+    background: var(--surface);
+    border-right: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    height: 100vh;
+  }
+  .dash-brand {
+    display: flex;
+    align-items: center;
+    min-height: var(--topbar-height);
+    padding: 0 var(--space-5);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .dash-nav-scroll {
+    flex: 1;
+    overflow-y: auto;
+    padding: var(--space-4) var(--space-3);
+  }
+  .dash-nav-section + .dash-nav-section {
+    margin-top: var(--space-5);
+  }
+  .dash-nav-section ul {
+    list-style: none;
+    margin: var(--space-1) 0 0;
+    padding: 0;
+    display: grid;
+    gap: 2px;
+  }
+  .dash-nav-heading {
+    margin: 0;
+    padding: 0 var(--space-3);
+    font-size: var(--text-caption);
+    font-weight: var(--weight-bold);
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--ink-500);
+  }
+  .dash-nav-section a {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--tap-target);
+    padding: 0 var(--space-3);
+    border-radius: var(--radius-md);
+    font-size: var(--text-body);
+    font-weight: var(--weight-medium);
+    color: var(--ink-700);
+  }
+  .dash-nav-section a:hover {
+    background: var(--surface-sunken);
+    color: var(--ink-900);
+  }
+  .dash-nav-section a.active {
+    background: var(--primary-50);
+    color: var(--primary-700);
+    font-weight: var(--weight-semibold);
+  }
+  .dash-sidebar-foot {
+    display: grid;
+    gap: 2px;
+    padding: var(--space-3);
+    border-top: 1px solid var(--border-subtle);
+  }
+  .dash-sidebar-foot a,
+  .dash-sidebar-foot button {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--tap-target);
+    padding: 0 var(--space-3);
+    border: 0;
+    border-radius: var(--radius-md);
+    background: transparent;
+    font-size: var(--text-body);
+    font-weight: var(--weight-medium);
+    color: var(--ink-700);
+    cursor: pointer;
+    text-align: left;
+    width: 100%;
+  }
+  .dash-sidebar-foot a:hover,
+  .dash-sidebar-foot button:hover {
+    background: var(--surface-sunken);
+    color: var(--ink-900);
+  }
+  .dash-main {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+  }
+  .dash-topbar {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+    min-height: var(--topbar-height);
+    padding: 0 var(--space-4);
+    background: var(--surface);
+    border-bottom: 1px solid var(--border-subtle);
+    position: sticky;
+    top: 0;
+    z-index: 20;
+  }
+  .dash-menu-button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--tap-target);
+    min-height: var(--tap-target);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--ink-700);
+    cursor: pointer;
+  }
+  .dash-school {
+    margin: 0;
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    font-weight: var(--weight-semibold);
+  }
+  .dash-user {
+    display: flex;
+    align-items: center;
+    gap: var(--space-3);
+  }
+  .dash-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--primary-600);
+    color: var(--ink-inverse);
+    font-size: var(--text-small);
+    font-weight: var(--weight-bold);
+    flex: none;
+  }
+  .dash-user-name {
+    margin: 0;
+    font-size: var(--text-small);
+    font-weight: var(--weight-semibold);
+    line-height: var(--leading-snug);
+  }
+  .dash-user-role {
+    margin: 0;
+    font-size: var(--text-caption);
+    color: var(--ink-500);
+    line-height: var(--leading-snug);
+  }
+  .dash-content {
+    flex: 1;
+    width: 100%;
+    max-width: var(--content-max);
+    margin: 0 auto;
+    padding: var(--space-5) var(--space-4);
+  }
+  .dash-mobile-nav {
+    position: fixed;
+    inset: 0;
+    z-index: 50;
+    display: flex;
+    flex-direction: column;
+    background: var(--surface);
+  }
+  .dash-mobile-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    min-height: var(--topbar-height);
+    padding: 0 var(--space-4);
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .dash-mobile-head button {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: var(--tap-target);
+    min-height: var(--tap-target);
+    border: 1px solid var(--border-subtle);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    color: var(--ink-700);
+    cursor: pointer;
+  }
+  @media (min-width: 1024px) {
+    .dash-sidebar { display: flex; }
+    .dash-menu-button { display: none; }
+    .dash-mobile-nav { display: none; }
+    .dash-content { padding: var(--space-8) var(--space-8); }
+  }
+}

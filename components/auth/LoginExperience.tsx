@@ -3,6 +3,7 @@
 import { FormEvent, useEffect, useMemo, useState } from "react";
 import { ArrowRight, Eye, EyeOff, KeyRound, Loader2, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { roleExperiences, roleLabels, UserRole } from "@/lib/rbac";
+import { roleHome } from "@/lib/nav";
 import { EduCoreLogo } from "@/components/brand/EduCoreLogo";
 import { createBrowserSupabaseClient, hasBrowserSupabaseConfig } from "@/lib/supabase/browser";
 import { Alert, type AlertTone } from "@/components/ui/Alert";
@@ -127,8 +128,19 @@ export function LoginExperience() {
           return;
         }
         await acceptInviteIfPresent();
-        const next = new URLSearchParams(window.location.search).get("next") ?? "/dashboard";
-        window.location.href = next;
+        const next = new URLSearchParams(window.location.search).get("next");
+        if (next) {
+          window.location.href = next;
+          return;
+        }
+        try {
+          const sessionResponse = await fetch("/api/auth/session", { cache: "no-store" });
+          const payload = await sessionResponse.json();
+          const role = payload?.session?.user?.role as UserRole | undefined;
+          window.location.href = role ? roleHome(role) : "/dashboard";
+        } catch {
+          window.location.href = "/dashboard";
+        }
         return;
       }
 

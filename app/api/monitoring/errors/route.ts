@@ -2,6 +2,7 @@ import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { NextRequest, NextResponse } from "next/server";
 import { listAppErrors, recordAppError, type ErrorEventInput } from "@/lib/supabase/school-data";
 import { getAppSession } from "@/lib/auth/session";
+import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
 
 export async function GET() {
   const supabase = await requestClientOrNull();
@@ -15,6 +16,10 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
+  {
+    const throttle = checkRateLimit(rateLimitKey(request, "monitoring-errors"), { limit: 30, windowMs: 60_000 });
+    if (!throttle.allowed) return rateLimitedResponse(throttle.retryAfterMs);
+  }
   const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured" }, { status: 503 });
   const session = await getAppSession();

@@ -4,6 +4,7 @@ import { withAuth } from "@/lib/auth/api-guard";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getInsightContext } from "@/lib/supabase/school-data";
 import { answerInsight } from "@/lib/insights/engine";
+import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
 
 const askBody = z.object({
   question: z.string().trim().min(3).max(500),
@@ -16,6 +17,10 @@ const askBody = z.object({
  * see lib/insights/engine.ts for the reasoning.
  */
 export const POST = withAuth("analytics.view", async (request) => {
+  {
+    const throttle = checkRateLimit(rateLimitKey(request, "insights-ask"), { limit: 30, windowMs: 60_000 });
+    if (!throttle.allowed) return rateLimitedResponse(throttle.retryAfterMs);
+  }
   const parsed = askBody.safeParse(await request.json().catch(() => null));
   if (!parsed.success) {
     return NextResponse.json(
