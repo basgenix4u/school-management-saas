@@ -1,16 +1,20 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { AlertCircle, ArrowRight, Award, BookOpenCheck, CheckCircle2, ClipboardCheck, FileText, GraduationCap, Loader2, Send, ShieldCheck } from "lucide-react";
-import { approvalSteps, getGrade, resultInsights, subjectAverages } from "@/lib/results-center";
+import { AlertTriangle, Award, BookOpenCheck, ClipboardCheck, FileText, Send, ShieldCheck } from "lucide-react";
+import { getGrade } from "@/lib/results/grading";
+import { Alert } from "@/components/ui/Alert";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Metric, MetricGrid } from "@/components/ui/Metric";
+import { Table } from "@/components/ui/Table";
 
 type ResultApiRow = Record<string, unknown>;
 type ResultBoardStudent = {
   id: string;
-  slug: string;
   name: string;
-  className: string;
   average: number;
   status: string;
   subjectCount: number;
@@ -21,20 +25,22 @@ type ResultsApiResponse = {
   source?: "none" | "supabase";
   summary?: Record<string, number>;
   data?: ResultApiRow[];
-  insights?: typeof resultInsights;
   message?: string;
 };
 
-function statusClass(status: string) {
-  if (status === "APPROVED" || status === "PUBLISHED") return "good";
-  if (status === "REVIEW") return "warn";
-  return "bad";
+function statusTone(status: string): BadgeTone {
+  if (status === "APPROVED" || status === "PUBLISHED") return "success";
+  if (status === "REVIEW") return "warning";
+  if (status === "DRAFT") return "neutral";
+  return "info";
 }
 
-function groupLiveResults(rows: ResultApiRow[]): ResultBoardStudent[] {
+function groupLiveResults(rows: ResultApiRow[]): { students: ResultBoardStudent[]; subjects: Array<{ name: string; average: number; count: number }> } {
   const grouped = new Map<string, { id: string; name: string; totals: number[]; statuses: string[]; subjectCount: number }>();
+  const subjectTotals = new Map<string, { total: number; count: number }>();
   for (const row of rows) {
     const student = row.students as Record<string, unknown> | null;
+    const subject = row.subjects as Record<string, unknown> | null;
     const id = String(student?.admission_no ?? row.student_id ?? "unknown");
     const name = `${student?.first_name ?? ""} ${student?.last_name ?? ""}`.trim() || id;
     const current = grouped.get(id) ?? { id, name, totals: [], statuses: [], subjectCount: 0 };
@@ -42,17 +48,28 @@ function groupLiveResults(rows: ResultApiRow[]): ResultBoardStudent[] {
     current.statuses.push(String(row.status ?? "DRAFT"));
     current.subjectCount += 1;
     grouped.set(id, current);
+
+    const subjectName = String(subject?.name ?? "Unassigned");
+    const entry = subjectTotals.get(subjectName) ?? { total: 0, count: 0 };
+    entry.total += Number(row.total_score ?? 0);
+    entry.count += 1;
+    subjectTotals.set(subjectName, entry);
   }
-  return Array.from(grouped.values()).map((item) => {
+  const students = Array.from(grouped.values()).map((item) => {
     const average = item.totals.length ? Math.round(item.totals.reduce((sum, value) => sum + value, 0) / item.totals.length) : 0;
     const status = item.statuses.includes("DRAFT") ? "DRAFT" : item.statuses.includes("REVIEW") ? "REVIEW" : item.statuses.includes("APPROVED") ? "APPROVED" : item.statuses[0] ?? "DRAFT";
-    return { id: item.id, slug: item.id, name: item.name, className: "Live Supabase", average, status, subjectCount: item.subjectCount };
+    return { id: item.id, name: item.name, average, status, subjectCount: item.subjectCount };
   });
+  const subjects = Array.from(subjectTotals.entries())
+    .map(([name, entry]) => ({ name, average: entry.count ? Math.round(entry.total / entry.count) : 0, count: entry.count }))
+    .sort((a, b) => a.average - b.average);
+  return { students, subjects };
 }
 
 export function ResultsCommandCenter() {
   const [students, setStudents] = useState<ResultBoardStudent[]>([]);
-  const [source, setSource] = useState("none");
+  const [subjects, setSubjects] = useState<Array<{ name: string; average: number; count: number }>>([]);
+  const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [message, setMessage] = useState("Loading academic records...");
 
@@ -63,11 +80,13 @@ export function ResultsCommandCenter() {
       const response = await fetch("/api/results", { cache: "no-store" });
       const payload = await response.json() as ResultsApiResponse;
       if (!response.ok) throw new Error(payload.message ?? "Unable to load results");
-      setSource(payload.source ?? "none");
-      const rows = payload.data ?? [];
-      setStudents(payload.source === "supabase" ? groupLiveResults(rows) : []);
+      setConnected(payload.source === "supabase");
+      const grouped = payload.source === "supabase" ? groupLiveResults(payload.data ?? []) : { students: [], subjects: [] };
+      setStudents(grouped.students);
+      setSubjects(grouped.subjects);
       setMessage(payload.source === "supabase" ? "Result records loaded." : (payload.message ?? "Connect your database to load results."));
     } catch (error) {
+      setConnected(false);
       setMessage(error instanceof Error ? error.message : "Results unavailable.");
     } finally {
       setLoading(false);
@@ -84,79 +103,160 @@ export function ResultsCommandCenter() {
     const approved = students.filter((student) => student.status === "APPROVED" || student.status === "PUBLISHED").length;
     const review = students.filter((student) => student.status === "REVIEW").length;
     const draft = students.filter((student) => student.status === "DRAFT").length;
+    const published = students.filter((student) => student.status === "PUBLISHED").length;
     const average = total ? Math.round(students.reduce((sum, student) => sum + student.average, 0) / total) : 0;
-    return { total, approved, review, draft, average };
+    return { total, approved, review, draft, published, average };
   }, [students]);
 
+  const insights = useMemo(() => {
+    const items: Array<{ title: string; detail: string; action: string; tone: BadgeTone }> = [];
+    const struggling = students.filter((student) => student.average < 50);
+    if (struggling.length > 0) {
+      items.push({
+        title: `${struggling.length} student${struggling.length === 1 ? "" : "s"} averaging below 50%`,
+        detail: `${struggling[0].name}${struggling.length > 1 ? ` and ${struggling.length - 1} more` : ""} need academic support before results go out.`,
+        action: "Schedule intervention with the class teacher",
+        tone: "danger",
+      });
+    }
+    if (summary.review > 0) {
+      items.push({
+        title: `${summary.review} record${summary.review === 1 ? "" : "s"} waiting in review`,
+        detail: "Scores are entered but not yet approved for release.",
+        action: "Clear the principal review queue",
+        tone: "warning",
+      });
+    }
+    if (summary.draft > 0) {
+      items.push({
+        title: `${summary.draft} draft record${summary.draft === 1 ? "" : "s"} unfinished`,
+        detail: "Teachers still have scores to enter or complete.",
+        action: "Follow up on score entry",
+        tone: "neutral",
+      });
+    }
+    if (summary.published > 0) {
+      items.push({
+        title: `${summary.published} record${summary.published === 1 ? "" : "s"} published`,
+        detail: "Locked and visible to guardians on the portal.",
+        action: "No action needed",
+        tone: "success",
+      });
+    }
+    return items;
+  }, [students, summary]);
+
+  const pipeline = [
+    { title: "Teacher entry", count: summary.draft, caption: "drafts with teachers" },
+    { title: "Review", count: summary.review, caption: "awaiting approval" },
+    { title: "Approved", count: summary.approved, caption: "cleared for release" },
+    { title: "Published", count: summary.published, caption: "live to guardians" },
+  ];
+
   return (
-    <div className="results-center premium-dashboard">
-      <section className="card-aurora results-hero">
-        <div>
-          <span className="premium-kicker"><Award size={14} /> Results Command Center • {source}</span>
-          <h1>From score entry to polished report cards.</h1>
-          <p>Manage academic scores, approval workflows, comments, performance signals and parent-ready report cards with a premium school SaaS experience.</p>
-          <div className="hero-actions">
-            <Link className="btn btn-primary" href="/dashboard/results/entry"><ClipboardCheck size={18} /> Enter Scores</Link>
-            <Link className="btn btn-secondary" href={`/dashboard/results/report-card/${students[0]?.slug ?? "amina-yusuf"}`}><FileText size={18} /> Preview Report Card</Link>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow">Results</p>
+        <h1 className="page-title">From score entry to report cards.</h1>
+        <p className="page-subtitle">Entry, review, approval and publishing — with every student&apos;s position visible.</p>
+      </header>
+
+      <div className="action-row">
+        <Button href="/dashboard/results/entry"><ClipboardCheck size={18} /> Enter scores</Button>
+        {students.length > 0 ? <Button variant="secondary" href={`/dashboard/results/report-card/${students[0].id}`}><FileText size={18} /> Preview report card</Button> : null}
+        <Button variant="secondary" href="/dashboard/results/publish"><Send size={18} /> Publish results</Button>
+      </div>
+
+      <Alert tone={loading ? "info" : connected ? "success" : "warning"}>
+        <p>{message}</p>
+        <p><Button variant="secondary" size="sm" onClick={loadResults} disabled={loading}>Refresh</Button></p>
+      </Alert>
+
+      <MetricGrid>
+        <Metric icon={<BookOpenCheck size={20} />} label="Students with results" value={String(summary.total)} caption={`school average ${summary.average}%`} />
+        <Metric icon={<ShieldCheck size={20} />} label="Approved" value={String(summary.approved)} caption="ready for release" />
+        <Metric icon={<ClipboardCheck size={20} />} label="In review" value={String(summary.review)} caption="principal queue" />
+        <Metric icon={<Send size={20} />} label="Drafts" value={String(summary.draft)} caption="with teachers" />
+      </MetricGrid>
+
+      <Card title="Student result board" subtitle={students.length ? `${students.length} students · select a row for the full report card.` : "Scores will appear here once teachers begin entry."}>
+        {students.length === 0 ? (
+          <EmptyState
+            icon={<Award size={22} />}
+            title="No results yet"
+            body="Enter the first score to begin the review and publishing flow."
+            action={<Button href="/dashboard/results/entry"><ClipboardCheck size={18} /> Enter scores</Button>}
+          />
+        ) : (
+          <Table>
+            <thead><tr><th>Student</th><th>Admission no.</th><th className="numeric">Subjects</th><th className="numeric">Average</th><th>Grade</th><th>Status</th></tr></thead>
+            <tbody>
+              {students.map((student) => (
+                <tr key={student.id}>
+                  <td><a href={`/dashboard/results/report-card/${student.id}`}>{student.name}</a></td>
+                  <td>{student.id}</td>
+                  <td className="numeric">{student.subjectCount}</td>
+                  <td className="numeric">{student.average}%</td>
+                  <td>{getGrade(student.average).grade}</td>
+                  <td><Badge tone={statusTone(student.status)}>{student.status}</Badge></td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card>
+
+      <div className="premium-grid-2 align-start">
+        <Card title="Publishing pipeline" subtitle="Where every record sits right now.">
+          <div className="trust-list">
+            {pipeline.map((step) => (
+              <article key={step.title}>
+                <div><strong>{step.title}</strong><p>{step.caption}</p></div>
+                <Badge tone={step.count > 0 ? "info" : "neutral"}>{step.count}</Badge>
+              </article>
+            ))}
           </div>
-        </div>
-        <div className="results-hero-card">
-          <span>Academic Average</span>
-          <strong>{summary.average}%</strong>
-          <small>{summary.approved} approved • {summary.review} in review • {summary.draft} draft</small>
-        </div>
-      </section>
+        </Card>
 
-      <section className="live-status-card">
-        {loading ? <Loader2 className="spin" size={18} /> : source === "supabase" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-        <span>{message}</span>
-        <button type="button" onClick={loadResults}>Refresh</button>
-      </section>
+        <Card title="Result insights" subtitle={insights.length ? "Drawn from the records above." : "Insights arrive with the first scores."}>
+          {insights.length === 0 ? (
+            <EmptyState icon={<Award size={22} />} title="Nothing to flag" body="Averages, review queues and publishing land here." />
+          ) : (
+            <div className="signal-list">
+              {insights.map((insight) => (
+                <article key={insight.title} className="signal-item">
+                  <div><strong>{insight.title}</strong><p>{insight.detail}</p><small>{insight.action}</small></div>
+                  <Badge tone={insight.tone}>{insight.tone === "danger" ? "Urgent" : insight.tone === "warning" ? "Watch" : insight.tone === "success" ? "Good" : "Info"}</Badge>
+                </article>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
 
-      <section className="premium-metrics">
-        <article className="premium-metric tone-blue"><div className="metric-icon"><BookOpenCheck /></div><span>Result Records</span><strong>{summary.total}</strong><small>{source} students</small><p>Academic records ready for entry, review and publishing.</p></article>
-        <article className="premium-metric tone-emerald"><div className="metric-icon"><ShieldCheck /></div><span>Approved</span><strong>{summary.approved}</strong><small>ready</small><p>Results approved for parent/student access.</p></article>
-        <article className="premium-metric tone-amber"><div className="metric-icon"><ClipboardCheck /></div><span>In Review</span><strong>{summary.review}</strong><small>principal queue</small><p>Results that need review before release.</p></article>
-        <article className="premium-metric tone-rose"><div className="metric-icon"><Send /></div><span>Drafts</span><strong>{summary.draft}</strong><small>teacher entry</small><p>Results still waiting for completion.</p></article>
-      </section>
+      <Card title="Average by subject" subtitle={subjects.length ? "Weakest subjects first." : "Subject averages arrive with the first scores."}>
+        {subjects.length === 0 ? (
+          <EmptyState icon={<BookOpenCheck size={22} />} title="No subject data" body="Enter scores to see how each subject performs." />
+        ) : (
+          <Table>
+            <thead><tr><th>Subject</th><th className="numeric">Records</th><th className="numeric">Average</th><th>Grade</th></tr></thead>
+            <tbody>
+              {subjects.map((subject) => (
+                <tr key={subject.name}>
+                  <td>{subject.name}</td>
+                  <td className="numeric">{subject.count}</td>
+                  <td className="numeric">{subject.average}%</td>
+                  <td>{getGrade(subject.average).grade}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card>
 
-      <section className="premium-grid-2 align-start">
-        <div className="card premium-panel">
-          <div className="panel-header compact"><div><span className="premium-kicker"><GraduationCap size={14} /> Student Result Board</span><h2>Academic records</h2></div><Link className="mini-link" href="/dashboard/results/entry">Score entry <ArrowRight size={15} /></Link></div>
-          <div className="result-list">
-            {!loading && students.length === 0 ? <div className="empty-state-card">No results found. Enter the first score to begin.</div> : null}
-            {students.map((student) => {
-              const grade = getGrade(student.average);
-              return (
-                <Link className="result-row" href={`/dashboard/results/report-card/${student.slug}`} key={student.id}>
-                  <div><strong>{student.name}</strong><span>{student.id} • {student.className} • {student.subjectCount} subject(s)</span></div>
-                  <div><strong>{student.average}%</strong><span>{grade.grade} • {grade.remark}</span></div>
-                  <span className={`status ${statusClass(student.status)}`}>{student.status}</span>
-                </Link>
-              );
-            })}
-          </div>
-        </div>
-
-        <div className="card premium-panel">
-          <span className="premium-kicker"><ShieldCheck size={14} /> Approval Workflow</span>
-          <h2>Publishing pipeline</h2>
-          <div className="approval-list">{approvalSteps.map((step) => <article key={step.title}><div><strong>{step.title}</strong><p>{step.description}</p></div><span>{step.status}</span></article>)}</div>
-        </div>
-      </section>
-
-      <section className="premium-grid-2 align-start">
-        <div className="card premium-panel">
-          <span className="premium-kicker"><Award size={14} /> Subject Performance</span>
-          <h2>Average by subject</h2>
-          <div className="subject-bars">{subjectAverages.map((item) => <article key={item.subject}><div><strong>{item.subject}</strong><span>{item.average}%</span></div><div className="progress-track"><span style={{ width: `${item.average}%` }} /></div></article>)}</div>
-        </div>
-        <div className="card premium-panel">
-          <span className="premium-kicker">Academic Intelligence</span>
-          <h2>Result insights</h2>
-          <div className="signal-list">{resultInsights.map((insight) => <article className="signal-item" key={insight.title}><div><strong>{insight.title}</strong><p>{insight.detail}</p><small>{insight.action}</small></div><span className={`status ${insight.severity === "High" ? "bad" : insight.severity === "Medium" ? "warn" : "good"}`}>{insight.severity}</span></article>)}</div>
-        </div>
-      </section>
+      {students.some((student) => student.average < 50) ? (
+        <Alert tone="danger"><p><AlertTriangle size={18} aria-hidden="true" /> Some students average below 50% — review the insights above before publishing.</p></Alert>
+      ) : null}
     </div>
   );
 }

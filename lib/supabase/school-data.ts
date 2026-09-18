@@ -1406,3 +1406,250 @@ export async function getAuditSummary(client: SupabaseClient) {
     needsReview: events.filter((event) => event.risk_level === "High" || event.risk_level === "Medium").length,
   };
 }
+
+export type TeacherRow = {
+  id: string;
+  staff_no: string;
+  name: string;
+  email: string | null;
+  phone: string | null;
+  department: string | null;
+  title: string | null;
+  active: boolean;
+};
+
+/** Staff directory for the caller's school. */
+export async function listTeachers(client: SupabaseClient) {
+  const { data, error } = await client
+    .from("teachers")
+    .select("id,staff_no,name,email,phone,department,title,active")
+    .order("name", { ascending: true })
+    .returns<TeacherRow[]>();
+  if (error) throw error;
+  return data ?? [];
+}
+
+export type RosterRow = {
+  admissionNo: string;
+  name: string;
+  classroom: string;
+};
+
+/**
+ * Minimal roster for score entry.
+ *
+ * Teachers need names and admission numbers to enter results but must not
+ * gain the full student-management read, so this stays a narrow endpoint
+ * rather than reusing the student directory.
+ */
+export async function listRoster(client: SupabaseClient, className?: string) {
+  const query = client
+    .from("students")
+    .select("admission_no,first_name,last_name,classrooms(name)")
+    .eq("active", true)
+    .order("first_name", { ascending: true })
+    .order("last_name", { ascending: true });
+  const { data, error } = await query;
+  if (error) throw error;
+  const roster = ((data ?? []) as Array<{
+    admission_no: string;
+    first_name: string;
+    last_name: string;
+    classrooms: { name: string } | { name: string }[] | null;
+  }>).map((row) => ({
+    admissionNo: row.admission_no,
+    name: `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || row.admission_no,
+    classroom: relationName(row.classrooms) ?? "Unassigned",
+  }));
+  return className ? roster.filter((row) => row.classroom === className) : roster;
+}
+
+export type ReportCardBundle = {
+  student: {
+    admission_no: string;
+    name: string;
+    classroom: string;
+  };
+  organizationName: string | null;
+  term: string;
+  session: string;
+  status: string;
+  subjects: Array<{
+    name: string;
+    ca: number;
+    exam: number;
+    total: number;
+    grade: string | null;
+    remark: string | null;
+  }>;
+  average: number;
+  attendanceRate: number | null;
+  position: string | null;
+  teacherComment: string | null;
+  principalComment: string | null;
+};
+
+/**
+ * Everything a report card prints, computed from live records.
+ *
+ * Position is the student's rank by average among classmates with results
+ * for the same term and session; attendance is their present-rate across
+ * submitted registers. Either is null when the underlying records do not
+ * exist yet, and the card says so instead of inventing a figure.
+ */
+export async function getReportCardBundle(client: SupabaseClient, admissionNo: string): Promise<ReportCardBundle | null> {
+  const organization = await getPrimaryOrganization(client);
+  const student = organization ? await getStudentByAdmission(client, organization.id, admissionNo) : null;
+  if (!organization || !student) return null;
+
+  const [resultsResult, attendanceResult, peersResult] = await Promise.all([
+    client.from("results").select("term,session,ca_score,exam_score,total_score,grade,remark,status,teacher_comment,principal_comment,subjects(name)").eq("student_id", student.id).order("created_at", { ascending: false }),
+    client.from("attendance_records").select("id", { count: "exact", head: true }).eq("student_id", student.id),
+    student.classroom_id
+      ? client.from("results").select("student_id,total_score,term,session,students!inner(classroom_id)").eq("students.classroom_id", student.classroom_id)
+      : Promise.resolve({ data: [], error: null } as unknown as { data: Array<{ student_id: string; total_score: string | number; term: string; session: string }>; error: null }),
+  ]);
+  if (resultsResult.error) throw resultsResult.error;
+  if (attendanceResult.error) throw attendanceResult.error;
+
+  const rows = (resultsResult.data ?? []) as Array<{
+    term: string; session: string; ca_score: string | number; exam_score: string | number;
+    total_score: string | number; grade: string | null; remark: string | null; status: string;
+    teacher_comment: string | null; principal_comment: string | null;
+    subjects: { name: string } | Array<{ name: string }> | null;
+  }>;
+  if (!rows.length) return null;
+
+  const term = rows[0].term;
+  const session = rows[0].session;
+  const termRows = rows.filter((row) => row.term === term && row.session === session);
+  const subjects = termRows.map((row) => {
+    const subject = Array.isArray(row.subjects) ? row.subjects[0] : row.subjects;
+    return {
+      name: subject?.name ?? "Subject",
+      ca: Number(row.ca_score ?? 0),
+      exam: Number(row.exam_score ?? 0),
+      total: Number(row.total_score ?? 0),
+      grade: row.grade,
+      remark: row.remark,
+    };
+  });
+  const average = subjects.length ? Math.round(subjects.reduce((sum, row) => sum + row.total, 0) / subjects.length) : 0;
+
+  let attendanceRate: number | null = null;
+  const marked = attendanceResult.count ?? 0;
+  if (marked > 0) {
+    const { count: present } = await client.from("attendance_records").select("id", { count: "exact", head: true }).eq("student_id", student.id).eq("status", "PRESENT");
+    attendanceRate = Math.round(((present ?? 0) / marked) * 100);
+  }
+
+  let position: string | null = null;
+  const peerRows = (peersResult.data ?? []) as Array<{ student_id: string; total_score: string | number; term: string; session: string }>;
+  const peerAverages = new Map<string, { total: number; count: number }>();
+  for (const row of peerRows) {
+    if (row.term !== term || row.session !== session) continue;
+    const entry = peerAverages.get(row.student_id) ?? { total: 0, count: 0 };
+    entry.total += Number(row.total_score ?? 0);
+    entry.count += 1;
+    peerAverages.set(row.student_id, entry);
+  }
+  if (peerAverages.size > 1) {
+    const ranked = [...peerAverages.entries()]
+      .map(([id, entry]) => ({ id, average: entry.count ? entry.total / entry.count : 0 }))
+      .sort((a, b) => b.average - a.average);
+    const rank = ranked.findIndex((entry) => entry.id === student.id) + 1;
+    if (rank > 0) {
+      const suffix = rank === 1 ? "st" : rank === 2 ? "nd" : rank === 3 ? "rd" : "th";
+      position = `${rank}${suffix} of ${ranked.length}`;
+    }
+  }
+
+  const classroom = student.classroom_id
+    ? await client.from("classrooms").select("name").eq("id", student.classroom_id).maybeSingle<{ name: string }>().then((result) => result.data?.name ?? "Unassigned", () => "Unassigned")
+    : "Unassigned";
+
+  return {
+    student: {
+      admission_no: student.admission_no,
+      name: `${student.first_name ?? ""} ${student.last_name ?? ""}`.trim() || student.admission_no,
+      classroom,
+    },
+    organizationName: organization.name,
+    term,
+    session,
+    status: termRows[0]?.status ?? "DRAFT",
+    subjects,
+    average,
+    attendanceRate,
+    position,
+    teacherComment: termRows.find((row) => row.teacher_comment)?.teacher_comment ?? null,
+    principalComment: termRows.find((row) => row.principal_comment)?.principal_comment ?? null,
+  };
+}
+
+export type StudentProfile = {
+  student: StudentRow & { classroom: string };
+  risk: {
+    level: string;
+    score: number;
+    attendanceRate: number;
+    absent: number;
+    balance: number;
+    overdue: number;
+    average: number;
+  } | null;
+  invoices: Array<{ invoice_no: string; title: string; amount: number; paid: number; status: string; due_date: string | null }>;
+  attendance: Array<{ date: string; period: string | null; status: string }>;
+  results: { subjects: number; average: number; published: number };
+};
+
+/**
+ * Full student profile for the 360 view.
+ *
+ * Combines the record, computed risk, invoices, recent registers and result
+ * averages. Sections without records come back empty and the page says so.
+ */
+export async function getStudentProfile(client: SupabaseClient, admissionNo: string): Promise<StudentProfile | null> {
+  const organization = await getPrimaryOrganization(client);
+  if (!organization) return null;
+  const student = await getStudentByAdmission(client, organization.id, admissionNo);
+  if (!student) return null;
+
+  const classroom = student.classroom_id
+    ? await client.from("classrooms").select("name").eq("id", student.classroom_id).maybeSingle<{ name: string }>().then((result) => result.data?.name ?? "Unassigned", () => "Unassigned")
+    : "Unassigned";
+
+  const [riskResult, invoicesResult, attendanceResult, resultsResult] = await Promise.all([
+    client.from("v_student_risk_scores").select("risk_level_computed,risk_score,attendance_rate,absent_count,outstanding_balance,overdue_invoices,average_score").eq("student_id", student.id).limit(1).maybeSingle(),
+    client.from("invoices").select("invoice_no,title,amount,amount_paid,status,due_date").eq("student_id", student.id).order("created_at", { ascending: false }).limit(20),
+    client.from("attendance_records").select("attendance_date,period,status").eq("student_id", student.id).order("attendance_date", { ascending: false }).limit(20),
+    client.from("results").select("total_score,status").eq("student_id", student.id),
+  ]);
+
+  const riskRow = (riskResult.data ?? null) as Record<string, string | number | null> | null;
+  const invoiceRows = (invoicesResult.data ?? []) as Array<{ invoice_no: string; title: string; amount: string | number; amount_paid: string | number; status: string; due_date: string | null }>;
+  const attendanceRows = (attendanceResult.data ?? []) as Array<{ attendance_date: string; period: string | null; status: string }>;
+  const resultRows = (resultsResult.data ?? []) as Array<{ total_score: string | number; status: string }>;
+
+  return {
+    student: { ...student, classroom },
+    risk: riskRow
+      ? {
+          level: String(riskRow.risk_level_computed ?? "Low"),
+          score: Number(riskRow.risk_score ?? 0),
+          attendanceRate: Number(riskRow.attendance_rate ?? 0),
+          absent: Number(riskRow.absent_count ?? 0),
+          balance: Number(riskRow.outstanding_balance ?? 0),
+          overdue: Number(riskRow.overdue_invoices ?? 0),
+          average: Number(riskRow.average_score ?? 0),
+        }
+      : null,
+    invoices: invoiceRows.map((row) => ({ invoice_no: row.invoice_no, title: row.title, amount: Number(row.amount ?? 0), paid: Number(row.amount_paid ?? 0), status: row.status, due_date: row.due_date })),
+    attendance: attendanceRows.map((row) => ({ date: row.attendance_date, period: row.period, status: row.status })),
+    results: {
+      subjects: resultRows.length,
+      average: resultRows.length ? Math.round(resultRows.reduce((sum, row) => sum + Number(row.total_score ?? 0), 0) / resultRows.length) : 0,
+      published: resultRows.filter((row) => row.status === "PUBLISHED").length,
+    },
+  };
+}

@@ -7,6 +7,7 @@ export { EmptyState } from "./EmptyState";
 export { Field } from "./Field";
 export { Input } from "./Input";
 export { Metric, MetricGrid } from "./Metric";
+export { PrintButton } from "./PrintButton";
 export { Select } from "./Select";
 export { Skeleton } from "./Skeleton";
 export { Table } from "./Table";

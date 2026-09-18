@@ -108,3 +108,113 @@ describe("finance module reads live invoices", () => {
     expect(page).not.toContain("/api/receipts/");
   });
 });
+
+describe("results and communications datasets stay deleted", () => {
+  it("removes the results, communications, student and launch datasets", () => {
+    for (const file of [
+      "lib/results-center.ts",
+      "lib/communications-data.ts",
+      "lib/student-360.ts",
+      "lib/launch-readiness.ts",
+      "components/production/LaunchCenter.tsx",
+      "components/results/ReportCardPreview.tsx",
+      "components/navigation/nav-items.ts",
+    ]) {
+      expect(existsSync(join(root, file))).toBe(false);
+    }
+    expect(existsSync(join(root, "app", "dashboard", "launch"))).toBe(false);
+    expect(existsSync(join(root, "app", "api", "launch"))).toBe(false);
+  });
+
+  it("imports none of them anywhere", () => {
+    const offenders: string[] = [];
+    for (const file of [...sources("app"), ...sources("components"), ...sources("lib")]) {
+      if (/results-center|communications-data|student-360|launch-readiness|LaunchCenter|ReportCardPreview|nav-items/.test(read(file))) {
+        offenders.push(file);
+      }
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("shows no invented students, scores or campaigns", () => {
+    const banned = [
+      "STU-1001", "amina-yusuf", "Mr. Ibrahim Musa", "Mrs. Grace Adams",
+      "resultStudents", "approvalSteps", "subjectAverages", "resultInsights",
+      "getStudentResult", "getResultSummary", "messageCampaigns",
+      "communicationMetrics", "communicationTimeline", "communicationInsights",
+      "studentRecords", "getStudentBySlug", "launchReadiness",
+      "deploymentChecklist", "clientProductScript", "Live Supabase", "Live teacher",
+    ];
+    const offenders: string[] = [];
+    for (const file of [...sources("app"), ...sources("components")]) {
+      const text = read(file);
+      if (banned.some((phrase) => text.includes(phrase))) offenders.push(file);
+    }
+    expect(offenders).toEqual([]);
+  });
+
+  it("never embeds the retired project reference", () => {
+    const offenders: string[] = [];
+    for (const file of [...sources("app"), ...sources("components"), ...sources("lib")]) {
+      if (read(file).includes("xevoiljsumlqqamqkwla")) offenders.push(file);
+    }
+    expect(offenders).toEqual([]);
+  });
+});
+
+describe("results module reads live records", () => {
+  it("serves a narrow roster behind results.view", () => {
+    const route = read("app/api/results/roster/route.ts");
+    expect(route).toContain('withAuth("results.view"');
+    expect(route).toContain("listRoster");
+  });
+
+  it("derives the board, pipeline and insights from live rows", () => {
+    const center = read("components/results/ResultsCommandCenter.tsx");
+    expect(center).toContain("/api/results");
+    expect(center).toContain("Publishing pipeline");
+    expect(center).toContain("Average by subject");
+    expect(center).not.toContain("amina-yusuf");
+  });
+
+  it("enters scores against the live roster", () => {
+    const matrix = read("components/results/ScoreEntryMatrix.tsx");
+    expect(matrix).toContain("/api/results/roster");
+    expect(matrix).toContain('method: "POST"');
+  });
+
+  it("renders report cards from the live bundle", () => {
+    const page = read("app/dashboard/results/report-card/[student]/page.tsx");
+    expect(page).toContain("getReportCardBundle");
+  });
+
+  it("keeps grading math in a pure module", () => {
+    const grading = read("lib/results/grading.ts");
+    expect(grading).toContain("getGrade");
+    expect(grading).toContain("getAverage");
+  });
+});
+
+describe("communications and profiles read live records", () => {
+  it("boards announcements with real delivery counts", () => {
+    const page = read("app/dashboard/communications/campaigns/page.tsx");
+    expect(page).toContain("listAnnouncements");
+    expect(page).toContain("listCommunicationDeliveries");
+  });
+
+  it("builds student profiles from the database", () => {
+    const page = read("app/dashboard/students/[id]/page.tsx");
+    expect(page).toContain("getStudentProfile");
+  });
+
+  it("lists staff from the database", () => {
+    expect(read("app/api/teachers/route.ts")).toContain('withAuth("teachers.manage"');
+    expect(read("app/dashboard/teachers/page.tsx")).toContain("listTeachers");
+  });
+
+  it("derives the database project from configuration", () => {
+    const route = read("app/api/database/status/route.ts");
+    expect(route).toContain("projectRefFromEnv");
+    expect(route).toContain("requestClientOrNull");
+  });
+});
