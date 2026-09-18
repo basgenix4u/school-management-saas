@@ -1,6 +1,6 @@
 # Authentication and RBAC Architecture
 
-EduManage is designed for role-aware SaaS access across multiple schools.
+EduCore is designed for role-aware SaaS access across multiple schools.
 
 ## Roles
 

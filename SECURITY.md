@@ -1,6 +1,6 @@
 # Security Policy
 
-EduManage handles sensitive school, student, parent and financial data. Security is a priority.
+EduCore handles sensitive school, student, parent and financial data. Security is a priority.
 
 ## Report a Vulnerability
 

@@ -1,8 +1,8 @@
-# EduManage Architecture
+# EduCore Architecture
 
 ## Application Type
 
-EduManage is designed as a multi-tenant SaaS platform for schools and training institutions.
+EduCore is designed as a multi-tenant SaaS platform for schools and training institutions.
 
 ## Core Domains
 

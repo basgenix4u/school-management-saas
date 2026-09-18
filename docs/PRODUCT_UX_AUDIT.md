@@ -1,8 +1,8 @@
-# EduManage Product UX Audit
+# EduCore Product UX Audit
 
 ## Executive Summary
 
-EduManage is being positioned as an operating system for modern schools, not a generic admin dashboard. The product must win trust quickly because it handles sensitive student, parent, academic and financial data.
+EduCore is being positioned as an operating system for modern schools, not a generic admin dashboard. The product must win trust quickly because it handles sensitive student, parent, academic and financial data.
 
 Primary product promise:
 

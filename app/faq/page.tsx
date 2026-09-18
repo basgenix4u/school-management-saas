@@ -1,20 +1,22 @@
 import Link from "next/link";
 import { HelpCircle } from "lucide-react";
-import { EduManageLogo } from "@/components/brand/EduManageLogo";
+import { EduCoreLogo } from "@/components/brand/EduCoreLogo";
 
 const faqs = [
-  ["Who is EduManage for?", "Private schools, academies, training centers and school groups that need a serious operating system for academics, finance, attendance and communication."],
-  ["Does it support multiple roles?", "Yes. The architecture includes owners, principals, teachers, accountants, parents, students and super admins."],
-  ["Does it use a real database?", "Yes. Supabase migrations, Auth foundation, CRUD API layer, views and application users have been implemented."],
-  ["Can parents and students log in?", "The portal and auth foundation exist. The next production step is connecting authenticated accounts to their live records."],
-  ["Is it production-ready today?", "It is a strong launch foundation. Before real school data, strict RLS, live UI wiring, payments, monitoring and legal review must be completed."],
+  ["Who is EduCore for?", "Private schools, colleges and school groups in Nigeria — from a single primary school to a multi-campus institution. If you run terms and sessions, admit students by admission number and collect fees per term, the system already speaks your language."],
+  ["What does it replace?", "Paper registers, admission spreadsheets, result-computation Excel files, printed invoices tracked by hand, and announcements buried in WhatsApp groups. Each of those becomes a workflow with records you can search and audit."],
+  ["How do parents use it?", "From any phone. Guardians see their children's attendance, invoices, receipts, results and announcements through the parent portal — no laptop and no app-store download required."],
+  ["How do we receive fee payments?", "Raise term invoices from the system and share them with guardians. Payments are confirmed through Paystack, receipts are issued automatically, and the bursar sees collected versus outstanding at all times."],
+  ["Who can see what?", "Access follows roles: owners, principals, teachers, accountants, parents and students each see only their own workspace. A teacher cannot open fee records; a parent only sees their own children."],
+  ["What do we need to start?", "One school-owner account, your current session and term, your class list, and your student records with admission numbers. Most schools complete setup in an afternoon."],
+  ["Is our data safe?", "Every school's data is isolated to its own workspace, sensitive actions are written to an audit trail, and payment callbacks are verified by signature. Read the full picture on the security page."],
 ];
 
 export default function FAQPage() {
   return (
     <main className="public-page">
-      <div className="public-nav"><EduManageLogo /><Link className="ds-btn ds-btn-secondary" href="/">Back home</Link></div>
-      <section className="public-hero"><span className="ds-eyebrow"><HelpCircle size={15} /> FAQ</span><h1>Answers for schools evaluating EduManage.</h1><p>Clear answers reduce buyer anxiety and help decision makers understand product readiness.</p></section>
+      <div className="public-nav"><EduCoreLogo /><Link className="ds-btn ds-btn-secondary" href="/">Back home</Link></div>
+      <section className="public-hero"><span className="ds-eyebrow"><HelpCircle size={15} /> FAQ</span><h1>Answers for schools evaluating EduCore.</h1><p>What the system does, who it serves, and what getting started takes.</p></section>
       <section className="faq-grid public-faq">{faqs.map(([q, a]) => <article key={q}><h2>{q}</h2><p>{a}</p></article>)}</section>
     </main>
   );

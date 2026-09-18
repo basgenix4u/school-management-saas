@@ -1,6 +1,6 @@
 # Contributing
 
-Thank you for your interest in improving EduManage.
+Thank you for your interest in improving EduCore.
 
 ## Development Workflow
 

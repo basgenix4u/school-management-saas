@@ -1,8 +1,13 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { AlertCircle, Bell, CreditCard, GraduationCap, Loader2, MessageCircle, ShieldCheck } from "lucide-react";
-import { money } from "@/lib/portal-data";
+import { Bell, CreditCard, GraduationCap, Loader2, MessageCircle, ShieldCheck, UsersRound, Wallet } from "lucide-react";
+import { formatDate, formatNairaCompact } from "@/lib/format";
+import { Alert } from "@/components/ui/Alert";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Metric, MetricGrid } from "@/components/ui/Metric";
 
 type PortalPayload = {
   status: string;
@@ -16,6 +21,20 @@ type PortalPayload = {
 
 function studentName(row: Record<string, unknown>) { return String(row.student_name ?? row.admission_no ?? "Student"); }
 function invoiceBalance(row: Record<string, unknown>) { return Number(row.amount ?? 0) - Number(row.amount_paid ?? 0); }
+
+function invoiceTone(status: string): BadgeTone {
+  if (status === "PAID") return "success";
+  if (status === "OVERDUE") return "danger";
+  if (status === "PARTIAL") return "info";
+  return "warning";
+}
+
+function invoiceLabel(status: string) {
+  if (status === "PAID") return "Paid";
+  if (status === "OVERDUE") return "Overdue";
+  if (status === "PARTIAL") return "Part paid";
+  return "Pending";
+}
 
 export function ParentPortal() {
   const [data, setData] = useState<PortalPayload>({ status: "loading", students: [], invoices: [], results: [], attendance: [] });
@@ -49,41 +68,74 @@ export function ParentPortal() {
           <span className="premium-kicker"><GraduationCap size={14} /> Parent Portal</span>
           <h1>Stay connected to your child’s school life.</h1>
           <p>View linked children, invoices, attendance activity and academic updates from one secure parent workspace.</p>
-          <div className="role-metrics"><span>{data.profile?.name ?? "Parent account"}</span><span>{students.length} linked child(ren)</span><span>{money(totalBalance)} balance</span></div>
+          <div className="role-metrics"><span>{data.profile?.name ?? "Parent account"}</span><span>{students.length} linked child(ren)</span><span>{formatNairaCompact(totalBalance)} balance</span></div>
         </div>
         <div className="portal-live-card"><strong>{students.length}</strong><span>Linked children</span><small>{loading ? "Loading..." : data.status}</small></div>
       </section>
 
-      <section className="live-status-card">
-        {loading ? <Loader2 className="spin" size={18} /> : data.status === "ok" ? <ShieldCheck size={18} /> : <AlertCircle size={18} />}
-        <span>{data.message ?? (data.status === "ok" ? "Parent portal data loaded." : "Portal is ready once records are linked.")}</span>
-        <button type="button" onClick={load}>Refresh</button>
-      </section>
+      <Alert tone={loading ? "info" : data.status === "ok" ? "success" : "warning"}>
+        <p>{loading ? "Loading your children's records…" : (data.message ?? (data.status === "ok" ? "Parent portal data loaded." : "Portal is ready once records are linked."))}</p>
+        <p><Button variant="secondary" size="sm" onClick={load} disabled={loading}>{loading ? <Loader2 className="spin" size={16} /> : null} Refresh</Button></p>
+      </Alert>
 
-      <section className="premium-metrics">
-        <article className="premium-metric tone-blue"><div className="metric-icon"><GraduationCap /></div><span>Children</span><strong>{students.length}</strong><small>linked profiles</small><p>Children connected to your parent account.</p></article>
-        <article className="premium-metric tone-emerald"><div className="metric-icon"><ShieldCheck /></div><span>Attendance records</span><strong>{attendanceCount}</strong><small>available</small><p>Recent attendance records for linked children.</p></article>
-        <article className="premium-metric tone-amber"><div className="metric-icon"><CreditCard /></div><span>Balance</span><strong>{money(totalBalance)}</strong><small>remaining</small><p>Outstanding invoice balance for linked children.</p></article>
-        <article className="premium-metric tone-violet"><div className="metric-icon"><MessageCircle /></div><span>Results</span><strong>{resultsCount}</strong><small>subject records</small><p>Academic results available to this account.</p></article>
-      </section>
+      <MetricGrid>
+        <Metric icon={<GraduationCap size={20} />} label="Children" value={String(students.length)} caption="linked profiles" />
+        <Metric icon={<ShieldCheck size={20} />} label="Attendance records" value={String(attendanceCount)} caption="available" />
+        <Metric icon={<Wallet size={20} />} label="Balance" value={formatNairaCompact(totalBalance)} caption="outstanding" />
+        <Metric icon={<MessageCircle size={20} />} label="Results" value={String(resultsCount)} caption="subject records" />
+      </MetricGrid>
 
       <section className="premium-grid-2 align-start">
         <div className="card premium-panel">
-          <span className="premium-kicker"><GraduationCap size={14} /> Children Overview</span>
+          <span className="premium-kicker"><UsersRound size={14} /> Children Overview</span>
           <h2>Linked students</h2>
-          <div className="portal-child-list">
-            {students.length === 0 ? <div className="empty-state-card">No children are linked to this account yet. Ask the school to link your parent email to the student record.</div> : null}
-            {students.map((child) => <article key={String(child.student_id)}><div className="student-avatar mini">{studentName(child).slice(0,2).toUpperCase()}</div><div><strong>{studentName(child)}</strong><span>{String(child.admission_no ?? "")} • {String(child.classroom ?? "No class assigned")}</span><p>Risk level: {String(child.risk_level ?? "Not set")}</p></div></article>)}
-          </div>
+          {students.length === 0 ? (
+            <EmptyState
+              icon={<UsersRound size={22} />}
+              title="No children linked yet"
+              body="Ask the school to link your parent email to each child's student record."
+            />
+          ) : (
+            <div className="portal-child-list">
+              {students.map((child) => (
+                <article key={String(child.student_id)}>
+                  <div className="student-avatar mini">{studentName(child).slice(0, 2).toUpperCase()}</div>
+                  <div>
+                    <strong>{studentName(child)}</strong>
+                    <span>{String(child.admission_no ?? "")} • {String(child.classroom ?? "No class assigned")}</span>
+                    <p>Risk level: {String(child.risk_level ?? "Not set")}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
         </div>
 
         <div className="card premium-panel">
           <span className="premium-kicker"><CreditCard size={14} /> Fees</span>
           <h2>Invoices and balances</h2>
-          <div className="portal-invoice-list">
-            {invoices.length === 0 ? <div className="empty-state-card">No invoices are available yet.</div> : null}
-            {invoices.map((invoice) => <article key={String(invoice.id)}><div><strong>{String(invoice.title ?? "Invoice")}</strong><span>{String(invoice.invoice_no ?? "")} • Due {String(invoice.due_date ?? "not set")}</span></div><div><strong>{money(invoiceBalance(invoice))}</strong><span className="status warn">{String(invoice.status ?? "PENDING")}</span></div></article>)}
-          </div>
+          {invoices.length === 0 ? (
+            <EmptyState
+              icon={<CreditCard size={22} />}
+              title="No invoices yet"
+              body="Invoices raised for your children will appear here with their due dates."
+            />
+          ) : (
+            <div className="portal-invoice-list">
+              {invoices.map((invoice) => {
+                const status = String(invoice.status ?? "PENDING");
+                return (
+                  <article key={String(invoice.id)}>
+                    <div>
+                      <strong>{String(invoice.title ?? "Invoice")}</strong>
+                      <span>{String(invoice.invoice_no ?? "")} • Due {formatDate(String(invoice.due_date ?? ""))}</span>
+                    </div>
+                    <div><strong>{formatNairaCompact(invoiceBalance(invoice))}</strong><Badge tone={invoiceTone(status)}>{invoiceLabel(status)}</Badge></div>
+                  </article>
+                );
+              })}
+            </div>
+          )}
         </div>
       </section>
 
