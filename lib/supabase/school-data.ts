@@ -1357,3 +1357,52 @@ export async function submitAttendanceRegister(
 
   return { saved: rows.length, unknown, date, period };
 }
+
+export type AuditEventRow = {
+  id: string;
+  actor_name: string | null;
+  actor_role: string | null;
+  action: string;
+  resource_type: string | null;
+  resource_id: string | null;
+  risk_level: string | null;
+  metadata: Record<string, unknown>;
+  created_at: string;
+};
+
+/**
+ * Recent audit events for the caller's school, newest first.
+ *
+ * An optional action prefix (or comma-separated prefixes) narrows the feed,
+ * so the finance desk can show invoice and payment activity without its own
+ * endpoint. Row level security scopes the feed to the caller's school.
+ */
+export async function listAuditEvents(client: SupabaseClient, prefixes?: string, limit = 100) {
+  let query = client
+    .from("audit_events")
+    .select("id,actor_name,actor_role,action,resource_type,resource_id,risk_level,metadata,created_at")
+    .order("created_at", { ascending: false })
+    .limit(Math.max(1, Math.min(limit, 200)));
+
+  const wanted = (prefixes ?? "").split(",").map((part) => part.trim()).filter(Boolean);
+  if (wanted.length === 1) {
+    query = query.like("action", `${wanted[0].replace(/[%_]/g, "")}%`);
+  } else if (wanted.length > 1) {
+    query = query.or(wanted.map((prefix) => `action.like.${prefix.replace(/[%_]/g, "")}%`).join(","));
+  }
+
+  const { data, error } = await query.returns<AuditEventRow[]>();
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function getAuditSummary(client: SupabaseClient) {
+  const events = await listAuditEvents(client, undefined, 200);
+  const today = new Date().toISOString().slice(0, 10);
+  return {
+    total: events.length,
+    today: events.filter((event) => event.created_at.slice(0, 10) === today).length,
+    highRisk: events.filter((event) => event.risk_level === "High").length,
+    needsReview: events.filter((event) => event.risk_level === "High" || event.risk_level === "Medium").length,
+  };
+}

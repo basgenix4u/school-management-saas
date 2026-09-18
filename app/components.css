@@ -685,3 +685,42 @@
     .dash-content { padding: var(--space-8) var(--space-8); }
   }
 }
+
+/* ---- Receipt ------------------------------------------------------ */
+@layer components {
+  .receipt-rows {
+    display: grid;
+    margin: 0 0 var(--space-4);
+  }
+  .receipt-rows > div {
+    display: flex;
+    justify-content: space-between;
+    gap: var(--space-4);
+    padding: var(--space-3) 0;
+    border-bottom: 1px solid var(--border-subtle);
+  }
+  .receipt-rows > div:last-child { border-bottom: 0; }
+  .receipt-rows dt {
+    margin: 0;
+    color: var(--ink-500);
+  }
+  .receipt-rows dd {
+    margin: 0;
+    font-weight: var(--weight-semibold);
+    text-align: right;
+    overflow-wrap: anywhere;
+  }
+  @media print {
+    .no-print,
+    .dash-sidebar,
+    .dash-topbar {
+      display: none !important;
+    }
+    .dash-shell { display: block; }
+    .dash-content {
+      max-width: none;
+      padding: 0;
+    }
+    .ui-card { box-shadow: none; }
+  }
+}
