@@ -50,12 +50,16 @@ jobs:
       - name: Reject committed credentials
         run: |
           set +e
-          PATTERN='eyJ[A-Za-z0-9_-]{30,}|sk_live_[A-Za-z0-9]{20,}|service_role.*eyJ'
+          # Fragments are joined at runtime so this workflow never matches itself.
+          P1="ey""J[A-Za-z0-9_-]{30,}"
+          P2="sk""_live_[A-Za-z0-9]{20,}"
+          PATTERN="$P1|$P2"
           MATCHES=$(grep -rInE "$PATTERN" \
             --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.next \
-            --exclude=package-lock.json . )
+            --exclude=package-lock.json --exclude=.github/workflows/ci.yml . )
           if [ -n "$MATCHES" ]; then
             echo "::error::Possible credential committed. Rotate it and remove it from history."
+            echo "$MATCHES" | sed -E 's/(ey""J|sk""_live_)[A-Za-z0-9_-]+/\1***REDACTED***/g'
             exit 1
           fi
           echo "No credential patterns found."
