@@ -1,8 +1,10 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
-import { configuredOrNull, createAnnouncement, getCommunicationSummary, listAnnouncements, listCommunicationDeliveries, type AnnouncementInput } from "@/lib/supabase/school-data";
+import { createAnnouncement, getCommunicationSummary, listAnnouncements, listCommunicationDeliveries, type AnnouncementInput } from "@/lib/supabase/school-data";
 
-export async function GET() {
-  const supabase = configuredOrNull();
+export const GET = withAuth("announcements.manage", async () => {
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", announcements: [], deliveries: [], summary: null, message: "Connect Supabase environment variables to manage communications." });
   try {
     const [announcements, deliveries, summary] = await Promise.all([listAnnouncements(supabase), listCommunicationDeliveries(supabase), getCommunicationSummary(supabase)]);
@@ -14,10 +16,10 @@ export async function GET() {
     }
     return NextResponse.json({ status: "error", message }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: NextRequest) {
-  const supabase = configuredOrNull();
+export const POST = withAuth("announcements.manage", async (request: NextRequest) => {
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before creating announcements." }, { status: 503 });
   const body = await request.json().catch(() => null) as Partial<AnnouncementInput> | null;
   if (!body?.title || !body?.body) return NextResponse.json({ status: "error", message: "Title and body are required." }, { status: 400 });
@@ -27,4 +29,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to create announcement" }, { status: 500 });
   }
-}
+});

@@ -32,9 +32,9 @@ export function IntelligenceCopilot() {
     <section className="copilot-card">
       <div className="copilot-orb"><Bot size={22} /></div>
       <div className="copilot-header">
-        <span className="premium-kicker"><Sparkles size={14} /> EduManage Intelligence</span>
-        <h2>AI-style school operations copilot</h2>
-        <p>Designed for instant answers across attendance, fees, academic performance and parent communication.</p>
+        <span className="premium-kicker"><Sparkles size={14} /> Insights</span>
+        <h2>Operations insights</h2>
+        <p>Patterns across attendance, fees and results, surfaced so decisions have a single view.</p>
       </div>
 
       <div className="copilot-answer">
@@ -43,7 +43,7 @@ export function IntelligenceCopilot() {
       </div>
 
       <div className="prompt-box">
-        <input value={prompt} onChange={(event) => setPrompt(event.target.value)} aria-label="Ask EduManage Intelligence" />
+        <input value={prompt} onChange={(event) => setPrompt(event.target.value)} aria-label="Ask Insights" />
         <button type="button" onClick={() => submitPrompt(prompt)} aria-label="Send prompt"><Send size={18} /></button>
       </div>
 

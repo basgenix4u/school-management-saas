@@ -1,0 +1,118 @@
+/**
+ * EduCore design tokens — the single source of truth for colour, type, spacing,
+ * radius, elevation and motion.
+ *
+ * Components reference these variables rather than literal values, so a change
+ * here propagates everywhere and contrast guarantees cannot be bypassed by a
+ * one-off hex in a component.
+ *
+ * Every text pair below was measured against WCAG 2.2 AA (4.5:1 body text,
+ * 3:1 interface boundaries). Recorded ratios sit beside each token.
+ */
+
+:root {
+  /* ---- Surfaces ---------------------------------------------------- */
+  --canvas: #f7f8fa;
+  --surface: #ffffff;
+  --surface-sunken: #f1f3f7;
+  --surface-inverse: #0b1524;
+
+  /* ---- Ink (text) -------------------------------------------------- */
+  --ink-900: #0b1524; /* 17.23:1 on canvas — headings */
+  --ink-700: #253449; /* 11.86:1 — body text */
+  --ink-500: #56637a; /* 5.71:1 canvas, 6.07:1 surface — secondary text */
+  --ink-inverse: #ffffff;
+
+  /* ---- Brand ------------------------------------------------------- */
+  /* Blue reads institutional in Nigerian education, government and banking. */
+  --primary-50: #eaf1fe;
+  --primary-100: #d3e1fd;
+  --primary-600: #1a56db; /* 6.18:1 against white, both directions */
+  --primary-700: #1541a8; /* 8.92:1 — hover and active */
+  --primary-900: #102f77;
+
+  /* ---- Status ------------------------------------------------------ */
+  /* Paired tints and foregrounds. Never the sole carrier of meaning. */
+  --success-50: #e6f6ee;
+  --success-700: #05603a; /* 6.85:1 on tint, 7.66:1 with white */
+  --warning-50: #fdf4e3;
+  --warning-700: #8a5300; /* 5.79:1 on tint, 6.33:1 with white */
+  --danger-50: #fdeceb;
+  --danger-700: #a52620; /* 7.25:1 with white */
+  --danger-800: #96231f; /* 7.19:1 on tint */
+  --info-50: #eaf1fe;
+  --info-700: #1e3a8a; /* 9.13:1 on tint */
+  --neutral-50: #f1f3f7;
+  --neutral-700: #3d4a5f;
+
+  /* ---- Borders ----------------------------------------------------- */
+  --border-strong: #7a8394; /* 3.82:1 surface, 3.59:1 canvas — meets 1.4.11 for inputs */
+  --border-subtle: #dde2e9; /* decorative separation only */
+
+  /* ---- Focus ------------------------------------------------------- */
+  --focus: #1a56db; /* 5.82:1 on canvas */
+  --focus-ring: 0 0 0 3px rgb(26 86 219 / 0.32);
+
+  /* ---- Typography -------------------------------------------------- */
+  /* System stack: no webfont download, which matters on metered mobile data. */
+  --font-sans: ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial, sans-serif;
+  --font-mono: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace;
+
+  --text-display: 2.75rem; /* 44px */
+  --text-h1: 2rem; /* 32px */
+  --text-h2: 1.5rem; /* 24px */
+  --text-h3: 1.1875rem; /* 19px */
+  --text-body-lg: 1.0625rem; /* 17px */
+  --text-body: 0.9375rem; /* 15px — floor for sustained reading on phones */
+  --text-small: 0.84375rem; /* 13.5px */
+  --text-caption: 0.78125rem; /* 12.5px — labels only, never paragraphs */
+
+  --leading-tight: 1.15;
+  --leading-snug: 1.3;
+  --leading-normal: 1.55;
+  --leading-relaxed: 1.7;
+
+  /* Capped at 700. Heavier numeric weights render as synthetic bold on
+     systems without the real face and look distorted. */
+  --weight-normal: 400;
+  --weight-medium: 500;
+  --weight-semibold: 600;
+  --weight-bold: 700;
+
+  /* ---- Spacing (4px grid) ------------------------------------------ */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+  --space-14: 3.5rem;
+  --space-18: 4.5rem;
+
+  /* ---- Radius ------------------------------------------------------ */
+  /* Restrained curvature reads institutional; very round corners read consumer. */
+  --radius-sm: 8px;
+  --radius-md: 12px;
+  --radius-lg: 16px;
+  --radius-xl: 20px;
+  --radius-pill: 999px;
+
+  /* ---- Elevation --------------------------------------------------- */
+  --shadow-card: 0 1px 2px rgb(11 21 36 / 0.04), 0 4px 12px rgb(11 21 36 / 0.06);
+  --shadow-float: 0 8px 24px rgb(11 21 36 / 0.1), 0 2px 6px rgb(11 21 36 / 0.06);
+
+  /* ---- Motion ------------------------------------------------------ */
+  /* Kept under the 400ms Doherty threshold so the interface never feels laggy. */
+  --motion-fast: 120ms;
+  --motion-base: 180ms;
+  --motion-slow: 260ms;
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+
+  /* ---- Layout ------------------------------------------------------ */
+  --content-max: 1200px;
+  --sidebar-width: 264px;
+  --topbar-height: 64px;
+  --tap-target: 44px; /* minimum touch target */
+}

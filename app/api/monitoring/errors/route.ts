@@ -1,9 +1,10 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { NextRequest, NextResponse } from "next/server";
-import { configuredOrNull, listAppErrors, recordAppError, type ErrorEventInput } from "@/lib/supabase/school-data";
+import { listAppErrors, recordAppError, type ErrorEventInput } from "@/lib/supabase/school-data";
 import { getAppSession } from "@/lib/auth/session";
 
 export async function GET() {
-  const supabase = configuredOrNull();
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", errors: [] });
   try {
     const errors = await listAppErrors(supabase);
@@ -14,7 +15,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = configuredOrNull();
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured" }, { status: 503 });
   const session = await getAppSession();
   const body = await request.json().catch(() => null) as Partial<ErrorEventInput> | null;

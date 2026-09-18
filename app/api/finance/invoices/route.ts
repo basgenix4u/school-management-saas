@@ -1,8 +1,10 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
-import { configuredOrNull, createLiveInvoice, InvoiceCreateInput, listLiveInvoices } from "@/lib/supabase/school-data";
+import { createLiveInvoice, InvoiceCreateInput, listLiveInvoices } from "@/lib/supabase/school-data";
 
-export async function GET() {
-  const supabase = configuredOrNull();
+export const GET = withAuth("fees.view", async () => {
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", source: "none", data: [], message: "Connect Supabase environment variables to load invoices." });
 
   try {
@@ -11,10 +13,10 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load invoices" }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: NextRequest) {
-  const supabase = configuredOrNull();
+export const POST = withAuth("fees.manage", async (request: NextRequest) => {
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before creating invoices." }, { status: 503 });
 
   const body = await request.json().catch(() => null) as Partial<InvoiceCreateInput> | null;
@@ -26,4 +28,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to create invoice" }, { status: 500 });
   }
-}
+});

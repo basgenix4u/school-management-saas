@@ -1,9 +1,14 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
-import { configuredOrNull, getReceiptByReference } from "@/lib/supabase/school-data";
+import { getReceiptByReference } from "@/lib/supabase/school-data";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ reference: string }> }) {
+type RouteParams = { params: Promise<{ reference: string }> };
+
+
+export const GET = withAuth<RouteParams>("fees.view", async (_request: Request, _context, { params }) => {
   const { reference } = await params;
-  const supabase = configuredOrNull();
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Database is not configured." }, { status: 503 });
   try {
     const receipt = await getReceiptByReference(supabase, reference);
@@ -12,4 +17,4 @@ export async function GET(_request: Request, { params }: { params: Promise<{ ref
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to load receipt" }, { status: 500 });
   }
-}
+});

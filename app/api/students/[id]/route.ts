@@ -1,33 +1,63 @@
-import { NextRequest, NextResponse } from "next/server";
-import { configuredOrNull, getOrganization, getStudentByAdmission, updateLiveStudent, StudentCreateInput } from "@/lib/supabase/school-data";
+import { NextResponse, type NextRequest } from "next/server";
+import { withAuth, type AuthedContext } from "@/lib/auth/api-guard";
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { getStudentByAdmission, updateLiveStudent, type StudentCreateInput } from "@/lib/supabase/school-data";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+type RouteParams = { params: Promise<{ id: string }> };
+
+const NOT_CONFIGURED = "Connect Supabase environment variables to load student records.";
+
+export const GET = withAuth<RouteParams>("students.manage", async (_request, context: AuthedContext, { params }) => {
   const { id } = await params;
-  const supabase = configuredOrNull();
-  if (!supabase) return NextResponse.json({ status: "not_configured", source: "none", message: "Connect Supabase environment variables to load student records." }, { status: 503 });
+  const supabase = await requestClientOrNull();
+  if (!supabase) {
+    return NextResponse.json({ status: "not_configured", source: "none", message: NOT_CONFIGURED }, { status: 503 });
+  }
 
   try {
-    const organization = await getOrganization(supabase);
-    const student = await getStudentByAdmission(supabase, organization.id, id.toUpperCase());
-    if (!student) return NextResponse.json({ status: "error", source: "supabase", message: "Student not found" }, { status: 404 });
+    // Scoped to the caller's school. A record belonging to another school is
+    // reported as not found rather than forbidden, so the response cannot be
+    // used to test whether an admission number exists elsewhere.
+    const student = await getStudentByAdmission(supabase, context.organizationId, id.toUpperCase());
+    if (!student) {
+      return NextResponse.json({ status: "error", source: "supabase", message: "Student not found" }, { status: 404 });
+    }
     return NextResponse.json({ status: "ok", source: "supabase", data: student });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load student" }, { status: 500 });
+    return NextResponse.json(
+      { status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load student" },
+      { status: 500 },
+    );
   }
-}
+});
 
-export async function PATCH(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export const PATCH = withAuth<RouteParams>("students.manage", async (request: NextRequest, context: AuthedContext, { params }) => {
   const { id } = await params;
-  const supabase = configuredOrNull();
-  if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before updating students." }, { status: 503 });
+  const supabase = await requestClientOrNull();
+  if (!supabase) {
+    return NextResponse.json({ status: "not_configured", message: NOT_CONFIGURED }, { status: 503 });
+  }
 
-  const body = await request.json().catch(() => null) as Partial<StudentCreateInput> | null;
-  if (!body) return NextResponse.json({ status: "error", message: "Invalid JSON body." }, { status: 400 });
+  const body = (await request.json().catch(() => null)) as Partial<StudentCreateInput> | null;
+  if (!body) {
+    return NextResponse.json({ status: "error", message: "Invalid JSON body." }, { status: 400 });
+  }
+
+  const admissionNo = id.toUpperCase();
 
   try {
-    const student = await updateLiveStudent(supabase, id.toUpperCase(), body);
+    // Confirm the record belongs to the caller's school before writing.
+    const existing = await getStudentByAdmission(supabase, context.organizationId, admissionNo);
+    if (!existing) {
+      return NextResponse.json({ status: "error", source: "supabase", message: "Student not found" }, { status: 404 });
+    }
+
+    const student = await updateLiveStudent(supabase, admissionNo, body);
     return NextResponse.json({ status: "updated", source: "supabase", data: student });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to update student" }, { status: 500 });
+    return NextResponse.json(
+      { status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to update student" },
+      { status: 500 },
+    );
   }
-}
+});

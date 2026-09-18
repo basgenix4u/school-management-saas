@@ -1,35 +1,56 @@
-import { NextRequest, NextResponse } from "next/server";
-import { configuredOrNull, createLiveStudent, listLiveStudents, StudentCreateInput } from "@/lib/supabase/school-data";
+import { NextResponse, type NextRequest } from "next/server";
+import { withAuth } from "@/lib/auth/api-guard";
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { createLiveStudent, listLiveStudents, type StudentCreateInput } from "@/lib/supabase/school-data";
 
-export async function GET() {
-  const supabase = configuredOrNull();
+const NOT_CONFIGURED = "Connect Supabase environment variables to load student records.";
+
+export const GET = withAuth("students.manage", async () => {
+  const supabase = await requestClientOrNull();
   if (!supabase) {
-    return NextResponse.json({ status: "not_configured", source: "none", summary: { total: 0, highRisk: 0, withBalance: 0 }, data: [], message: "Connect Supabase environment variables to load student records." });
+    return NextResponse.json({
+      status: "not_configured",
+      source: "none",
+      summary: { total: 0, highRisk: 0, withBalance: 0 },
+      data: [],
+      message: NOT_CONFIGURED,
+    });
   }
 
   try {
+    // Rows are filtered by row level security against the caller's school, so
+    // no organisation filter is applied here.
     const result = await listLiveStudents(supabase);
     return NextResponse.json({ status: "ok", source: "supabase", ...result });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load students" }, { status: 500 });
+    return NextResponse.json(
+      { status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load students" },
+      { status: 500 },
+    );
   }
-}
+});
 
-export async function POST(request: NextRequest) {
-  const supabase = configuredOrNull();
+export const POST = withAuth("students.manage", async (request: NextRequest) => {
+  const supabase = await requestClientOrNull();
   if (!supabase) {
-    return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before creating students." }, { status: 503 });
+    return NextResponse.json({ status: "not_configured", message: NOT_CONFIGURED }, { status: 503 });
   }
 
-  const body = await request.json().catch(() => null) as Partial<StudentCreateInput> | null;
+  const body = (await request.json().catch(() => null)) as Partial<StudentCreateInput> | null;
   if (!body?.firstName || !body?.lastName || !body?.admissionNo) {
-    return NextResponse.json({ status: "error", message: "firstName, lastName and admissionNo are required." }, { status: 400 });
+    return NextResponse.json(
+      { status: "error", message: "firstName, lastName and admissionNo are required." },
+      { status: 400 },
+    );
   }
 
   try {
     const student = await createLiveStudent(supabase, body as StudentCreateInput);
     return NextResponse.json({ status: "created", source: "supabase", data: student }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to create student" }, { status: 500 });
+    return NextResponse.json(
+      { status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to create student" },
+      { status: 500 },
+    );
   }
-}
+});

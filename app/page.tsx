@@ -1,6 +1,6 @@
 import Link from "next/link";
 import { Logo } from "@/components/Logo";
-import { ArrowRight, CheckCircle2 } from "lucide-react";
+import {} from "lucide-react";
 
 export default function Landing() {
   return (

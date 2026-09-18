@@ -1,9 +1,11 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
 import { announcementHtml, hasResendConfig, sendEmail } from "@/lib/email/resend";
-import { configuredOrNull, recordCommunicationDelivery } from "@/lib/supabase/school-data";
+import { recordCommunicationDelivery } from "@/lib/supabase/school-data";
 
-export async function POST(request: NextRequest) {
-  const supabase = configuredOrNull();
+export const POST = withAuth("announcements.manage", async (request: NextRequest) => {
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Database is not configured." }, { status: 503 });
   if (!hasResendConfig()) return NextResponse.json({ status: "not_configured", message: "Email delivery is not configured. Add RESEND_API_KEY and EMAIL_FROM to Vercel environment variables." }, { status: 503 });
 
@@ -26,4 +28,4 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to send email" }, { status: 500 });
   }
-}
+});

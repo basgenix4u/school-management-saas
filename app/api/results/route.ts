@@ -1,8 +1,10 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
-import { configuredOrNull, listLiveResults, ResultUpsertInput, upsertLiveResult } from "@/lib/supabase/school-data";
+import { listLiveResults, ResultUpsertInput, upsertLiveResult } from "@/lib/supabase/school-data";
 
-export async function GET() {
-  const supabase = configuredOrNull();
+export const GET = withAuth("results.view", async () => {
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", source: "none", data: [], message: "Connect Supabase environment variables to load results." });
 
   try {
@@ -11,10 +13,10 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load results" }, { status: 500 });
   }
-}
+});
 
-export async function POST(request: NextRequest) {
-  const supabase = configuredOrNull();
+export const POST = withAuth("results.manage", async (request: NextRequest) => {
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before saving results." }, { status: 503 });
 
   const body = await request.json().catch(() => null) as Partial<ResultUpsertInput> | null;
@@ -28,4 +30,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to save result" }, { status: 500 });
   }
-}
+});

@@ -1,250 +1,189 @@
-# EduCore — School Management SaaS
+# EduCore — School Management Platform
 
-EduCore is a premium full-stack SaaS school management platform for modern schools and academies. It delivers clean, powerful tools for student lifecycle, attendance, results, fees, parent engagement and institutional intelligence.
+EduCore is a multi-tenant school management platform built for Nigerian institutions —
+primary and secondary schools, colleges, polytechnics and universities. It replaces paper
+registers, scattered spreadsheets and ad-hoc messaging with one system for admissions,
+attendance, results, fees and parent communication.
 
-**Founder & Author:** Abdulbasit Abdulalim  
-**Co-Founder & Technical Architect:** Arena AI Agent
+**Author:** Abdulbasit Abdulalim
 
 - GitHub: https://github.com/basgenix4u
-- Portfolio: https://alimswrite.com
+- Website: https://alimswrite.com
 
 [![Next.js](https://img.shields.io/badge/Next.js-black?style=for-the-badge&logo=next.js)](https://nextjs.org)
 [![TypeScript](https://img.shields.io/badge/TypeScript-3178C6?style=for-the-badge&logo=typescript&logoColor=white)](https://www.typescriptlang.org)
-[![Supabase](https://img.shields.io/badge/Auth-Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
-[![Prisma](https://img.shields.io/badge/ORM-Prisma-2D3748?style=for-the-badge&logo=prisma&logoColor=white)](https://www.prisma.io)
-[![PostgreSQL](https://img.shields.io/badge/DB-PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
+[![Supabase](https://img.shields.io/badge/Supabase-3FCF8E?style=for-the-badge&logo=supabase&logoColor=white)](https://supabase.com)
+[![PostgreSQL](https://img.shields.io/badge/PostgreSQL-4169E1?style=for-the-badge&logo=postgresql&logoColor=white)](https://www.postgresql.org)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow?style=for-the-badge)](./LICENSE)
 
+---
+
+## The problem
+
+Nigerian schools lose time and money to administration that runs on paper. Attendance sits in
+hardcover registers, results are compiled by hand each term, fee balances live in a bursar's
+spreadsheet, and parents learn about arrears when a child is sent home. Existing software is
+usually priced for Western schools, assumes reliable broadband, and does not model Nigerian
+academic structure.
+
+EduCore is built for the way Nigerian schools actually operate: terms and sessions rather than
+semesters, continuous assessment alongside examinations, naira invoicing with Paystack, and a
+mobile-first parent experience that works on a modest phone and an intermittent connection.
 
 ---
 
-## Why This Project Exists
+## Built for Nigerian institutions
 
-Many schools still manage operations with paper records, spreadsheets and scattered WhatsApp messages. EduCore provides a structured SaaS foundation that can be extended into a real commercial school management product.
-
-This repository demonstrates advanced full-stack skills for client-facing software:
-
-- Multi-tenant SaaS data modelling
-- Admin dashboards
-- Student and teacher management
-- Attendance workflows
-- Results/report-card workflows
-- Fees, invoices and payment-ready architecture
-- Role-based access planning
-- Production documentation and deployment readiness
+- **Academic structure** — three terms per session, sessions written `2025/2026`, CA and exam
+  score components, class structures from nursery through tertiary.
+- **Roles that match a real school** — Proprietor, Principal, Teacher, Bursar, Parent, Student.
+- **Naira throughout** — invoices, receipts and reports all in `₦`, never bare numbers.
+- **Low-bandwidth first** — server-rendered pages, no webfont downloads, small payloads.
+- **Phone-number tolerant** — accepts `08031234567`, `+234 803 123 4567` or `234-803-123-4567`
+  and stores one normalised form.
 
 ---
 
-## Current Features
+## Architecture
 
-- Professional landing page
-- Premium executive command-center dashboard
-- AI-style intelligence copilot experience
-- Workspace onboarding launch flow
-- Premium login and role-based access matrix
-- Supabase Auth foundation with protected routes
-- Audit trail and trust center experience
-- Student 360 directory and profile experience
-- Teacher daily workspace and smart attendance marking
-- Attendance overview
-- Results command center and report card designer
-- Premium finance command center and invoice intelligence
-- Health API endpoint at `/api/health`
-- Prisma/PostgreSQL schema for SaaS school operations
-- Supabase production schema migration, demo seed data, intelligence views and CRUD API layer
-- Live UI wiring for Student 360, Finance, Attendance and Results modules
-- Seed script foundation
-- CI workflow
-- Security, contribution and architecture documentation
-- Launch-grade public pages: contact, support, FAQ, pricing, privacy, terms and security
-- Professional brand assets and design system documentation
-
----
-
-## Tech Stack
-
-| Area | Technologies |
+| Layer | Technology |
 | --- | --- |
-| Frontend | Next.js, React, TypeScript |
-| Styling | Tailwind CSS, custom design system |
-| Database | PostgreSQL |
-| ORM | Prisma |
-| Auth Foundation | Role-based architecture planned |
-| Email | Resend-ready |
-| Payments | Paystack/Stripe-ready placeholders |
-| UI | Lucide Icons, custom dashboard components |
-| Deployment | Vercel-ready |
+| Framework | Next.js 16 (App Router), React 19 |
+| Language | TypeScript, strict mode |
+| Styling | Tailwind CSS v4 with a token-based design system |
+| Database | PostgreSQL via Supabase |
+| Authentication | Supabase Auth with cookie sessions |
+| Authorisation | Role-based permissions plus PostgreSQL row level security |
+| Payments | Paystack |
+| Email | Resend |
+| Documents | PDFKit for report cards and receipts |
+
+### Security model
+
+Authorisation is enforced at three independent layers, so no single mistake exposes data:
+
+1. **Proxy** (`proxy.ts`) — establishes a session and blocks anonymous access to `/dashboard`
+   and `/portal`.
+2. **Application** — `withAuth(permission, handler)` guards every route handler, and the
+   dashboard layout checks the permission required for the requested area. Both deny by default.
+3. **Database** — row level security scopes every row to the caller's school. Requests use a
+   session-scoped client, so a forgotten filter cannot leak another school's records.
+
+The service role key bypasses row level security and is therefore restricted to contexts with
+no user session: Paystack webhooks, invitation acceptance and first-owner setup. CI fails the
+build if it appears anywhere else.
 
 ---
 
-## Project Structure
+## Getting started
 
-```txt
-app/                    Next.js app routes, dashboard pages and API routes
-components/             Reusable UI and layout components
-lib/                    Demo data and future utilities
-prisma/                 Prisma schema and seed script
-docs/                   Architecture, UX strategy and product documentation
-public/screenshots/     Screenshots for portfolio/demo assets
-.github/workflows/      GitHub Actions CI
-```
+### Prerequisites
 
----
+- Node.js 22 or newer
+- A Supabase project
 
-## Getting Started
-
-### 1. Clone the repository
+### 1. Install
 
 ```bash
 git clone https://github.com/basgenix4u/school-management-saas.git
 cd school-management-saas
-```
-
-### 2. Install dependencies
-
-```bash
 npm install
 ```
 
-### 3. Configure environment variables
+### 2. Configure environment
 
 ```bash
 cp .env.example .env.local
 ```
 
-Update `DATABASE_URL`, auth secret, email and payment keys.
+Set `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_ANON_KEY` and
+`SUPABASE_SERVICE_ROLE_KEY`. Paystack and Resend keys are optional in development; without
+them the related features report that they are unconfigured rather than failing.
 
-### 4. Generate Prisma client
+### 3. Apply database migrations
 
-```bash
-npm run db:generate
-```
+Run the files in `supabase/migrations/` in filename order against your Supabase project, using
+the SQL editor or the Supabase CLI. They are the single source of truth for the schema,
+including row level security policies, triggers and reporting views.
 
-### 5. Push schema to database
-
-```bash
-npm run db:push
-```
-
-### 6. Seed demo data
-
-```bash
-npm run db:seed
-```
-
-### 7. Run locally
+### 4. Run
 
 ```bash
 npm run dev
 ```
 
-Run full local checks:
-
-```bash
-npm run check
-```
-
 Open http://localhost:3000.
 
----
+### Verify before pushing
 
-## Demo Routes
-
-```txt
-/                       Landing page
-/dashboard              Executive command center
-/dashboard/setup        First-run school setup wizard
-/dashboard/users        User invitations and access management
-/dashboard/intelligence Intelligence center and AI-style copilot
-/dashboard/onboarding   Workspace launch onboarding
-/dashboard/launch       Production launch center
-/dashboard/database     Supabase database control room
-/dashboard/communications Communication center
-/dashboard/communications/campaigns Campaign manager
-/dashboard/access       Role-based access control matrix
-/dashboard/audit        Audit trail and sensitive action monitoring
-/dashboard/trust        Trust center and security posture
-/login                  Supabase Auth login experience
-/auth/callback          Supabase Auth callback
-/portal/parent          Parent portal
-/portal/student         Student portal
-/dashboard/students     Student 360 directory
-/dashboard/students/[id]  Student 360 profile
-/dashboard/teachers     Teacher management
-/dashboard/teacher-desk Teacher daily workspace
-/dashboard/attendance/mark Smart attendance marking
-/dashboard/attendance   Attendance overview
-/dashboard/results      Results command center
-/dashboard/results/entry Score entry matrix
-/dashboard/results/publish Result publishing and locking
-/dashboard/results/report-card/[student] Report card preview
-/dashboard/fees         Finance command center
-/dashboard/fees/invoices Invoice intelligence board
-/dashboard/fees/[invoice] Invoice detail workspace
-/api/health             Health check API
+```bash
+npm run check   # lint, typecheck, tests, production build
 ```
 
 ---
 
-## Premium UX Documentation
+## Project structure
 
-See `docs/UX_STRATEGY.md` for the product experience direction and high-end UX roadmap.
+```txt
+app/                  Routes, pages and API handlers
+  api/                Route handlers, each guarded by withAuth
+  dashboard/          Staff workspace; layout enforces per-area permissions
+  portal/             Parent and student portals
+components/           UI components grouped by domain
+lib/
+  auth/               Session, permissions and the API authorisation guard
+  supabase/           Request-scoped and service-role clients, data access
+  format.ts           Naira, date, phone and academic session formatting
+  rbac.ts             Roles and permissions
+supabase/migrations/  Schema, row level security, triggers and views
+tests/                Authorisation, role boundary and formatting tests
+docs/                 Architecture, design system and operational guides
+```
 
-See `docs/AUTH_RBAC.md` for authentication and role-based access architecture. Demo credentials are documented there for development/testing.
+---
 
-See `docs/SUPABASE_SETUP.md` for Supabase database setup and migration details.
+## Testing
 
-See `docs/REMAINING_FEATURES.md` for the full production roadmap.
+```bash
+npm run test        # authorisation coverage, role boundaries, formatting
+npm run test:smoke  # HTTP smoke test against a running instance
+```
 
-See `docs/DEPLOYMENT_TESTING.md` for Vercel deployment, Supabase setup and QA testing steps.
+The security suite asserts that every route handler authorises unless it appears on an
+explicit, documented public list, and that user-facing routes never use the row-level-security
+bypass. Adding an unguarded endpoint fails the build.
 
-See `docs/PRODUCT_UX_AUDIT.md` for the full product UX audit and conversion strategy.
+---
 
-See `docs/DESIGN_SYSTEM.md` for typography, color, component and layout standards.
+## Documentation
 
-See `docs/BRAND_ASSET_PROMPTS.md` for logo and marketing image generation prompts.
-
-See `docs/IMAGE_ASSET_AUDIT.md` for uploaded image placement, usage and performance guidance.
+| Document | Purpose |
+| --- | --- |
+| `docs/ARCHITECTURE.md` | System design and data flow |
+| `docs/AUTH_RBAC.md` | Authentication and the permission matrix |
+| `docs/DESIGN_SYSTEM.md` | Tokens, typography, colour and components |
+| `docs/SUPABASE_SETUP.md` | Database provisioning and migrations |
+| `docs/DEPLOYMENT_TESTING.md` | Deployment and QA procedure |
+| `docs/REMAINING_FEATURES.md` | Product roadmap |
 
 ---
 
 ## Roadmap
 
-- Connect command center to live database metrics
-- Supabase-backed CRUD for students, attendance, invoices and results
-- Authentication and role-based access control
-- Multi-school workspace onboarding
-- Student enrollment forms
-- Premium parent and student portals
-- Premium score entry and report card designer
-- Smart attendance marking workflow
-- Report card PDF generation
-- Fee payment integration with Paystack
-- Communication center and campaign manager
-- Email/SMS reminders
-- Audit logs
-- Real command palette and keyboard shortcuts
-- Admin analytics charts
-- Automated tests
-- Production launch center
-- Production deployment
+Delivered: authentication, role-based authorisation, row level security, student records,
+attendance, results with report card PDFs, fee invoicing, Paystack payments with receipts,
+parent and student portals, announcements, audit logging and the setup wizard.
+
+Next: teacher timetables, period-based attendance, bulk result import, SMS reminders,
+subscription billing for schools, and an offline-tolerant attendance mode.
 
 ---
 
-## Security Notes
+## Security
 
-- Do not commit real `.env` files.
-- Protect student and parent data with strict role-based permissions.
-- Encrypt or hash sensitive credentials.
-- Use audit logs for finance and result changes.
-- Add authentication before connecting real school data.
+Report vulnerabilities privately using the process in [SECURITY.md](./SECURITY.md).
+Never commit `.env` files or service role keys.
 
----
+## Licence
 
-## Author
-
-Built and maintained by **Abdulbasit Abdulalim** — Full-stack Software Developer and Founder of **ALIM CREATIVE**.
-
-- GitHub: https://github.com/basgenix4u
-- Website: https://alimswrite.com
-- LinkedIn: https://www.linkedin.com/in/abdulbasit-abdulalim-94a701354
+MIT — see [LICENSE](./LICENSE).

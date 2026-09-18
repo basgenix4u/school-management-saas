@@ -1,8 +1,9 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
-import { configuredOrNull } from "@/lib/supabase/school-data";
 
-export async function GET() {
-  const supabase = configuredOrNull();
+export const GET = withAuth("analytics.view", async () => {
+  const supabase = await requestClientOrNull();
   if (!supabase) {
     return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables to load command center data." }, { status: 503 });
   }
@@ -14,4 +15,4 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json({ status: "error", source: "supabase-view", message: error instanceof Error ? error.message : "Failed to load command center" }, { status: 500 });
   }
-}
+});

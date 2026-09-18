@@ -1,7 +1,8 @@
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient, hasSupabaseConfig } from "@/lib/supabase/server";
 
-export async function GET() {
+export const GET = withAuth("workspace.manage", async () => {
   if (!hasSupabaseConfig()) {
     return NextResponse.json({
       status: "not_configured",
@@ -17,4 +18,4 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
   }
-}
+});

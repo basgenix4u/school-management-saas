@@ -1,8 +1,10 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
-import { configuredOrNull, getOrganizationForWrite, TeacherSetupInput, upsertTeachers } from "@/lib/supabase/school-data";
+import { getOrganizationForWrite, TeacherSetupInput, upsertTeachers } from "@/lib/supabase/school-data";
 
-export async function POST(request: NextRequest) {
-  const supabase = configuredOrNull();
+export const POST = withAuth("teachers.manage", async (request: NextRequest) => {
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before saving staff." }, { status: 503 });
   const body = await request.json().catch(() => null) as { teachers?: TeacherSetupInput[] } | null;
   if (!body?.teachers?.length) return NextResponse.json({ status: "error", message: "At least one staff member is required." }, { status: 400 });
@@ -13,4 +15,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to save staff" }, { status: 500 });
   }
-}
+});
