@@ -167,7 +167,7 @@ export async function listLiveStudents(client: SupabaseClient) {
   };
 }
 
-export async function createLiveStudent(client: SupabaseClient, input: StudentCreateInput) {
+export async function createLiveStudent(client: SupabaseClient, input: StudentCreateInput, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const classroom = await getClassroomByName(client, organization.id, input.className);
   const payload = {
@@ -186,11 +186,11 @@ export async function createLiveStudent(client: SupabaseClient, input: StudentCr
   const { data, error } = await client.from("students").upsert(payload, { onConflict: "organization_id,admission_no" }).select("*").single<StudentRow>();
   if (error) throw error;
   await linkExistingUsersForStudent(client, data).catch(() => []);
-  await writeAuditEvent(client, { organizationId: data.organization_id, action: "student.upsert", resourceType: "student", resourceId: data.id, riskLevel: "Medium", metadata: { admissionNo: data.admission_no } });
+  await writeAuditEvent(client, { organizationId: data.organization_id, ...actorFields(actor), action: "student.upsert", resourceType: "student", resourceId: data.id, riskLevel: "Medium", metadata: { admissionNo: data.admission_no } });
   return data;
 }
 
-export async function updateLiveStudent(client: SupabaseClient, admissionNo: string, changes: Partial<StudentCreateInput>) {
+export async function updateLiveStudent(client: SupabaseClient, admissionNo: string, changes: Partial<StudentCreateInput>, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const classroom = await getClassroomByName(client, organization.id, changes.className);
   const payload: Record<string, string | null> = {};
@@ -212,7 +212,7 @@ export async function updateLiveStudent(client: SupabaseClient, admissionNo: str
     .select("*")
     .single<StudentRow>();
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId: data.organization_id, action: "student.update", resourceType: "student", resourceId: data.id, riskLevel: "Medium", metadata: { admissionNo: data.admission_no } });
+  await writeAuditEvent(client, { organizationId: data.organization_id, ...actorFields(actor), action: "student.update", resourceType: "student", resourceId: data.id, riskLevel: "Medium", metadata: { admissionNo: data.admission_no } });
   return data;
 }
 
@@ -226,7 +226,7 @@ export async function listLiveAttendance(client: SupabaseClient) {
   return data ?? [];
 }
 
-export async function createLiveAttendance(client: SupabaseClient, input: AttendanceCreateInput) {
+export async function createLiveAttendance(client: SupabaseClient, input: AttendanceCreateInput, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
   if (!student) throw new Error(`Student ${input.admissionNo} not found`);
@@ -241,7 +241,7 @@ export async function createLiveAttendance(client: SupabaseClient, input: Attend
   };
   const { data, error } = await client.from("attendance_records").upsert(payload, { onConflict: "student_id,attendance_date,period" }).select("*").single();
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId: data.organization_id, action: "attendance.upsert", resourceType: "attendance", resourceId: data.id, metadata: { status: data.status } });
+  await writeAuditEvent(client, { organizationId: data.organization_id, ...actorFields(actor), action: "attendance.upsert", resourceType: "attendance", resourceId: data.id, metadata: { status: data.status } });
   return data;
 }
 
@@ -265,7 +265,7 @@ export async function getLiveInvoice(client: SupabaseClient, invoiceNo: string) 
   return data;
 }
 
-export async function createLiveInvoice(client: SupabaseClient, input: InvoiceCreateInput) {
+export async function createLiveInvoice(client: SupabaseClient, input: InvoiceCreateInput, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
   if (!student) throw new Error(`Student ${input.admissionNo} not found`);
@@ -282,7 +282,7 @@ export async function createLiveInvoice(client: SupabaseClient, input: InvoiceCr
   };
   const { data, error } = await client.from("invoices").insert(payload).select("*").single<InvoiceRow>();
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId: data.organization_id, action: "invoice.create", resourceType: "invoice", resourceId: data.id, riskLevel: "Medium", metadata: { invoiceNo: data.invoice_no, amount: data.amount } });
+  await writeAuditEvent(client, { organizationId: data.organization_id, ...actorFields(actor), action: "invoice.create", resourceType: "invoice", resourceId: data.id, riskLevel: "Medium", metadata: { invoiceNo: data.invoice_no, amount: data.amount } });
   return data;
 }
 
@@ -328,7 +328,7 @@ export async function getLiveResultByStudent(client: SupabaseClient, admissionNo
   return { student, results: data ?? [] };
 }
 
-export async function upsertLiveResult(client: SupabaseClient, input: ResultUpsertInput) {
+export async function upsertLiveResult(client: SupabaseClient, input: ResultUpsertInput, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
   if (!student) throw new Error(`Student ${input.admissionNo} not found`);
@@ -354,7 +354,7 @@ export async function upsertLiveResult(client: SupabaseClient, input: ResultUpse
     .select("*")
     .single<ResultRow>();
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId: data.organization_id, action: "result.upsert", resourceType: "result", resourceId: data.id, riskLevel: "Medium", metadata: { term: data.term, session: data.session, total: data.total_score } });
+  await writeAuditEvent(client, { organizationId: data.organization_id, ...actorFields(actor), action: "result.upsert", resourceType: "result", resourceId: data.id, riskLevel: "Medium", metadata: { term: data.term, session: data.session, total: data.total_score } });
   return data;
 }
 
@@ -454,7 +454,7 @@ export async function getOrganizationForWrite(client: SupabaseClient, organizati
   throw new Error("Create a school profile before adding records.");
 }
 
-export async function upsertOrganization(client: SupabaseClient, input: OrganizationSetupInput) {
+export async function upsertOrganization(client: SupabaseClient, input: OrganizationSetupInput, actor?: ActorInput) {
   const slug = input.slug ? slugify(input.slug) : slugify(input.name);
   const { data, error } = await client.from("organizations").upsert({
     name: input.name,
@@ -465,11 +465,11 @@ export async function upsertOrganization(client: SupabaseClient, input: Organiza
     active: true,
   }, { onConflict: "slug" }).select("id,name,slug").single<OrganizationRow>();
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId: data.id, action: "organization.upsert", resourceType: "organization", resourceId: data.id, riskLevel: "Medium", metadata: { slug: data.slug } });
+  await writeAuditEvent(client, { organizationId: data.id, ...actorFields(actor), action: "organization.upsert", resourceType: "organization", resourceId: data.id, riskLevel: "Medium", metadata: { slug: data.slug } });
   return data;
 }
 
-export async function upsertAcademicSession(client: SupabaseClient, organizationId: string, input: AcademicSessionInput) {
+export async function upsertAcademicSession(client: SupabaseClient, organizationId: string, input: AcademicSessionInput, actor?: ActorInput) {
   const { data, error } = await client.from("academic_sessions").upsert({
     organization_id: organizationId,
     name: input.name,
@@ -479,11 +479,11 @@ export async function upsertAcademicSession(client: SupabaseClient, organization
     active: true,
   }, { onConflict: "organization_id,name" }).select("*").single();
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId, action: "academic_session.upsert", resourceType: "academic_session", resourceId: data.id, metadata: { name: input.name, currentTerm: input.currentTerm } });
+  await writeAuditEvent(client, { organizationId, ...actorFields(actor), action: "academic_session.upsert", resourceType: "academic_session", resourceId: data.id, metadata: { name: input.name, currentTerm: input.currentTerm } });
   return data;
 }
 
-export async function upsertClassrooms(client: SupabaseClient, organizationId: string, classes: ClassroomSetupInput[]) {
+export async function upsertClassrooms(client: SupabaseClient, organizationId: string, classes: ClassroomSetupInput[], actor?: ActorInput) {
   const rows = classes.filter((item) => item.name).map((item) => ({
     organization_id: organizationId,
     name: item.name,
@@ -494,11 +494,11 @@ export async function upsertClassrooms(client: SupabaseClient, organizationId: s
   if (!rows.length) return [];
   const { data, error } = await client.from("classrooms").upsert(rows, { onConflict: "organization_id,name" }).select("*");
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId, action: "classrooms.upsert_bulk", resourceType: "classrooms", riskLevel: "Medium", metadata: { count: rows.length } });
+  await writeAuditEvent(client, { organizationId, ...actorFields(actor), action: "classrooms.upsert_bulk", resourceType: "classrooms", riskLevel: "Medium", metadata: { count: rows.length } });
   return data ?? [];
 }
 
-export async function upsertTeachers(client: SupabaseClient, organizationId: string, teachers: TeacherSetupInput[]) {
+export async function upsertTeachers(client: SupabaseClient, organizationId: string, teachers: TeacherSetupInput[], actor?: ActorInput) {
   const rows = teachers.filter((item) => item.staffNo && item.name).map((item) => ({
     organization_id: organizationId,
     staff_no: item.staffNo,
@@ -512,11 +512,11 @@ export async function upsertTeachers(client: SupabaseClient, organizationId: str
   if (!rows.length) return [];
   const { data, error } = await client.from("teachers").upsert(rows, { onConflict: "organization_id,staff_no" }).select("*");
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId, action: "teachers.upsert_bulk", resourceType: "teachers", riskLevel: "Medium", metadata: { count: rows.length } });
+  await writeAuditEvent(client, { organizationId, ...actorFields(actor), action: "teachers.upsert_bulk", resourceType: "teachers", riskLevel: "Medium", metadata: { count: rows.length } });
   return data ?? [];
 }
 
-export async function upsertFeeCategories(client: SupabaseClient, organizationId: string, fees: FeeCategoryInput[]) {
+export async function upsertFeeCategories(client: SupabaseClient, organizationId: string, fees: FeeCategoryInput[], actor?: ActorInput) {
   const rows = fees.filter((item) => item.name).map((item) => ({
     organization_id: organizationId,
     name: item.name,
@@ -528,7 +528,7 @@ export async function upsertFeeCategories(client: SupabaseClient, organizationId
   if (!rows.length) return [];
   const { data, error } = await client.from("fee_categories").upsert(rows, { onConflict: "organization_id,name" }).select("*");
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId, action: "fee_categories.upsert_bulk", resourceType: "fee_categories", riskLevel: "Medium", metadata: { count: rows.length } });
+  await writeAuditEvent(client, { organizationId, ...actorFields(actor), action: "fee_categories.upsert_bulk", resourceType: "fee_categories", riskLevel: "Medium", metadata: { count: rows.length } });
   return data ?? [];
 }
 
@@ -561,7 +561,7 @@ export async function listInvitations(client: SupabaseClient) {
   return data ?? [];
 }
 
-export async function createInvitation(client: SupabaseClient, input: InvitationInput) {
+export async function createInvitation(client: SupabaseClient, input: InvitationInput, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const { data, error } = await client
     .from("user_invitations")
@@ -576,7 +576,7 @@ export async function createInvitation(client: SupabaseClient, input: Invitation
     .select("id,organization_id,email,name,role,status,token,expires_at,created_at")
     .single();
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId: data.organization_id, action: "invitation.create", resourceType: "invitation", resourceId: data.id, riskLevel: "Medium", metadata: { email: data.email, role: data.role } });
+  await writeAuditEvent(client, { organizationId: data.organization_id, ...actorFields(actor), action: "invitation.create", resourceType: "invitation", resourceId: data.id, riskLevel: "Medium", metadata: { email: data.email, role: data.role } });
   return data;
 }
 
@@ -818,7 +818,7 @@ export type ResultPublishInput = {
   note?: string;
 };
 
-export async function publishOrUnlockResults(client: SupabaseClient, input: ResultPublishInput) {
+export async function publishOrUnlockResults(client: SupabaseClient, input: ResultPublishInput, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
   if (!student) throw new Error(`Student ${input.admissionNo} not found`);
@@ -847,7 +847,7 @@ export async function publishOrUnlockResults(client: SupabaseClient, input: Resu
     note: input.note ?? null,
   });
   if (eventError) throw eventError;
-  await writeAuditEvent(client, { organizationId: organization.id, action: `results.${input.action}`, resourceType: "results", resourceId: student.id, riskLevel: input.action === "publish" ? "High" : "Medium", metadata: { admissionNo: student.admission_no, term: input.term, session: input.session } });
+  await writeAuditEvent(client, { organizationId: organization.id, ...actorFields(actor), action: `results.${input.action}`, resourceType: "results", resourceId: student.id, riskLevel: input.action === "publish" ? "High" : "Medium", metadata: { admissionNo: student.admission_no, term: input.term, session: input.session } });
 
   return { student, updated: data.length, action: input.action };
 }
@@ -882,7 +882,7 @@ export async function listAnnouncements(client: SupabaseClient) {
   return data ?? [];
 }
 
-export async function createAnnouncement(client: SupabaseClient, input: AnnouncementInput) {
+export async function createAnnouncement(client: SupabaseClient, input: AnnouncementInput, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const { data, error } = await client
     .from("announcements")
@@ -896,7 +896,7 @@ export async function createAnnouncement(client: SupabaseClient, input: Announce
     .select("id,organization_id,title,body,audience,published_at,created_at")
     .single();
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId: data.organization_id, action: "announcement.create", resourceType: "announcement", resourceId: data.id, metadata: { audience: data.audience, published: Boolean(data.published_at) } });
+  await writeAuditEvent(client, { organizationId: data.organization_id, ...actorFields(actor), action: "announcement.create", resourceType: "announcement", resourceId: data.id, metadata: { audience: data.audience, published: Boolean(data.published_at) } });
   return data;
 }
 
@@ -927,7 +927,7 @@ export async function recordCommunicationDelivery(client: SupabaseClient, input:
   providerMessageId?: string;
   errorMessage?: string;
   metadata?: Record<string, unknown>;
-}) {
+}, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const { data, error } = await client
     .from("communication_deliveries")
@@ -947,7 +947,7 @@ export async function recordCommunicationDelivery(client: SupabaseClient, input:
     .select("*")
     .single();
   if (error) throw error;
-  await writeAuditEvent(client, { organizationId: data.organization_id, action: `communication.delivery.${input.status}`, resourceType: "communication_delivery", resourceId: data.id, riskLevel: input.status === "failed" ? "Medium" : "Low", metadata: { recipientEmail: input.recipientEmail, subject: input.subject } });
+  await writeAuditEvent(client, { organizationId: data.organization_id, ...actorFields(actor), action: `communication.delivery.${input.status}`, resourceType: "communication_delivery", resourceId: data.id, riskLevel: input.status === "failed" ? "Medium" : "Low", metadata: { recipientEmail: input.recipientEmail, subject: input.subject } });
   return data;
 }
 
@@ -1220,4 +1220,140 @@ export async function getInsightContext(client: SupabaseClient): Promise<Insight
     classAttendance,
     resultTerms: terms,
   };
+}
+
+export type RegisterMark = {
+  admissionNo: string;
+  status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+  note?: string;
+};
+
+export type RegisterSubmitInput = {
+  date?: string;
+  period?: string;
+  marks: RegisterMark[];
+};
+
+export type ActorInput = {
+  email?: string;
+  role?: string;
+};
+
+function actorFields(actor?: ActorInput) {
+  return { actorEmail: actor?.email, actorRole: actor?.role };
+}
+
+/**
+ * Live class register: the school's classes, the students in them and any
+ * marks already saved for today, so the register opens pre-filled rather
+ * than blank.
+ */
+export async function getClassRegister(client: SupabaseClient, className?: string) {
+  const today = new Date().toISOString().slice(0, 10);
+  const organization = await getPrimaryOrganization(client);
+
+  const classesQuery = client.from("classrooms").select("name").order("name", { ascending: true });
+  if (organization) classesQuery.eq("organization_id", organization.id);
+
+  let studentsQuery = client
+    .from("students")
+    .select("admission_no,first_name,last_name,classrooms(name)")
+    .eq("active", true)
+    .order("first_name", { ascending: true})
+    .order("last_name", { ascending: true });
+  if (organization) studentsQuery = studentsQuery.eq("organization_id", organization.id);
+
+  const marksQuery = client
+    .from("attendance_records")
+    .select("status,students(admission_no)")
+    .eq("attendance_date", today);
+
+  const [classesResult, studentsResult, marksResult] = await Promise.all([classesQuery, studentsQuery, marksQuery]);
+  if (classesResult.error) throw classesResult.error;
+  if (studentsResult.error) throw studentsResult.error;
+  if (marksResult.error) throw marksResult.error;
+
+  const classes = ((classesResult.data ?? []) as Array<{ name: string }>).map((row) => row.name);
+  const students = ((studentsResult.data ?? []) as Array<{
+    admission_no: string;
+    first_name: string;
+    last_name: string;
+    classrooms: { name: string } | { name: string }[] | null;
+  }>).map((row) => ({
+    admissionNo: row.admission_no,
+    name: `${row.first_name ?? ""} ${row.last_name ?? ""}`.trim() || row.admission_no,
+    classroom: relationName(row.classrooms) ?? "Unassigned",
+  }));
+  const filtered = className ? students.filter((student) => student.classroom === className) : students;
+
+  const marks: Record<string, string> = {};
+  const markRows = (marksResult.data ?? []) as unknown as Array<{ status: string; students: { admission_no: string } | Array<{ admission_no: string }> | null }>;
+  for (const row of markRows) {
+    const linked = Array.isArray(row.students) ? row.students[0] : row.students;
+    if (linked?.admission_no) marks[linked.admission_no] = row.status;
+  }
+
+  return { date: today, classes, students: filtered, marks };
+}
+
+/**
+ * Saves a whole register in one round trip.
+ *
+ * A class of forty submits as a single upsert rather than forty requests,
+ * which is what keeps marking usable on slow connections. Unknown admission
+ * numbers are reported back instead of failing the batch, so one stale row
+ * never discards the other thirty-nine.
+ */
+export async function submitAttendanceRegister(
+  client: SupabaseClient,
+  input: RegisterSubmitInput,
+  actor?: ActorInput,
+) {
+  const organization = await getOrganizationForWrite(client);
+  const date = input.date ?? new Date().toISOString().slice(0, 10);
+  const period = input.period ?? "Morning";
+
+  const admissionNumbers = [...new Set(input.marks.map((mark) => mark.admissionNo))];
+  const { data: students, error: studentsError } = await client
+    .from("students")
+    .select("id,admission_no,classroom_id")
+    .eq("organization_id", organization.id)
+    .in("admission_no", admissionNumbers);
+  if (studentsError) throw studentsError;
+
+  const byAdmission = new Map((students ?? []).map((row: { id: string; admission_no: string; classroom_id: string | null }) => [row.admission_no, row]));
+  const rows = [];
+  const unknown: string[] = [];
+  for (const mark of input.marks) {
+    const student = byAdmission.get(mark.admissionNo);
+    if (!student) {
+      unknown.push(mark.admissionNo);
+      continue;
+    }
+    rows.push({
+      organization_id: organization.id,
+      student_id: student.id,
+      classroom_id: student.classroom_id,
+      attendance_date: date,
+      period,
+      status: mark.status,
+      note: mark.note ?? null,
+    });
+  }
+
+  if (rows.length) {
+    const { error } = await client.from("attendance_records").upsert(rows, { onConflict: "student_id,attendance_date,period" });
+    if (error) throw error;
+  }
+
+  await writeAuditEvent(client, {
+    organizationId: organization.id,
+    ...actorFields(actor),
+    action: "attendance.register_submit",
+    resourceType: "attendance",
+    riskLevel: "Medium",
+    metadata: { date, period, saved: rows.length, unknown },
+  });
+
+  return { saved: rows.length, unknown, date, period };
 }

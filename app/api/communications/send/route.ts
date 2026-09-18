@@ -3,8 +3,13 @@ import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
 import { announcementHtml, hasResendConfig, sendEmail } from "@/lib/email/resend";
 import { recordCommunicationDelivery } from "@/lib/supabase/school-data";
+import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
 
-export const POST = withAuth("announcements.manage", async (request: NextRequest) => {
+export const POST = withAuth("announcements.manage", async (request: NextRequest, context) => {
+  {
+    const throttle = checkRateLimit(rateLimitKey(request, "communications-send"), { limit: 20, windowMs: 60_000 });
+    if (!throttle.allowed) return rateLimitedResponse(throttle.retryAfterMs);
+  }
   const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Database is not configured." }, { status: 503 });
   if (!hasResendConfig()) return NextResponse.json({ status: "not_configured", message: "Email delivery is not configured. Add RESEND_API_KEY and EMAIL_FROM to Vercel environment variables." }, { status: 503 });
@@ -19,12 +24,12 @@ export const POST = withAuth("announcements.manage", async (request: NextRequest
     const providerId = result.data?.id;
     const deliveries = [];
     for (const recipient of recipients) {
-      deliveries.push(await recordCommunicationDelivery(supabase, { announcementId: body.announcementId, recipientEmail: recipient, subject: body.subject, status: "sent", provider: "resend", providerMessageId: providerId, metadata: { resend: result.data ?? null } }));
+      deliveries.push(await recordCommunicationDelivery(supabase, { announcementId: body.announcementId, recipientEmail: recipient, subject: body.subject, status: "sent", provider: "resend", providerMessageId: providerId, metadata: { resend: result.data ?? null } }, { email: context.user.email, role: context.role }));
     }
     return NextResponse.json({ status: "sent", provider: "resend", recipients: recipients.length, deliveries });
   } catch (error) {
     for (const recipient of recipients) {
-      await recordCommunicationDelivery(supabase, { announcementId: body.announcementId, recipientEmail: recipient, subject: body.subject, status: "failed", provider: "resend", errorMessage: error instanceof Error ? error.message : "Email failed" }).catch(() => null);
+      await recordCommunicationDelivery(supabase, { announcementId: body.announcementId, recipientEmail: recipient, subject: body.subject, status: "failed", provider: "resend", errorMessage: error instanceof Error ? error.message : "Email failed" }, { email: context.user.email, role: context.role }).catch(() => null);
     }
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to send email" }, { status: 500 });
   }

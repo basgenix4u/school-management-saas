@@ -52,7 +52,7 @@ export const PATCH = withAuth<RouteParams>("students.manage", async (request: Ne
       return NextResponse.json({ status: "error", source: "supabase", message: "Student not found" }, { status: 404 });
     }
 
-    const student = await updateLiveStudent(supabase, admissionNo, body);
+    const student = await updateLiveStudent(supabase, admissionNo, body, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "updated", source: "supabase", data: student });
   } catch (error) {
     return NextResponse.json(

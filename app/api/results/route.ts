@@ -15,7 +15,7 @@ export const GET = withAuth("results.view", async () => {
   }
 });
 
-export const POST = withAuth("results.manage", async (request: NextRequest) => {
+export const POST = withAuth("results.manage", async (request: NextRequest, context) => {
   const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before saving results." }, { status: 503 });
 
@@ -25,7 +25,7 @@ export const POST = withAuth("results.manage", async (request: NextRequest) => {
   }
 
   try {
-    const result = await upsertLiveResult(supabase, body as ResultUpsertInput);
+    const result = await upsertLiveResult(supabase, body as ResultUpsertInput, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "saved", source: "supabase", data: result }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to save result" }, { status: 500 });

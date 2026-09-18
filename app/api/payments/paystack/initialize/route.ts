@@ -1,8 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { configuredOrNull, getLiveInvoice } from "@/lib/supabase/school-data";
 import { generatePaymentReference, hasPaystackConfig, initializePaystackTransaction } from "@/lib/payments/paystack";
+import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
 
 export async function POST(request: NextRequest) {
+  {
+    const throttle = checkRateLimit(rateLimitKey(request, "paystack-initialize"), { limit: 30, windowMs: 60_000 });
+    if (!throttle.allowed) return rateLimitedResponse(throttle.retryAfterMs);
+  }
   if (!hasPaystackConfig()) return NextResponse.json({ status: "not_configured", message: "Paystack is not configured. Add PAYSTACK_SECRET_KEY to Vercel environment variables." }, { status: 503 });
   const supabase = configuredOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Database is not configured." }, { status: 503 });

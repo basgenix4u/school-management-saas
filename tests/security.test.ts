@@ -39,10 +39,8 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "support/tickets/route.ts": "Support intake.",
   "portal/parent/route.ts": "Guards internally via getAppSession and portal links.",
   "portal/student/route.ts": "Guards internally via getAppSession and portal links.",
-  "results/publish/route.ts": "Guards internally via getAppSession.",
   "setup/organization/route.ts": "First-owner bootstrap before any membership row exists.",
   "launch/readiness/route.ts": "Deployment readiness probe.",
-  "teachers/workspace/route.ts": "Guards internally via getAppSession.",
   "finance/route.ts": "Static shape only.",
 };
 
@@ -115,9 +113,13 @@ describe("role boundaries", () => {
     expect(can("PARENT", "fees.manage")).toBe(false);
   });
 
-  it("prevents anyone but an owner-level role from managing the workspace", () => {
+  it("lets school owners manage their own workspace, and no one else", () => {
+    // The owner is the customer: without this they could not open setup,
+    // invite staff or onboard their school. Tenancy still comes from row
+    // level security, so this is authority over their school, not the
+    // platform. Staff, parents and students stay excluded.
     const allowed = (Object.keys(permissionsByRole) as UserRole[]).filter((role) => can(role, "workspace.manage"));
-    expect(allowed).toEqual(["SUPER_ADMIN"]);
+    expect(allowed).toEqual(["SUPER_ADMIN", "SCHOOL_OWNER"]);
   });
 
   it("stops students and parents from editing records", () => {

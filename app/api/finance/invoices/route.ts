@@ -15,7 +15,7 @@ export const GET = withAuth("fees.view", async () => {
   }
 });
 
-export const POST = withAuth("fees.manage", async (request: NextRequest) => {
+export const POST = withAuth("fees.manage", async (request: NextRequest, context) => {
   const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables before creating invoices." }, { status: 503 });
 
@@ -23,7 +23,7 @@ export const POST = withAuth("fees.manage", async (request: NextRequest) => {
   if (!body?.admissionNo || !body?.invoiceNo || typeof body.amount !== "number") return NextResponse.json({ status: "error", message: "admissionNo, invoiceNo and numeric amount are required." }, { status: 400 });
 
   try {
-    const invoice = await createLiveInvoice(supabase, body as InvoiceCreateInput);
+    const invoice = await createLiveInvoice(supabase, body as InvoiceCreateInput, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "created", source: "supabase", data: invoice }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to create invoice" }, { status: 500 });

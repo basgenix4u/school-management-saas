@@ -41,7 +41,10 @@ export const permissionsByRole: Record<UserRole, Permission[]> = {
     "portal.view",
     "audit.view",
   ],
-  SCHOOL_OWNER: ["analytics.view", "students.manage", "teachers.manage", "attendance.view", "results.view", "fees.manage", "fees.view", "announcements.manage", "portal.view", "audit.view"],
+  // The owner runs the school: setup, staff and registers are theirs to manage.
+  // Workspace access stays tenant-scoped through row level security, so this
+  // grants authority over their own school, not the platform.
+  SCHOOL_OWNER: ["workspace.manage", "analytics.view", "students.manage", "teachers.manage", "attendance.mark", "attendance.view", "results.manage", "results.view", "fees.manage", "fees.view", "announcements.manage", "portal.view", "audit.view"],
   PRINCIPAL: ["analytics.view", "students.manage", "teachers.manage", "attendance.view", "results.manage", "results.view", "announcements.manage", "portal.view"],
   TEACHER: ["attendance.mark", "attendance.view", "results.manage", "results.view", "announcements.manage", "portal.view"],
   ACCOUNTANT: ["analytics.view", "fees.manage", "fees.view", "students.manage", "portal.view", "audit.view"],
@@ -50,7 +53,7 @@ export const permissionsByRole: Record<UserRole, Permission[]> = {
 };
 
 export const permissionLabels: Record<Permission, string> = {
-  "workspace.manage": "Manage SaaS workspace",
+  "workspace.manage": "Manage school workspace",
   "analytics.view": "View executive analytics",
   "students.manage": "Manage students",
   "teachers.manage": "Manage teachers",
