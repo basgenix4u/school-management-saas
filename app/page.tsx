@@ -1,106 +1,164 @@
 import Link from "next/link";
-import { Logo } from "@/components/Logo";
-import {} from "lucide-react";
+import { ArrowRight, BellRing, ClipboardCheck, FileSpreadsheet, ReceiptText, ShieldCheck, UsersRound } from "lucide-react";
+import { EduCoreLogo } from "@/components/brand/EduCoreLogo";
+import { Badge } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+
+const features = [
+  {
+    icon: UsersRound,
+    title: "Student records",
+    body: "Admissions, biodata, guardians and class placement in one record — from admission number to graduation.",
+  },
+  {
+    icon: ClipboardCheck,
+    title: "Attendance registers",
+    body: "Class registers teachers can mark in seconds, with absence patterns visible to principals the same day.",
+  },
+  {
+    icon: FileSpreadsheet,
+    title: "Results and report cards",
+    body: "Continuous assessment and exam scores flow into reviewed, published report cards — no spreadsheet scramble at term end.",
+  },
+  {
+    icon: ReceiptText,
+    title: "Fees and receipts",
+    body: "Term invoices, online payment and instant receipts, with the bursar seeing every outstanding balance at a glance.",
+  },
+  {
+    icon: BellRing,
+    title: "Parent communication",
+    body: "Announcements, fee reminders and result notifications that reach guardians directly — not lost in group chats.",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Roles and audit trail",
+    body: "Owners, principals, teachers, accountants, parents and students each see only what their role allows. Sensitive actions are logged.",
+  },
+];
+
+const steps = [
+  {
+    step: "1",
+    title: "Create your school account",
+    body: "Sign up as the school owner in minutes. Your school gets its own secure workspace.",
+  },
+  {
+    step: "2",
+    title: "Set up the session",
+    body: "Add the current session and term, create classes, enrol staff and students, and define term fees.",
+  },
+  {
+    step: "3",
+    title: "Run the term",
+    body: "Mark registers, raise invoices, enter scores and publish results — with parents following along from their phones.",
+  },
+];
 
 export default function Landing() {
   return (
-    <div className="min-h-screen bg-white text-zinc-950">
-      {/* Navbar */}
-      <nav className="border-b border-zinc-100">
-        <div className="max-w-7xl mx-auto px-8 h-20 flex items-center justify-between">
-          <Logo />
-          <div className="flex items-center gap-8 text-sm font-medium">
-            <a href="#features" className="hover:text-zinc-600">Features</a>
-            <a href="#pricing" className="hover:text-zinc-600">Pricing</a>
-            <Link href="/login" className="hover:text-zinc-600">Log in</Link>
-            <Link 
-              href="/signup" 
-              className="bg-zinc-950 text-white px-5 py-2.5 rounded-full text-sm font-semibold hover:bg-black transition-colors"
-            >
-              Start free trial
-            </Link>
+    <div className="bg-canvas text-ink-900">
+      <header className="border-b border-border-subtle bg-surface">
+        <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4">
+          <EduCoreLogo />
+          <nav className="hidden items-center gap-6 text-sm font-medium md:flex" aria-label="Primary">
+            <a href="#features" className="hover:text-primary-700">Features</a>
+            <a href="#how-it-works" className="hover:text-primary-700">How it works</a>
+            <Link href="/pricing" className="hover:text-primary-700">Pricing</Link>
+            <Link href="/security" className="hover:text-primary-700">Security</Link>
+            <Link href="/faq" className="hover:text-primary-700">FAQ</Link>
+          </nav>
+          <div className="flex items-center gap-2">
+            <Button href="/login" variant="ghost" size="sm">Log in</Button>
+            <Button href="/login" size="sm">Create school account</Button>
           </div>
         </div>
-      </nav>
+      </header>
 
-      {/* Hero */}
-      <div className="max-w-5xl mx-auto px-8 pt-20 pb-16 text-center">
-        <div className="inline-flex items-center gap-2 px-4 py-1 rounded-full bg-zinc-100 text-sm mb-6">
-          <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse" />
-          Trusted by 240+ schools
-        </div>
+      <main>
+        <section className="mx-auto max-w-3xl px-4 pb-14 pt-14 text-center md:pt-20">
+          <Badge tone="info">Built for Nigerian institutions</Badge>
+          <h1 className="mt-4 text-4xl font-bold leading-tight tracking-tight md:text-5xl">
+            Run your school from admission to report card.
+          </h1>
+          <p className="mx-auto mt-4 max-w-xl text-lg text-ink-500">
+            EduCore replaces paper registers, scattered spreadsheets and lost messages with one
+            system for students, attendance, results, fees and parent communication.
+          </p>
+          <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+            <Button href="/login">
+              Create school account <ArrowRight size={18} aria-hidden="true" />
+            </Button>
+            <Button href="/contact" variant="secondary">Talk to us</Button>
+          </div>
+          <p className="mt-3 text-sm text-ink-500">Set up your first term in an afternoon.</p>
+        </section>
 
-        <h1 className="text-7xl font-semibold tracking-[-3.2px] leading-none mb-6">
-          School management.<br />Reimagined.
-        </h1>
-        <p className="max-w-lg mx-auto text-2xl text-zinc-600 tracking-tight mb-10">
-          The modern platform schools actually enjoy using.
-        </p>
-
-        <div className="flex items-center justify-center gap-4">
-          <Link 
-            href="/signup" 
-            className="inline-flex h-14 items-center justify-center rounded-2xl bg-zinc-950 px-10 text-lg font-semibold text-white hover:bg-black active:scale-[0.985] transition-all"
-          >
-            Start 14-day free trial
-          </Link>
-          <Link 
-            href="#demo" 
-            className="inline-flex h-14 items-center justify-center rounded-2xl border border-zinc-200 px-8 text-lg font-medium hover:bg-zinc-50"
-          >
-            Watch demo
-          </Link>
-        </div>
-        <p className="mt-4 text-sm text-zinc-500">No credit card required</p>
-      </div>
-
-      {/* Trust bar */}
-      <div className="border-y border-zinc-100 py-8">
-        <div className="max-w-5xl mx-auto px-8 flex justify-center gap-x-14 text-sm font-medium text-zinc-400 tracking-[2px]">
-          BRIGHTON ACADEMY • ST. MARY’S • RIVERSIDE • HORIZON PREP
-        </div>
-      </div>
-
-      {/* Features */}
-      <div id="features" className="max-w-6xl mx-auto px-8 pt-24 pb-20">
-        <div className="text-center mb-16">
-          <div className="uppercase tracking-[3px] text-xs font-semibold text-zinc-500 mb-3">EVERYTHING YOU NEED</div>
-          <h2 className="text-6xl font-semibold tracking-[-1.5px]">Built for how schools actually work.</h2>
-        </div>
-
-        <div className="grid md:grid-cols-3 gap-6">
-          {[
-            ["Student Management", "Complete lifecycle from admission to alumni with powerful profiles."],
-            ["Smart Attendance", "Real-time marking with AI risk alerts and automated notifications."],
-            ["Results & Exams", "Flexible grading, instant report cards, and performance analytics."],
-            ["Fee Collection", "Automated invoicing, online payments, and defaulter intelligence."],
-            ["Parent Portal", "Real-time access to grades, attendance, and teacher messaging."],
-            ["AI Insights", "Predict at-risk students and surface actionable school KPIs."],
-          ].map(([title, desc], index) => (
-            <div key={index} className="p-8 rounded-3xl border border-zinc-100 hover:border-zinc-200 bg-white group transition-all">
-              <div className="font-semibold text-2xl tracking-tight mb-3 group-hover:text-[#0A66C2] transition-colors">{title}</div>
-              <p className="text-lg text-zinc-600 leading-snug">{desc}</p>
+        <section id="features" className="border-y border-border-subtle bg-surface">
+          <div className="mx-auto max-w-6xl px-4 py-14">
+            <p className="text-center text-xs font-semibold uppercase tracking-widest text-ink-500">
+              Everything a term demands
+            </p>
+            <h2 className="mx-auto mt-2 max-w-xl text-center text-3xl font-bold tracking-tight">
+              Built for how Nigerian schools actually work.
+            </h2>
+            <div className="mt-10 grid gap-4 md:grid-cols-3">
+              {features.map((feature) => (
+                <article key={feature.title} className="ui-card ui-card-pad">
+                  <span className="ui-metric-icon" aria-hidden="true"><feature.icon size={20} /></span>
+                  <h3 className="ui-card-title">{feature.title}</h3>
+                  <p className="ui-card-subtitle">{feature.body}</p>
+                </article>
+              ))}
             </div>
-          ))}
-        </div>
-      </div>
+          </div>
+        </section>
 
-      {/* Final CTA */}
-      <div className="bg-zinc-950 py-20 text-center text-white">
-        <div className="max-w-xl mx-auto px-8">
-          <h2 className="text-6xl font-semibold tracking-[-1.5px] mb-4">Ready to modernize your school?</h2>
-          <p className="text-2xl text-white/70 mb-9">Join forward-thinking schools already using EduCore.</p>
-          <Link 
-            href="/signup" 
-            className="inline-block bg-white text-zinc-950 px-10 py-4 rounded-2xl font-semibold text-lg active:scale-[0.985]"
-          >
-            Start your free trial
-          </Link>
-        </div>
-      </div>
+        <section id="how-it-works" className="mx-auto max-w-6xl px-4 py-14">
+          <p className="text-center text-xs font-semibold uppercase tracking-widest text-ink-500">How it works</p>
+          <h2 className="mx-auto mt-2 max-w-xl text-center text-3xl font-bold tracking-tight">
+            From signup to school-day in three steps.
+          </h2>
+          <ol className="mx-auto mt-10 grid max-w-4xl gap-4 md:grid-cols-3">
+            {steps.map((item) => (
+              <li key={item.step} className="ui-card ui-card-pad">
+                <span className="ui-badge ui-badge-info" aria-hidden="true">Step {item.step}</span>
+                <h3 className="ui-card-title mt-3">{item.title}</h3>
+                <p className="ui-card-subtitle">{item.body}</p>
+              </li>
+            ))}
+          </ol>
+        </section>
 
-      <footer className="border-t py-12 text-center text-sm text-zinc-500">
-        © {new Date().getFullYear()} EduCore. All rights reserved.
+        <section className="bg-surface-inverse text-ink-inverse">
+          <div className="mx-auto max-w-3xl px-4 py-16 text-center">
+            <h2 className="text-3xl font-bold tracking-tight md:text-4xl">Ready to run this term properly?</h2>
+            <p className="mx-auto mt-3 max-w-xl text-lg opacity-80">
+              Create your school account and set up the current session today. Your registers,
+              invoices and results will finally live in one place.
+            </p>
+            <div className="mt-8 flex flex-col items-center justify-center gap-3 sm:flex-row">
+              <Button href="/login">Create school account</Button>
+              <Button href="/pricing" variant="secondary">See plans</Button>
+            </div>
+          </div>
+        </section>
+      </main>
+
+      <footer className="border-t border-border-subtle bg-surface">
+        <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-4 py-8 text-sm text-ink-500 md:flex-row">
+          <EduCoreLogo />
+          <nav className="flex flex-wrap items-center justify-center gap-x-6 gap-y-2" aria-label="Footer">
+            <Link href="/pricing" className="hover:text-primary-700">Pricing</Link>
+            <Link href="/security" className="hover:text-primary-700">Security</Link>
+            <Link href="/support" className="hover:text-primary-700">Support</Link>
+            <Link href="/faq" className="hover:text-primary-700">FAQ</Link>
+            <Link href="/contact" className="hover:text-primary-700">Contact</Link>
+            <Link href="/privacy" className="hover:text-primary-700">Privacy</Link>
+            <Link href="/terms" className="hover:text-primary-700">Terms</Link>
+          </nav>
+          <p>© {new Date().getFullYear()} EduCore. All rights reserved.</p>
+        </div>
       </footer>
     </div>
   );

@@ -1,11 +1,14 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
 import { ArrowRight, Eye, EyeOff, KeyRound, Loader2, LockKeyhole, Mail, ShieldCheck, UserRound } from "lucide-react";
 import { roleExperiences, roleLabels, UserRole } from "@/lib/rbac";
-import { EduManageLogo } from "@/components/brand/EduManageLogo";
+import { EduCoreLogo } from "@/components/brand/EduCoreLogo";
 import { createBrowserSupabaseClient, hasBrowserSupabaseConfig } from "@/lib/supabase/browser";
+import { Alert, type AlertTone } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
 
 function friendlyAuthError(message: string) {
   const lower = message.toLowerCase();
@@ -23,14 +26,20 @@ export function LoginExperience() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [message, setMessage] = useState("Sign in with your school account, or create the first owner account for a new school.");
+  const [messageTone, setMessageTone] = useState<AlertTone>("info");
   const [loading, setLoading] = useState(false);
   const selected = useMemo(() => roleExperiences.find((item) => item.role === role) ?? roleExperiences[0], [role]);
+
+  function say(text: string, tone: AlertTone = "info") {
+    setMessage(text);
+    setMessageTone(tone);
+  }
 
   useEffect(() => {
     const timer = window.setTimeout(() => {
       if (new URLSearchParams(window.location.search).get("reset") === "1") {
         setMode("reset");
-        setMessage("Enter a new password to complete account recovery.");
+        say("Enter a new password to complete account recovery.");
       }
     }, 0);
     return () => window.clearTimeout(timer);
@@ -50,7 +59,7 @@ export function LoginExperience() {
 
   async function sendPasswordReset() {
     if (!email) {
-      setMessage("Enter your email address first, then request password reset.");
+      say("Enter your email address first, then request password reset.", "warning");
       return;
     }
     setLoading(true);
@@ -59,9 +68,9 @@ export function LoginExperience() {
       const supabase = createBrowserSupabaseClient();
       const { error } = await supabase.auth.resetPasswordForEmail(email, { redirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent("/login?reset=1")}` });
       if (error) throw error;
-      setMessage("Password reset link sent. Check your email inbox.");
+      say("Password reset link sent. Check your email inbox.", "success");
     } catch (error) {
-      setMessage(error instanceof Error ? friendlyAuthError(error.message) : "Unable to send password reset.");
+      say(error instanceof Error ? friendlyAuthError(error.message) : "Unable to send password reset.", "danger");
     } finally {
       setLoading(false);
     }
@@ -69,7 +78,7 @@ export function LoginExperience() {
 
   async function sendMagicLink() {
     if (!email) {
-      setMessage("Enter your email address first, then request a sign-in link.");
+      say("Enter your email address first, then request a sign-in link.", "warning");
       return;
     }
     setLoading(true);
@@ -79,9 +88,9 @@ export function LoginExperience() {
       const next = new URLSearchParams(window.location.search).get("next") ?? "/dashboard";
       const { error } = await supabase.auth.signInWithOtp({ email, options: { emailRedirectTo: `${window.location.origin}/auth/callback?next=${encodeURIComponent(next)}` } });
       if (error) throw error;
-      setMessage("Sign-in link sent. Check your email inbox.");
+      say("Sign-in link sent. Check your email inbox.", "success");
     } catch (error) {
-      setMessage(error instanceof Error ? friendlyAuthError(error.message) : "Unable to send sign-in link.");
+      say(error instanceof Error ? friendlyAuthError(error.message) : "Unable to send sign-in link.", "danger");
     } finally {
       setLoading(false);
     }
@@ -90,11 +99,11 @@ export function LoginExperience() {
   async function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setLoading(true);
-    setMessage(mode === "signin" ? "Signing in..." : mode === "signup" ? "Creating account..." : "Updating password...");
+    say(mode === "signin" ? "Signing in..." : mode === "signup" ? "Creating account..." : "Updating password...");
 
     try {
       if (!hasBrowserSupabaseConfig()) {
-        setMessage("Authentication is not configured yet. Add Supabase environment variables to enable access.");
+        say("Authentication is not configured yet. Add Supabase environment variables to enable access.", "warning");
         return;
       }
 
@@ -102,10 +111,10 @@ export function LoginExperience() {
       if (mode === "reset") {
         const { error } = await supabase.auth.updateUser({ password });
         if (error) {
-          setMessage(friendlyAuthError(error.message));
+          say(friendlyAuthError(error.message), "danger");
           return;
         }
-        setMessage("Password updated. You can now sign in with your new password.");
+        say("Password updated. You can now sign in with your new password.", "success");
         setPassword("");
         setMode("signin");
         return;
@@ -114,7 +123,7 @@ export function LoginExperience() {
       if (mode === "signin") {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
         if (error) {
-          setMessage(friendlyAuthError(error.message));
+          say(friendlyAuthError(error.message), "danger");
           return;
         }
         await acceptInviteIfPresent();
@@ -130,7 +139,7 @@ export function LoginExperience() {
       });
       if (error) {
         const friendly = friendlyAuthError(error.message);
-        setMessage(friendly);
+        say(friendly, "danger");
         if (friendly.includes("already has an account")) setMode("signin");
         return;
       }
@@ -141,10 +150,10 @@ export function LoginExperience() {
         return;
       }
 
-      setMessage("Account created. Check your email to confirm your account, then sign in.");
+      say("Account created. Check your email to confirm your account, then sign in.", "success");
       setMode("signin");
     } catch (error) {
-      setMessage(error instanceof Error ? friendlyAuthError(error.message) : "Unable to continue.");
+      say(error instanceof Error ? friendlyAuthError(error.message) : "Unable to continue.", "danger");
     } finally {
       setLoading(false);
     }
@@ -153,10 +162,10 @@ export function LoginExperience() {
   return (
     <main className="login-shell">
       <section className="login-brand-panel">
-        <div className="login-brand-logo"><EduManageLogo href="" uploaded /></div>
+        <div className="login-brand-logo"><EduCoreLogo href="" /></div>
         <span className="premium-kicker"><ShieldCheck size={14} /> Secure School OS</span>
         <h1>Role-aware access built for serious school operations.</h1>
-        <p>EduManage is designed for owners, principals, teachers, accountants, parents and students — each with a focused workspace and permission boundary.</p>
+        <p>EduCore is designed for owners, principals, teachers, accountants, parents and students — each with a focused workspace and permission boundary.</p>
         <div className="login-showcase">
           <strong>{selected.workspace}</strong>
           <span>{selected.headline}</span>
@@ -166,54 +175,70 @@ export function LoginExperience() {
 
       <section className="login-card">
         <span className="premium-kicker">Secure Access</span>
-        <h2>{mode === "signin" ? "Sign in to EduManage" : mode === "signup" ? "Create school owner account" : "Set a new password"}</h2>
+        <h2>{mode === "signin" ? "Sign in to EduCore" : mode === "signup" ? "Create school owner account" : "Set a new password"}</h2>
         <p>{mode === "signin" ? "Access your school workspace." : mode === "signup" ? "Create the first account, then set up your school profile." : "Complete password recovery for your account."}</p>
 
         {mode !== "reset" ? (
-          <div className="auth-mode-switch" role="tablist" aria-label="Authentication mode">
-            <button type="button" className={mode === "signin" ? "active" : ""} onClick={() => setMode("signin")}>Sign in</button>
-            <button type="button" className={mode === "signup" ? "active" : ""} onClick={() => setMode("signup")}>Create account</button>
+          <div className="ui-segmented" role="group" aria-label="Authentication mode">
+            <button type="button" aria-pressed={mode === "signin"} onClick={() => setMode("signin")}>Sign in</button>
+            <button type="button" aria-pressed={mode === "signup"} onClick={() => setMode("signup")}>Create account</button>
           </div>
         ) : null}
 
         {mode !== "reset" ? (
-          <div className="role-select-grid">
+          <div className="ui-segmented" role="group" aria-label="Your role">
             {roleExperiences.filter((item) => mode === "signup" ? item.role === "SCHOOL_OWNER" : true).map((item) => (
-              <button key={item.role} type="button" onClick={() => setRole(item.role)} className={item.role === role ? "active" : ""}>
+              <button key={item.role} type="button" aria-pressed={item.role === role} onClick={() => setRole(item.role)}>
                 {roleLabels[item.role]}
               </button>
             ))}
           </div>
         ) : null}
 
-        <form onSubmit={handleSubmit}>
+        <form onSubmit={handleSubmit} className="ui-form">
           {mode === "signup" ? (
-            <label className="field-label">
-              <span>Full name</span>
-              <div><UserRound size={18} /><input value={name} onChange={(event) => setName(event.target.value)} type="text" required placeholder="School owner name" /></div>
-            </label>
+            <Field label="Full name" required>
+              {(id) => <Input id={id} value={name} onChange={(event) => setName(event.target.value)} type="text" required placeholder="School owner name" autoComplete="name" leading={<UserRound size={18} aria-hidden="true" />} />}
+            </Field>
           ) : null}
           {mode !== "reset" ? (
-            <label className="field-label">
-              <span>Email address</span>
-              <div><Mail size={18} /><input value={email} onChange={(event) => setEmail(event.target.value)} type="email" required placeholder="you@school.com" /></div>
-            </label>
+            <Field label="Email address" required>
+              {(id) => <Input id={id} value={email} onChange={(event) => setEmail(event.target.value)} type="email" required placeholder="you@school.com" autoComplete="email" leading={<Mail size={18} aria-hidden="true" />} />}
+            </Field>
           ) : null}
-          <label className="field-label">
-            <span>Password</span>
-            <div><LockKeyhole size={18} /><input value={password} onChange={(event) => setPassword(event.target.value)} type={showPassword ? "text" : "password"} required minLength={6} placeholder="Minimum 6 characters" /><button type="button" onClick={() => setShowPassword((value) => !value)}>{showPassword ? <EyeOff size={18} /> : <Eye size={18} />}</button></div>
-          </label>
+          <Field label="Password" required hint={mode === "reset" ? undefined : "Minimum 6 characters"}>
+            {(id) => (
+              <Input
+                id={id}
+                value={password}
+                onChange={(event) => setPassword(event.target.value)}
+                type={showPassword ? "text" : "password"}
+                required
+                minLength={6}
+                placeholder="Minimum 6 characters"
+                autoComplete={mode === "signin" ? "current-password" : "new-password"}
+                leading={<LockKeyhole size={18} aria-hidden="true" />}
+                trailing={
+                  <button type="button" onClick={() => setShowPassword((value) => !value)} aria-label={showPassword ? "Hide password" : "Show password"}>
+                    {showPassword ? <EyeOff size={18} /> : <Eye size={18} />}
+                  </button>
+                }
+              />
+            )}
+          </Field>
 
-          <button className="btn btn-primary login-submit" type="submit" disabled={loading}>{loading ? <Loader2 className="spin" size={18} /> : <ArrowRight size={18} />} {mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Update password"}</button>
+          <Button type="submit" disabled={loading}>
+            {loading ? <Loader2 className="spin" size={18} /> : <ArrowRight size={18} />} {mode === "signin" ? "Sign in" : mode === "signup" ? "Create account" : "Update password"}
+          </Button>
         </form>
         {mode === "signin" ? (
           <div className="auth-recovery-actions">
-            <button type="button" onClick={sendPasswordReset} disabled={loading}><KeyRound size={15} /> Reset password</button>
-            <button type="button" onClick={sendMagicLink} disabled={loading}><Mail size={15} /> Email sign-in link</button>
+            <Button variant="secondary" size="sm" onClick={sendPasswordReset} disabled={loading}><KeyRound size={15} /> Reset password</Button>
+            <Button variant="secondary" size="sm" onClick={sendMagicLink} disabled={loading}><Mail size={15} /> Email sign-in link</Button>
           </div>
         ) : null}
-        <p className="auth-message">{message}</p>
-        <Link className="login-secondary" href="/contact">Need access? Contact your school administrator</Link>
+        <Alert tone={messageTone}><p>{message}</p></Alert>
+        <Button href="/contact" variant="ghost">Need access? Contact your school administrator</Button>
       </section>
     </main>
   );

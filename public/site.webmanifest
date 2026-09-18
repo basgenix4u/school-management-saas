@@ -1,11 +1,11 @@
 {
-  "name": "EduManage School OS",
-  "short_name": "EduManage",
-  "description": "Premium school operating system for academics, finance, attendance and parent engagement.",
+  "name": "EduCore",
+  "short_name": "EduCore",
+  "description": "Admissions, attendance, results, fees and parent communication for Nigerian institutions.",
   "start_url": "/",
   "display": "standalone",
-  "background_color": "#07111F",
-  "theme_color": "#07111F",
+  "background_color": "#f7f8fa",
+  "theme_color": "#0b1524",
   "icons": [
     {
       "src": "/icon-192.png",

@@ -1,4 +1,4 @@
-# EduManage Design System
+# EduCore Design System
 
 ## Design Principles
 

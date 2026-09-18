@@ -1,7 +1,7 @@
 'use client';
 
 import Link from 'next/link';
-import { Logo } from './Logo';
+import { EduCoreLogo } from '@/components/brand/EduCoreLogo';
 import { 
   Users, Calendar, Award, CreditCard, BarChart3, 
   Settings, LogOut 
@@ -21,7 +21,7 @@ export function DashboardLayout({ children }: { children: React.ReactNode }) {
       {/* Sidebar */}
       <aside className="w-64 border-r bg-white flex flex-col">
         <div className="h-20 flex items-center px-8 border-b">
-          <Logo />
+          <EduCoreLogo />
         </div>
 
         <nav className="flex-1 px-4 py-8 space-y-1">

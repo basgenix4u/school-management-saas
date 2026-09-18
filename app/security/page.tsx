@@ -1,21 +1,21 @@
 import Link from "next/link";
 import { Database, KeyRound, LockKeyhole, ShieldCheck } from "lucide-react";
-import { EduManageLogo } from "@/components/brand/EduManageLogo";
+import { EduCoreLogo } from "@/components/brand/EduCoreLogo";
 
 const controls = [
-  { icon: KeyRound, title: "Role-based access", body: "Access architecture separates owners, principals, teachers, accountants, parents and students." },
-  { icon: Database, title: "Supabase foundation", body: "Database migrations, RLS foundation, Auth users and server-only service role patterns are documented." },
-  { icon: LockKeyhole, title: "Protected routes", body: "Dashboards and portals are protected when Supabase environment variables are configured." },
-  { icon: ShieldCheck, title: "Audit readiness", body: "Audit events and trust center modules are included for sensitive school operations." },
+  { icon: KeyRound, title: "Role-based access", body: "Owners, principals, teachers, accountants, parents and students each get their own workspace. Every page and every data request checks the caller's permission before answering." },
+  { icon: Database, title: "Isolated school workspaces", body: "Each school's records live in its own workspace, enforced at the database layer — a request from one school cannot read or change another school's data." },
+  { icon: LockKeyhole, title: "Verified payments", body: "Payment notifications from Paystack are accepted only when their cryptographic signature checks out. Forged callbacks are rejected." },
+  { icon: ShieldCheck, title: "Audit trail", body: "Enrolment, results, invoices and payments write events to an audit log, so the school can always answer who changed what." },
 ];
 
 export default function SecurityPage() {
   return (
     <main className="public-page">
-      <div className="public-nav"><EduManageLogo /><Link className="ds-btn ds-btn-secondary" href="/">Back home</Link></div>
-      <section className="public-hero"><span className="ds-eyebrow"><ShieldCheck size={15} /> Security</span><h1>Security principles for sensitive school data.</h1><p>EduManage is designed to protect student, parent, academic and financial records through layered access, auditability and deployment discipline.</p></section>
+      <div className="public-nav"><EduCoreLogo /><Link className="ds-btn ds-btn-secondary" href="/">Back home</Link></div>
+      <section className="public-hero"><span className="ds-eyebrow"><ShieldCheck size={15} /> Security</span><h1>Security principles for sensitive school data.</h1><p>EduCore protects student, parent, academic and financial records through layered access, workspace isolation and auditability.</p></section>
       <section className="public-card-grid">{controls.map((control) => { const Icon = control.icon; return <article className="ds-card public-card" key={control.title}><Icon /><h2>{control.title}</h2><p>{control.body}</p></article>; })}</section>
-      <section className="public-panel"><h2>Before production with real schools</h2><p>Replace product RLS policies with strict organization-scoped policies, rotate access credentials, enable monitoring, review legal policies and run accessibility/security QA.</p></section>
+      <section className="public-panel"><h2>Report a concern</h2><p>Found something that worries you? Write to the security contact and it will be handled privately — never post account or data issues publicly.</p></section>
     </main>
   );
 }

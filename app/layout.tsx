@@ -17,9 +17,8 @@ export const metadata: Metadata = {
     apple: [{ url: "/apple-touch-icon.png", sizes: "180x180", type: "image/png" }],
   },
   openGraph: {
-    title: "EduCore School OS",
-    description: "A premium school operating system for modern institutions.",
-    images: [{ url: "/marketing/platform-intelligence.webp", width: 1376, height: 768, alt: "EduCore platform intelligence dashboard" }],
+    title: "EduCore — School Management Platform",
+    description: "Admissions, attendance, results, fees and parent communication for Nigerian institutions.",
   },
 };
 

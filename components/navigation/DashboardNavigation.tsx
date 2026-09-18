@@ -3,7 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { Menu, X } from "lucide-react";
-import { EduManageLogo } from "@/components/brand/EduManageLogo";
+import { EduCoreLogo } from "@/components/brand/EduCoreLogo";
 import { canSeeItem, navItems, roleHome } from "@/components/navigation/nav-items";
 
 type SessionResponse = {
@@ -59,7 +59,7 @@ export function DashboardNavigation() {
     <>
       <aside className="sidebar premium-sidebar desktop-sidebar">
         <div className="sidebar-brand sidebar-brand-logo">
-          <EduManageLogo href={home} uploaded />
+          <EduCoreLogo href={home} />
         </div>
         <nav>{navContent}</nav>
         <div className="sidebar-status">
@@ -70,7 +70,7 @@ export function DashboardNavigation() {
       </aside>
 
       <header className="mobile-dashboard-topbar">
-        <EduManageLogo href={home} uploaded />
+        <EduCoreLogo href={home} />
         <button type="button" onClick={() => setOpen(true)} aria-label="Open navigation"><Menu size={22} /></button>
       </header>
 
@@ -78,7 +78,7 @@ export function DashboardNavigation() {
         <div className="mobile-nav-overlay" role="dialog" aria-modal="true" aria-label="Dashboard navigation">
           <button className="mobile-nav-backdrop" type="button" aria-label="Close navigation" onClick={() => setOpen(false)} />
           <aside className="mobile-nav-panel">
-            <div className="mobile-nav-head"><EduManageLogo href={home} uploaded /><button type="button" onClick={() => setOpen(false)} aria-label="Close navigation"><X size={20} /></button></div>
+            <div className="mobile-nav-head"><EduCoreLogo href={home} /><button type="button" onClick={() => setOpen(false)} aria-label="Close navigation"><X size={20} /></button></div>
             <nav>{navContent}</nav>
           </aside>
         </div>
