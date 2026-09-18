@@ -1,21 +1,29 @@
 "use client";
 
 import { FormEvent, useEffect, useMemo, useState } from "react";
-import Link from "next/link";
-import { AlertCircle, ArrowRight, Banknote, BellRing, CheckCircle2, CreditCard, FileText, Loader2, PlusCircle, ShieldAlert, WalletCards } from "lucide-react";
-import { collectionForecast, currency, financeInsights, paymentTimeline } from "@/lib/finance-center";
-import { TrendLine } from "@/components/premium/TrendLine";
+import { BellRing, CheckCircle2, FileText, Loader2, PlusCircle, WalletCards } from "lucide-react";
+import { formatDate, formatNairaCompact } from "@/lib/format";
+import { Alert } from "@/components/ui/Alert";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Dialog } from "@/components/ui/Dialog";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Field } from "@/components/ui/Field";
+import { Input } from "@/components/ui/Input";
+import { Metric, MetricGrid } from "@/components/ui/Metric";
+import { Select } from "@/components/ui/Select";
+import { Table } from "@/components/ui/Table";
 
 type InvoiceCard = {
   id: string;
   student: string;
-  className: string;
+  admissionNo: string;
   guardian: string;
   amount: number;
   paid: number;
   status: string;
   due?: string;
-  probability?: number;
 };
 
 type InvoiceApiResponse = {
@@ -26,17 +34,25 @@ type InvoiceApiResponse = {
   message?: string;
 };
 
-function statusClass(status: string) {
-  if (status === "PAID" || status === "Paid") return "good";
-  if (["PARTIAL", "PENDING", "Partial", "Pending"].includes(status)) return "warn";
-  return "bad";
+type AuditEvent = { id: string; action: string; actor_name: string | null; created_at: string; metadata: Record<string, unknown> };
+
+type AuditPayload = {
+  status: string;
+  events?: AuditEvent[];
+};
+
+function invoiceTone(status: string): BadgeTone {
+  if (status === "PAID") return "success";
+  if (status === "OVERDUE") return "danger";
+  if (status === "PARTIAL") return "info";
+  return "warning";
 }
 
-function toneClass(tone: string) {
-  if (tone === "emerald") return "tone-emerald";
-  if (tone === "amber") return "tone-amber";
-  if (tone === "rose") return "tone-rose";
-  return "tone-blue";
+function invoiceLabel(status: string) {
+  if (status === "PAID") return "Paid";
+  if (status === "OVERDUE") return "Overdue";
+  if (status === "PARTIAL") return "Part paid";
+  return "Pending";
 }
 
 function studentName(student: unknown) {
@@ -46,36 +62,23 @@ function studentName(student: unknown) {
 }
 
 function normalizeInvoice(row: Record<string, unknown>): InvoiceCard {
-  if (row.invoice_no) {
-    return {
-      id: String(row.invoice_no),
-      student: studentName(row.students),
-      className: String((row.students as Record<string, unknown> | undefined)?.admission_no ?? "Live Supabase"),
-      guardian: String((row.students as Record<string, unknown> | undefined)?.guardian_name ?? "Guardian"),
-      amount: Number(row.amount ?? 0),
-      paid: Number(row.amount_paid ?? 0),
-      status: String(row.status ?? "PENDING"),
-      due: row.due_date ? String(row.due_date) : undefined,
-      probability: Number(row.payment_probability ?? 50),
-    };
-  }
-
+  const student = row.students as Record<string, unknown> | undefined;
   return {
-    id: String(row.id),
-    student: String(row.student),
-    className: String(row.className),
-    guardian: String(row.guardian ?? "Guardian"),
+    id: String(row.invoice_no ?? row.id),
+    student: row.invoice_no ? studentName(row.students) : String(row.student),
+    admissionNo: String(student?.admission_no ?? row.admissionNo ?? ""),
+    guardian: String(student?.guardian_name ?? row.guardian ?? "—"),
     amount: Number(row.amount ?? 0),
-    paid: Number(row.paid ?? 0),
-    status: String(row.status),
-    due: String(row.due ?? ""),
-    probability: Number(row.probability ?? 50),
+    paid: Number(row.amount_paid ?? row.paid ?? 0),
+    status: String(row.status ?? "PENDING"),
+    due: row.due_date ? String(row.due_date) : undefined,
   };
 }
 
 export function FinanceCommandCenter() {
   const [invoiceRows, setInvoiceRows] = useState<InvoiceCard[]>([]);
-  const [source, setSource] = useState("none");
+  const [activity, setActivity] = useState<AuditEvent[]>([]);
+  const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
@@ -84,10 +87,25 @@ export function FinanceCommandCenter() {
   const summary = useMemo(() => {
     const total = invoiceRows.reduce((sum, invoice) => sum + invoice.amount, 0);
     const paid = invoiceRows.reduce((sum, invoice) => sum + invoice.paid, 0);
-    const outstanding = total - paid;
-    const overdue = invoiceRows.filter((invoice) => invoice.status === "OVERDUE" || invoice.status === "Overdue").reduce((sum, invoice) => sum + invoice.amount - invoice.paid, 0);
-    const collectionRate = total > 0 ? Math.round((paid / total) * 100) : 0;
-    return { total, paid, outstanding, overdue, collectionRate };
+    const outstanding = Math.max(0, total - paid);
+    const overdueRows = invoiceRows.filter((invoice) => invoice.status === "OVERDUE");
+    const overdue = overdueRows.reduce((sum, invoice) => sum + invoice.amount - invoice.paid, 0);
+    return { total, paid, outstanding, overdue, overdueCount: overdueRows.length, collectionRate: total > 0 ? Math.round((paid / total) * 100) : 0 };
+  }, [invoiceRows]);
+
+  const priorities = useMemo(() => {
+    const open = invoiceRows
+      .map((invoice) => ({ invoice, balance: Math.max(0, invoice.amount - invoice.paid) }))
+      .filter((row) => row.balance > 0)
+      .sort((a, b) => (a.invoice.status === "OVERDUE" ? 0 : 1) - (b.invoice.status === "OVERDUE" ? 0 : 1) || b.balance - a.balance)
+      .slice(0, 5);
+    return open.map(({ invoice, balance }) => ({
+      id: invoice.id,
+      title: `${invoice.id} — ${formatNairaCompact(balance)} outstanding`,
+      detail: `${invoice.student}${invoice.guardian !== "—" ? ` · guardian: ${invoice.guardian}` : ""}${invoice.due ? ` · due ${formatDate(invoice.due)}` : ""}`,
+      action: invoice.status === "OVERDUE" ? "Overdue — follow up now" : "Send a reminder before it slips",
+      tone: (invoice.status === "OVERDUE" ? "danger" : "warning") as BadgeTone,
+    }));
   }, [invoiceRows]);
 
   async function loadInvoices() {
@@ -97,18 +115,30 @@ export function FinanceCommandCenter() {
       const response = await fetch("/api/finance/invoices", { cache: "no-store" });
       const payload = await response.json() as InvoiceApiResponse;
       if (!response.ok) throw new Error(payload.message ?? "Unable to load invoices");
-      setSource(payload.source ?? "none");
+      setConnected(payload.source === "supabase");
       setInvoiceRows((payload.data ?? []).map(normalizeInvoice));
       setMessage(payload.source === "supabase" ? "Invoice records loaded." : (payload.message ?? "Connect your database to load invoices."));
     } catch (error) {
+      setConnected(false);
       setMessage(error instanceof Error ? error.message : "Invoices unavailable.");
     } finally {
       setLoading(false);
     }
   }
 
+  async function loadActivity() {
+    try {
+      const response = await fetch("/api/audit?action=payment,invoice", { cache: "no-store" });
+      if (!response.ok) return;
+      const payload = await response.json() as AuditPayload;
+      setActivity((payload.events ?? []).slice(0, 8));
+    } catch {
+      // Activity is supplementary; the invoice board stands on its own.
+    }
+  }
+
   useEffect(() => {
-    const timer = window.setTimeout(() => { void loadInvoices(); }, 0);
+    const timer = window.setTimeout(() => { void loadInvoices(); void loadActivity(); }, 0);
     return () => window.clearTimeout(timer);
   }, []);
 
@@ -128,8 +158,7 @@ export function FinanceCommandCenter() {
           amount: Number(form.get("amount")),
           amountPaid: Number(form.get("amountPaid") || 0),
           status: form.get("status"),
-          dueDate: form.get("dueDate"),
-          paymentProbability: Number(form.get("paymentProbability") || 50),
+          dueDate: form.get("dueDate") || undefined,
         }),
       });
       const payload = await response.json() as InvoiceApiResponse;
@@ -145,84 +174,130 @@ export function FinanceCommandCenter() {
     }
   }
 
-  const dynamicMetrics = [
-    { label: "Collected", value: currency(summary.paid), change: `${summary.collectionRate}% collected`, tone: "emerald" },
-    { label: "Outstanding", value: currency(summary.outstanding), change: `${invoiceRows.length} invoices`, tone: "amber" },
-    { label: "Overdue Risk", value: currency(summary.overdue), change: "review queue", tone: "rose" },
-    { label: "Data Source", value: source, change: loading ? "loading" : "ready", tone: "blue" },
-  ];
-
   return (
-    <div className="finance-center premium-dashboard">
-      <section className="card-aurora finance-hero">
-        <div>
-          <span className="premium-kicker"><WalletCards size={14} /> Finance Command Center • {source}</span>
-          <h1>Fees, invoices and payment intelligence in one place.</h1>
-          <p>Give accountants and school owners a premium finance cockpit for invoice tracking, payment reconciliation, overdue risk and guardian follow-up.</p>
-          <div className="hero-actions"><Link className="btn btn-primary" href="/dashboard/fees/invoices"><FileText size={18} /> View Invoices</Link><button className="btn btn-secondary" type="button" onClick={() => setFormOpen((value) => !value)}><PlusCircle size={18} /> Create Invoice</button><button className="btn btn-secondary" type="button"><BellRing size={18} /> Send Reminders</button></div>
-        </div>
-        <div className="finance-hero-card"><span>Total Billing</span><strong>{currency(summary.total)}</strong><small>{summary.collectionRate}% collected • {currency(summary.outstanding)} outstanding</small></div>
-      </section>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow">Finance</p>
+        <h1 className="page-title">Fees, invoices and collection.</h1>
+        <p className="page-subtitle">What has been billed, what has landed, and what needs chasing.</p>
+      </header>
 
-      <section className="live-status-card">
-        {loading ? <Loader2 className="spin" size={18} /> : source === "supabase" ? <CheckCircle2 size={18} /> : <AlertCircle size={18} />}
-        <span>{message}</span>
-        <button type="button" onClick={loadInvoices}>Refresh</button>
-      </section>
+      <div className="action-row">
+        <Button href="/dashboard/fees/invoices"><FileText size={18} /> View invoices</Button>
+        <Button variant="secondary" onClick={() => setFormOpen(true)}><PlusCircle size={18} /> Create invoice</Button>
+        <Button variant="secondary" href="/dashboard/communications"><BellRing size={18} /> Send reminders</Button>
+      </div>
 
-      {formOpen ? (
-        <section className="card premium-panel live-form-panel">
-          <span className="premium-kicker">Live invoice creation</span>
-          <h2>Create invoice</h2>
-          <form className="live-form-grid" onSubmit={createInvoice}>
-            <label><span>Admission no.</span><input name="admissionNo" required placeholder="STU-1001" /></label>
-            <label><span>Invoice no.</span><input name="invoiceNo" required placeholder="INV-NEW-001" /></label>
-            <label><span>Title</span><input name="title" placeholder="Second Term Fees" /></label>
-            <label><span>Amount</span><input name="amount" required type="number" min="0" placeholder="145000" /></label>
-            <label><span>Paid</span><input name="amountPaid" type="number" min="0" placeholder="0" /></label>
-            <label><span>Due date</span><input name="dueDate" type="date" /></label>
-            <label><span>Status</span><select name="status" defaultValue="PENDING"><option>PENDING</option><option>PARTIAL</option><option>PAID</option><option>OVERDUE</option></select></label>
-            <label><span>Probability</span><input name="paymentProbability" type="number" min="0" max="100" defaultValue="50" /></label>
-            <button className="btn btn-primary" type="submit" disabled={saving}>{saving ? <Loader2 className="spin" size={18} /> : <PlusCircle size={18} />} Save invoice</button>
-          </form>
-        </section>
-      ) : null}
+      <Alert tone={loading ? "info" : connected ? "success" : "warning"}>
+        <p>{message}</p>
+        <p><Button variant="secondary" size="sm" onClick={loadInvoices} disabled={loading}>Refresh</Button></p>
+      </Alert>
 
-      <section className="premium-metrics">
-        {dynamicMetrics.map((metric) => <article className={`premium-metric ${toneClass(metric.tone)}`} key={metric.label}><div className="metric-icon"><CreditCard /></div><span>{metric.label}</span><strong>{metric.value}</strong><small>{metric.change}</small><p>Finance operations metric for the current academic term.</p></article>)}
-      </section>
+      <Dialog
+        open={formOpen}
+        title="Create invoice"
+        onClose={() => setFormOpen(false)}
+        footer={
+          <>
+            <Button variant="ghost" onClick={() => setFormOpen(false)}>Cancel</Button>
+            <Button type="submit" form="create-invoice" disabled={saving}>
+              {saving ? <Loader2 className="spin" size={18} /> : <PlusCircle size={18} />} Save invoice
+            </Button>
+          </>
+        }
+      >
+        <form id="create-invoice" className="ui-form" onSubmit={createInvoice}>
+          <Field label="Admission number" required>{(id) => <Input id={id} name="admissionNo" required placeholder="STU-2001" autoComplete="off" />}</Field>
+          <Field label="Invoice number" required hint="Unique for this invoice, e.g. INV-2026-001">{(id) => <Input id={id} name="invoiceNo" required placeholder="INV-2026-001" autoComplete="off" />}</Field>
+          <Field label="Title">{(id) => <Input id={id} name="title" placeholder="First Term Fees" autoComplete="off" />}</Field>
+          <Field label="Amount (₦)" required>{(id) => <Input id={id} name="amount" required type="number" min="0" step="1" placeholder="145000" />}</Field>
+          <Field label="Amount already paid (₦)">{(id) => <Input id={id} name="amountPaid" type="number" min="0" step="1" placeholder="0" />}</Field>
+          <Field label="Due date">{(id) => <Input id={id} name="dueDate" type="date" />}</Field>
+          <Field label="Status">
+            {(id) => (
+              <Select id={id} name="status" defaultValue="PENDING">
+                <option value="PENDING">Pending</option>
+                <option value="PARTIAL">Part paid</option>
+                <option value="PAID">Paid</option>
+                <option value="OVERDUE">Overdue</option>
+              </Select>
+            )}
+          </Field>
+        </form>
+      </Dialog>
 
-      <section className="premium-grid-2 align-start">
-        <div className="card premium-panel">
-          <div className="panel-header"><div><span className="premium-kicker"><Banknote size={14} /> Collection Forecast</span><h2>Expected payment momentum</h2></div><strong className="panel-value">{summary.collectionRate}%</strong></div>
-          <TrendLine data={collectionForecast} color="#2563eb" />
-          <div className="insight-row"><span>Total billed</span><strong>{currency(summary.total)}</strong></div>
-          <div className="insight-row"><span>Collected</span><strong>{currency(summary.paid)}</strong></div>
-          <div className="insight-row"><span>Overdue</span><strong>{currency(summary.overdue)}</strong></div>
-        </div>
+      <MetricGrid>
+        <Metric icon={<WalletCards size={20} />} label="Collected" value={formatNairaCompact(summary.paid)} caption={`${summary.collectionRate}% of billed`} />
+        <Metric icon={<FileText size={20} />} label="Outstanding" value={formatNairaCompact(summary.outstanding)} caption={`${invoiceRows.length} invoices`} />
+        <Metric icon={<BellRing size={20} />} label="Overdue" value={formatNairaCompact(summary.overdue)} caption={`${summary.overdueCount} invoices past due`} />
+        <Metric icon={<CheckCircle2 size={20} />} label="Total billed" value={formatNairaCompact(summary.total)} caption="this workspace" />
+      </MetricGrid>
 
-        <div className="card premium-panel">
-          <span className="premium-kicker"><ShieldAlert size={14} /> Payment Risk Intelligence</span>
-          <h2>Recommended finance actions</h2>
-          <div className="signal-list">{financeInsights.map((insight) => <article className="signal-item" key={insight.title}><div><strong>{insight.title}</strong><p>{insight.detail}</p><small>{insight.action}</small></div><span className={`status ${insight.severity === "High" ? "bad" : insight.severity === "Medium" ? "warn" : "good"}`}>{insight.severity}</span></article>)}</div>
-        </div>
-      </section>
+      <div className="premium-grid-2 align-start">
+        <Card title="Priority follow-ups" subtitle={priorities.length ? "Largest open balances, overdue first." : "Nothing outstanding right now."}>
+          {priorities.length === 0 ? (
+            <EmptyState icon={<CheckCircle2 size={22} />} title="Books are clean" body="No invoice carries an outstanding balance." />
+          ) : (
+            <div className="signal-list">
+              {priorities.map((item) => (
+                <article key={item.id} className="signal-item">
+                  <div>
+                    <strong>{item.title}</strong>
+                    <p>{item.detail}</p>
+                    <small>{item.action}</small>
+                  </div>
+                  <Badge tone={item.tone}>{item.tone === "danger" ? "Overdue" : "Open"}</Badge>
+                </article>
+              ))}
+            </div>
+          )}
+        </Card>
 
-      <section className="premium-grid-2 align-start">
-        <div className="card premium-panel">
-          <div className="panel-header compact"><div><span className="premium-kicker"><FileText size={14} /> Invoice Board</span><h2>Priority invoices</h2></div><Link className="mini-link" href="/dashboard/fees/invoices">Open all <ArrowRight size={15} /></Link></div>
-          <div className="invoice-list">
-            {!loading && invoiceRows.length === 0 ? <div className="empty-state-card">No invoices found. Create the first invoice.</div> : null}
-            {invoiceRows.slice(0, 5).map((invoice) => <Link className="invoice-row" key={invoice.id} href={`/dashboard/fees/${invoice.id}`}><div><strong>{invoice.student}</strong><span>{invoice.id} • {invoice.className}</span></div><div><strong>{currency(invoice.amount - invoice.paid)}</strong><span className={`status ${statusClass(invoice.status)}`}>{invoice.status}</span></div></Link>)}
-          </div>
-        </div>
+        <Card title="Recent finance activity" subtitle="Invoice and payment events as they were recorded.">
+          {activity.length === 0 ? (
+            <EmptyState icon={<FileText size={22} />} title="No activity yet" body="Creations, payments and verifications will appear here." />
+          ) : (
+            <div className="trust-list">
+              {activity.map((item) => (
+                <article key={item.id}>
+                  <div>
+                    <strong>{item.action.replace(/\./g, " · ")}</strong>
+                    <p>{item.actor_name ?? "System"} · {formatDate(item.created_at)}</p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          )}
+        </Card>
+      </div>
 
-        <div className="card premium-panel">
-          <span className="premium-kicker">Payment Timeline</span>
-          <h2>Today’s finance pulse</h2>
-          <div className="timeline-list">{paymentTimeline.map((item) => <article key={item.time}><time>{item.time}</time><div><strong>{item.title}</strong><p>{item.detail}</p><span className="timeline-amount">{item.amount}</span></div></article>)}</div>
-        </div>
-      </section>
+      <Card title="Invoice board" subtitle={invoiceRows.length ? `Showing ${Math.min(8, invoiceRows.length)} of ${invoiceRows.length} invoices.` : "No invoices raised yet."}>
+        {invoiceRows.length === 0 ? (
+          <EmptyState
+            icon={<FileText size={22} />}
+            title="No invoices yet"
+            body="Raise the term's first invoice to start the collection picture."
+            action={<Button onClick={() => setFormOpen(true)}><PlusCircle size={18} /> Create invoice</Button>}
+          />
+        ) : (
+          <Table>
+            <thead><tr><th>Invoice</th><th>Student</th><th className="numeric">Amount</th><th className="numeric">Paid</th><th className="numeric">Balance</th><th>Status</th><th>Due</th></tr></thead>
+            <tbody>
+              {invoiceRows.slice(0, 8).map((invoice) => (
+                <tr key={invoice.id}>
+                  <td><a href={`/dashboard/fees/${invoice.id}`}>{invoice.id}</a></td>
+                  <td>{invoice.student}</td>
+                  <td className="numeric">{formatNairaCompact(invoice.amount)}</td>
+                  <td className="numeric">{formatNairaCompact(invoice.paid)}</td>
+                  <td className="numeric">{formatNairaCompact(Math.max(0, invoice.amount - invoice.paid))}</td>
+                  <td><Badge tone={invoiceTone(invoice.status)}>{invoiceLabel(invoice.status)}</Badge></td>
+                  <td style={{ whiteSpace: "nowrap" }}>{invoice.due ? formatDate(invoice.due) : "—"}</td>
+                </tr>
+              ))}
+            </tbody>
+          </Table>
+        )}
+      </Card>
     </div>
   );
 }

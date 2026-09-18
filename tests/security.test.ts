@@ -41,7 +41,6 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "portal/student/route.ts": "Guards internally via getAppSession and portal links.",
   "setup/organization/route.ts": "First-owner bootstrap before any membership row exists.",
   "launch/readiness/route.ts": "Deployment readiness probe.",
-  "finance/route.ts": "Static shape only.",
 };
 
 describe("API authorization coverage", () => {

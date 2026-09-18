@@ -1,31 +1,88 @@
 import { Activity, AlertTriangle, History, ShieldCheck } from "lucide-react";
-import { auditEvents } from "@/lib/audit-data";
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { getAuditSummary, listAuditEvents } from "@/lib/supabase/school-data";
+import { formatDateTime } from "@/lib/format";
+import { Alert } from "@/components/ui/Alert";
+import { Badge, type BadgeTone } from "@/components/ui/Badge";
+import { EmptyState } from "@/components/ui/EmptyState";
+import { Metric, MetricGrid } from "@/components/ui/Metric";
+import { Table } from "@/components/ui/Table";
 
-export default function AuditPage() {
+/**
+ * Audit trail for the school.
+ *
+ * Every row is a recorded event: enrolments, registers, invoices, payments,
+ * result publications and invitations, each with its actor. Nothing here is
+ * sampled — an empty school sees an empty trail.
+ */
+export const dynamic = "force-dynamic";
+
+function riskTone(risk: string | null): BadgeTone {
+  if (risk === "High") return "danger";
+  if (risk === "Medium") return "warning";
+  return "success";
+}
+
+function describeAction(action: string): string {
+  return action
+    .split(".")
+    .map((part) => part.charAt(0).toUpperCase() + part.slice(1).replace(/_/g, " "))
+    .join(" · ");
+}
+
+export default async function AuditPage() {
+  const supabase = await requestClientOrNull();
+  const connected = Boolean(supabase);
+  const [events, summary] = supabase
+    ? await Promise.all([listAuditEvents(supabase).catch(() => []), getAuditSummary(supabase).catch(() => null)])
+    : [[], null];
+
   return (
-    <div className="premium-dashboard">
-      <section className="card-aurora intelligence-hero">
-        <span className="premium-kicker"><History size={14} /> Audit Trail</span>
-        <h1>Every sensitive school action should be traceable.</h1>
-        <p>Enterprise-grade school software needs visibility over results, payments, attendance, user access and system intelligence events.</p>
-      </section>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow">Audit trail</p>
+        <h1 className="page-title">Every sensitive action, traceable.</h1>
+        <p className="page-subtitle">Who did what, to which record, and when — recorded as it happens.</p>
+      </header>
 
-      <section className="premium-metrics">
-        <article className="premium-metric tone-blue"><div className="metric-icon"><Activity /></div><span>Events Today</span><strong>1,842</strong><small>+18%</small><p>All dashboard, finance, academic and portal actions.</p></article>
-        <article className="premium-metric tone-amber"><div className="metric-icon"><AlertTriangle /></div><span>Review Queue</span><strong>12</strong><small>4 urgent</small><p>Actions that require principal or owner review.</p></article>
-        <article className="premium-metric tone-emerald"><div className="metric-icon"><ShieldCheck /></div><span>Policy Pass Rate</span><strong>98%</strong><small>healthy</small><p>Role and workspace boundaries are being respected.</p></article>
-        <article className="premium-metric tone-violet"><div className="metric-icon"><History /></div><span>Retention</span><strong>365d</strong><small>planned</small><p>Recommended audit retention for school operations.</p></article>
-      </section>
+      {!connected ? (
+        <Alert tone="info"><p>Connect your database to start recording audit events for your school.</p></Alert>
+      ) : (
+        <>
+          <MetricGrid>
+            <Metric icon={<Activity size={20} />} label="Events recorded" value={String(summary?.total ?? 0)} caption="latest 200" />
+            <Metric icon={<History size={20} />} label="Events today" value={String(summary?.today ?? 0)} caption="since midnight" />
+            <Metric icon={<AlertTriangle size={20} />} label="Needs review" value={String(summary?.needsReview ?? 0)} caption={`${summary?.highRisk ?? 0} high risk`} />
+            <Metric icon={<ShieldCheck size={20} />} label="Actor attribution" value={events.some((event) => event.actor_name) ? "Active" : "—"} caption="named on each row" />
+          </MetricGrid>
 
-      <section className="card premium-panel">
-        <div className="panel-header compact"><div><span className="premium-kicker">Live Audit Feed</span><h2>Recent sensitive events</h2></div></div>
-        <div className="audit-table-wrap">
-          <table className="table premium-table">
-            <thead><tr><th>ID</th><th>Actor</th><th>Role</th><th>Action</th><th>Resource</th><th>Time</th><th>Risk</th></tr></thead>
-            <tbody>{auditEvents.map((event) => <tr key={event.id}><td>{event.id}</td><td>{event.actor}</td><td>{event.role}</td><td>{event.action}</td><td>{event.resource}</td><td>{event.time}</td><td><span className={`status ${event.risk === "High" ? "bad" : event.risk === "Medium" ? "warn" : "good"}`}>{event.risk}</span></td></tr>)}</tbody>
-          </table>
-        </div>
-      </section>
+          {events.length === 0 ? (
+            <EmptyState
+              icon={<History size={22} />}
+              title="No audit events yet"
+              body="Events appear here automatically as your team enrols students, marks registers, raises invoices and publishes results."
+            />
+          ) : (
+            <Table caption="Newest events first">
+              <thead>
+                <tr><th>Action</th><th>Actor</th><th>Role</th><th>Resource</th><th>Time</th><th>Risk</th></tr>
+              </thead>
+              <tbody>
+                {events.map((event) => (
+                  <tr key={event.id}>
+                    <td>{describeAction(event.action)}</td>
+                    <td>{event.actor_name ?? "—"}</td>
+                    <td>{event.actor_role ?? "—"}</td>
+                    <td>{event.resource_type ?? "—"}</td>
+                    <td style={{ whiteSpace: "nowrap" }}>{formatDateTime(event.created_at)}</td>
+                    <td><Badge tone={riskTone(event.risk_level)}>{event.risk_level ?? "Low"}</Badge></td>
+                  </tr>
+                ))}
+              </tbody>
+            </Table>
+          )}
+        </>
+      )}
     </div>
   );
 }
