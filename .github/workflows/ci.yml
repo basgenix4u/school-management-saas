@@ -1,4 +1,4 @@
-name: Repository CI
+name: CI
 
 on:
   push:
@@ -7,7 +7,8 @@ on:
     branches: ["main"]
 
 jobs:
-  build:
+  verify:
+    name: Lint · Typecheck · Test · Build
     runs-on: ubuntu-latest
 
     steps:
@@ -26,5 +27,59 @@ jobs:
       - name: Lint
         run: npm run lint
 
+      - name: Typecheck
+        run: npm run typecheck
+
+      - name: Test
+        run: npm run test
+
       - name: Build
         run: npm run build
+
+  security:
+    name: Security gates
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Student and guardian records must never be reachable without a session.
+      # The suite in tests/security.test.ts enforces this; this job fails fast
+      # on the patterns most likely to reintroduce the problem.
+      - name: Reject committed credentials
+        run: |
+          set +e
+          PATTERN='eyJ[A-Za-z0-9_-]{30,}|sk_live_[A-Za-z0-9]{20,}|service_role.*eyJ'
+          MATCHES=$(grep -rInE "$PATTERN" \
+            --exclude-dir=node_modules --exclude-dir=.git --exclude-dir=.next \
+            --exclude=package-lock.json . )
+          if [ -n "$MATCHES" ]; then
+            echo "::error::Possible credential committed. Rotate it and remove it from history."
+            exit 1
+          fi
+          echo "No credential patterns found."
+
+      - name: Ensure .env files are untracked
+        run: |
+          if git ls-files --error-unmatch .env .env.local >/dev/null 2>&1; then
+            echo "::error::An environment file is tracked. Only .env.example belongs in git."
+            exit 1
+          fi
+          echo "No environment files tracked."
+
+      - name: Reject the service role client on user-facing routes
+        run: |
+          set +e
+          # configuredOrNull() bypasses row level security. It is permitted only
+          # on paths with no user context, which are listed in the test suite.
+          HITS=$(grep -rln "configuredOrNull(" app/api \
+            | grep -v "app/api/payments/" \
+            | grep -v "app/api/invitations/accept/" \
+            | grep -v "app/api/setup/organization/")
+          if [ -n "$HITS" ]; then
+            echo "::error::Service role client used on a user-facing route:"
+            echo "$HITS"
+            exit 1
+          fi
+          echo "User-facing routes use the request-scoped client."

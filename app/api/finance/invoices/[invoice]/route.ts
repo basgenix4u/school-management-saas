@@ -1,9 +1,14 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
-import { configuredOrNull, getLiveInvoice } from "@/lib/supabase/school-data";
+import { getLiveInvoice } from "@/lib/supabase/school-data";
 
-export async function GET(_request: Request, { params }: { params: Promise<{ invoice: string }> }) {
+type RouteParams = { params: Promise<{ invoice: string }> };
+
+
+export const GET = withAuth<RouteParams>("fees.view", async (_request: Request, _context, { params }) => {
   const { invoice } = await params;
-  const supabase = configuredOrNull();
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", source: "none", message: "Connect Supabase environment variables to load invoice records." }, { status: 503 });
 
   try {
@@ -13,4 +18,4 @@ export async function GET(_request: Request, { params }: { params: Promise<{ inv
   } catch (error) {
     return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load invoice" }, { status: 500 });
   }
-}
+});

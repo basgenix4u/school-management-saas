@@ -1,10 +1,11 @@
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
 import { createServerSupabaseClient, hasSupabaseConfig } from "@/lib/supabase/server";
 import type { DatabaseHealth } from "@/lib/supabase/types";
 
 const tables = ["organizations", "students", "teachers", "classrooms", "invoices", "attendance_records", "results", "audit_events"];
 
-export async function GET() {
+export const GET = withAuth("workspace.manage", async () => {
   const response: DatabaseHealth = {
     configured: hasSupabaseConfig(),
     projectRef: "xevoiljsumlqqamqkwla",
@@ -29,4 +30,4 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json({ ...response, error: error instanceof Error ? error.message : "Unknown Supabase error" }, { status: 500 });
   }
-}
+});

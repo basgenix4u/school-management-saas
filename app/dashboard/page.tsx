@@ -1,38 +1,113 @@
-import { DashboardLayout } from "@/components/DashboardLayout";
+import Link from "next/link";
+import { ClipboardCheck, FileSpreadsheet, ReceiptText } from "lucide-react";
+import { getAppSession } from "@/lib/auth/session";
+import { can } from "@/lib/rbac";
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { getCommandCenterSnapshot } from "@/lib/supabase/school-data";
+import { formatNaira } from "@/lib/format";
 
-export default function DashboardOverview() {
+/**
+ * Operations overview.
+ *
+ * Figures come from the caller's school only; row level security scopes the
+ * query. When Supabase is unconfigured the page states that plainly instead of
+ * showing placeholder numbers, so a demo is never mistaken for live data.
+ */
+export const dynamic = "force-dynamic";
+
+type Metric = { label: string; value: string; caption: string };
+
+function greeting(date = new Date()) {
+  const hour = Number(
+    new Intl.DateTimeFormat("en-NG", { hour: "numeric", hour12: false, timeZone: "Africa/Lagos" }).format(date),
+  );
+  if (hour < 12) return "Good morning";
+  if (hour < 17) return "Good afternoon";
+  return "Good evening";
+}
+
+export default async function DashboardOverview() {
+  const session = await getAppSession();
+  const supabase = await requestClientOrNull();
+
+  const firstName = session.user?.name?.split(" ")[0] ?? "there";
+  const role = session.user?.role ?? "SCHOOL_OWNER";
+
+  let metrics: Metric[] = [];
+  let schoolName: string | null = null;
+  let unavailable: string | null = null;
+
+  if (!supabase) {
+    unavailable = "Connect your database to see live figures for your school.";
+  } else {
+    try {
+      const snapshot = await getCommandCenterSnapshot(supabase);
+      schoolName = snapshot.organization?.name ?? null;
+      metrics = [
+        { label: "Enrolled students", value: String(snapshot.totals.students), caption: "Active records" },
+        { label: "Attendance today", value: `${snapshot.totals.attendanceRate}%`, caption: "Marked registers" },
+        { label: "Outstanding fees", value: formatNaira(snapshot.totals.outstanding), caption: `${snapshot.totals.unpaidInvoices} unpaid invoices` },
+        { label: "Results published", value: `${snapshot.totals.publishedRate}%`, caption: "This term" },
+      ];
+    } catch {
+      unavailable = "We could not load your figures just now. Please refresh in a moment.";
+    }
+  }
+
+  // Miller's Law: keep the action set small. Only actions this role can
+  // actually complete are offered, so nothing here leads to a refusal.
+  const actions = [
+    { href: "/dashboard/attendance/mark", label: "Mark attendance", icon: ClipboardCheck, permission: "attendance.mark" as const },
+    { href: "/dashboard/results/entry", label: "Enter results", icon: FileSpreadsheet, permission: "results.manage" as const },
+    { href: "/dashboard/fees/invoices", label: "Create invoice", icon: ReceiptText, permission: "fees.manage" as const },
+  ].filter((action) => can(role, action.permission));
+
   return (
-    <DashboardLayout>
-      <div className="max-w-6xl">
-        <div className="mb-10">
-          <h1 className="text-4xl font-semibold tracking-tight">Good morning, Abdulbasit</h1>
-          <p className="text-xl text-zinc-600 mt-1">Here's what's happening at Brighton Academy today.</p>
-        </div>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow">{schoolName ?? "Your school"}</p>
+        <h1 className="page-title">
+          {greeting()}, {firstName}
+        </h1>
+        <p className="page-subtitle">Here is where your school stands today.</p>
+      </header>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-          {[
-            { label: "Total Students", value: "1,248", change: "+12 this week" },
-            { label: "Today's Attendance", value: "94.8%", change: "↑ 2.3%" },
-            { label: "Pending Fees", value: "₦4.2M", change: "42 invoices" },
-            { label: "Results Published", value: "87%", change: "This term" },
-          ].map((stat, i) => (
-            <div key={i} className="bg-white border border-zinc-100 p-6 rounded-3xl">
-              <div className="text-sm text-zinc-500">{stat.label}</div>
-              <div className="text-5xl font-semibold tracking-tighter mt-3">{stat.value}</div>
-              <div className="text-emerald-600 text-sm mt-1">{stat.change}</div>
-            </div>
-          ))}
+      {unavailable ? (
+        <div className="notice notice-info" role="status">
+          <p>{unavailable}</p>
         </div>
-
-        <div className="mt-10">
-          <h3 className="font-semibold mb-4 text-lg">Quick Actions</h3>
-          <div className="flex gap-4">
-            <a href="/dashboard/attendance/mark" className="px-6 py-3 rounded-2xl bg-white border text-sm font-medium hover:bg-zinc-50">Mark Attendance</a>
-            <a href="/dashboard/results/entry" className="px-6 py-3 rounded-2xl bg-white border text-sm font-medium hover:bg-zinc-50">Enter Results</a>
-            <a href="/dashboard/fees/invoices" className="px-6 py-3 rounded-2xl bg-white border text-sm font-medium hover:bg-zinc-50">Create Invoice</a>
+      ) : (
+        <section aria-labelledby="today-heading">
+          <h2 id="today-heading" className="sr-only">
+            Today at a glance
+          </h2>
+          <div className="metric-grid">
+            {metrics.map((metric) => (
+              <article key={metric.label} className="metric">
+                <p className="metric-label">{metric.label}</p>
+                <p className="metric-value">{metric.value}</p>
+                <p className="metric-caption">{metric.caption}</p>
+              </article>
+            ))}
           </div>
-        </div>
-      </div>
-    </DashboardLayout>
+        </section>
+      )}
+
+      {actions.length > 0 && (
+        <section aria-labelledby="actions-heading" className="section">
+          <h2 id="actions-heading" className="section-title">
+            Quick actions
+          </h2>
+          <div className="action-row">
+            {actions.map((action) => (
+              <Link key={action.href} href={action.href} className="action-chip">
+                <action.icon size={18} aria-hidden="true" />
+                {action.label}
+              </Link>
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
   );
 }

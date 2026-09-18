@@ -1,9 +1,10 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { NextRequest, NextResponse } from "next/server";
 import { getAppSession } from "@/lib/auth/session";
-import { configuredOrNull, createSupportTicket, getSupportSummary, listSupportTickets, type SupportTicketInput } from "@/lib/supabase/school-data";
+import { createSupportTicket, getSupportSummary, listSupportTickets, type SupportTicketInput } from "@/lib/supabase/school-data";
 
 export async function GET() {
-  const supabase = configuredOrNull();
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", tickets: [], summary: null });
   try {
     const [tickets, summary] = await Promise.all([listSupportTickets(supabase), getSupportSummary(supabase)]);
@@ -14,7 +15,7 @@ export async function GET() {
 }
 
 export async function POST(request: NextRequest) {
-  const supabase = configuredOrNull();
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Database is not configured." }, { status: 503 });
   const session = await getAppSession();
   const body = await request.json().catch(() => null) as Partial<SupportTicketInput> | null;

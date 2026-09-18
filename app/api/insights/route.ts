@@ -1,5 +1,6 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
-import { configuredOrNull } from "@/lib/supabase/school-data";
 
 function currency(value: unknown) {
   return new Intl.NumberFormat("en-NG", { style: "currency", currency: "NGN", maximumFractionDigits: 0 }).format(Number(value ?? 0));
@@ -9,8 +10,8 @@ function pct(value: unknown) {
   return `${Math.round(Number(value ?? 0))}%`;
 }
 
-export async function GET() {
-  const supabase = configuredOrNull();
+export const GET = withAuth("analytics.view", async () => {
+  const supabase = await requestClientOrNull();
   if (!supabase) {
     return NextResponse.json({ status: "not_configured", message: "Connect Supabase environment variables to load live insights.", metrics: [], signals: [], summary: null });
   }
@@ -75,4 +76,4 @@ export async function GET() {
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to load insights", metrics: [], signals: [] }, { status: 500 });
   }
-}
+});

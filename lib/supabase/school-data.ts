@@ -423,13 +423,31 @@ export function slugify(value: string) {
   return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || DEFAULT_ORG_SLUG;
 }
 
+/**
+ * Resolves the school this request belongs to.
+ *
+ * With a request-scoped client, row level security limits `organizations` to
+ * the caller's membership, so this returns their school and nothing else. The
+ * ordering is retained only to make the result deterministic.
+ *
+ * Passing a service role client here would return the oldest school on the
+ * platform regardless of the caller, so that client must never reach this path.
+ */
 export async function getPrimaryOrganization(client: SupabaseClient) {
   const { data, error } = await client.from("organizations").select("id,name,slug").order("created_at", { ascending: true }).limit(1).maybeSingle<OrganizationRow>();
   if (error) throw error;
   return data;
 }
 
-export async function getOrganizationForWrite(client: SupabaseClient) {
+/** Resolves the school for a write, preferring an explicit id from the session. */
+export async function getOrganizationForWrite(client: SupabaseClient, organizationId?: string) {
+  if (organizationId) {
+    const { data, error } = await client.from("organizations").select("id,name,slug").eq("id", organizationId).maybeSingle<OrganizationRow>();
+    if (error) throw error;
+    if (data) return data;
+    throw new Error("School workspace not found for this account.");
+  }
+
   const primary = await getPrimaryOrganization(client);
   if (primary) return primary;
   throw new Error("Create a school profile before adding records.");
@@ -1038,4 +1056,59 @@ export async function getSupportSummary(client: SupabaseClient) {
   const { data, error } = await client.from("v_support_operations_summary").select("*").limit(1).maybeSingle();
   if (error) throw error;
   return data;
+}
+
+type SnapshotTotals = {
+  students: number;
+  attendanceRate: number;
+  outstanding: number;
+  unpaidInvoices: number;
+  publishedRate: number;
+};
+
+/**
+ * Figures for the operations overview.
+ *
+ * Counts are requested with `head: true` so the database returns totals without
+ * transferring rows, which keeps the dashboard responsive on slow connections.
+ * Row level security scopes every count to the caller's school.
+ */
+export async function getCommandCenterSnapshot(client: SupabaseClient): Promise<{
+  organization: OrganizationRow | null;
+  totals: SnapshotTotals;
+}> {
+  const organization = await getPrimaryOrganization(client);
+
+  const today = new Date().toISOString().slice(0, 10);
+
+  const [students, attendanceToday, presentToday, invoices, results] = await Promise.all([
+    client.from("students").select("id", { count: "exact", head: true }).eq("active", true),
+    client.from("attendance_records").select("id", { count: "exact", head: true }).eq("date", today),
+    client.from("attendance_records").select("id", { count: "exact", head: true }).eq("date", today).eq("status", "PRESENT"),
+    client.from("invoices").select("amount,amount_paid,status"),
+    client.from("results").select("published"),
+  ]);
+
+  const invoiceRows = (invoices.data ?? []) as Array<{ amount: string | number; amount_paid: string | number; status: string }>;
+  const outstanding = invoiceRows.reduce((total, row) => total + (Number(row.amount ?? 0) - Number(row.amount_paid ?? 0)), 0);
+  const unpaidInvoices = invoiceRows.filter((row) => row.status !== "PAID").length;
+
+  const resultRows = (results.data ?? []) as Array<{ published: boolean | null }>;
+  const publishedRate = resultRows.length
+    ? Math.round((resultRows.filter((row) => row.published).length / resultRows.length) * 100)
+    : 0;
+
+  const markedToday = attendanceToday.count ?? 0;
+  const attendanceRate = markedToday ? Math.round(((presentToday.count ?? 0) / markedToday) * 100) : 0;
+
+  return {
+    organization,
+    totals: {
+      students: students.count ?? 0,
+      attendanceRate,
+      outstanding: Math.max(outstanding, 0),
+      unpaidInvoices,
+      publishedRate,
+    },
+  };
 }

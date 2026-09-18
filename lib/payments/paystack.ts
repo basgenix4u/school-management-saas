@@ -72,7 +72,12 @@ export async function verifyPaystackTransaction(reference: string) {
 export function verifyPaystackSignature(rawBody: string, signature: string | null) {
   if (!process.env.PAYSTACK_SECRET_KEY || !signature) return false;
   const hash = crypto.createHmac("sha512", process.env.PAYSTACK_SECRET_KEY).update(rawBody).digest("hex");
-  return crypto.timingSafeEqual(Buffer.from(hash), Buffer.from(signature));
+  const expected = Buffer.from(hash);
+  const received = Buffer.from(signature);
+  // timingSafeEqual throws on length mismatch, which would surface a forged
+  // header as a 500 instead of a clean rejection. Compare lengths first.
+  if (expected.length !== received.length) return false;
+  return crypto.timingSafeEqual(expected, received);
 }
 
 export function generatePaymentReference(invoiceNo: string) {

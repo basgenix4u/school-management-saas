@@ -1,8 +1,13 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import path from "path";
 import fs from "fs";
-import { configuredOrNull, getLiveResultByStudent, getPrimaryOrganization } from "@/lib/supabase/school-data";
+import { getLiveResultByStudent, getPrimaryOrganization } from "@/lib/supabase/school-data";
+
+type RouteParams = { params: Promise<{ student: string }> };
+
 
 export const runtime = "nodejs";
 
@@ -35,9 +40,9 @@ function getLogoPath() {
   return candidates.find((candidate) => fs.existsSync(candidate));
 }
 
-export async function GET(_request: Request, { params }: { params: Promise<{ student: string }> }) {
+export const GET = withAuth<RouteParams>("results.view", async (_request: Request, _context, { params }) => {
   const { student } = await params;
-  const supabase = configuredOrNull();
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Database is not configured." }, { status: 503 });
 
   try {
@@ -125,4 +130,4 @@ export async function GET(_request: Request, { params }: { params: Promise<{ stu
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to generate PDF" }, { status: 500 });
   }
-}
+});

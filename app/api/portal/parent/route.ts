@@ -1,11 +1,12 @@
+import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { NextResponse } from "next/server";
 import { getAppSession } from "@/lib/auth/session";
-import { configuredOrNull, getStudentPortalBundle } from "@/lib/supabase/school-data";
+import { getStudentPortalBundle } from "@/lib/supabase/school-data";
 
 export async function GET() {
   const session = await getAppSession();
   if (!session.authenticated || !session.user?.email) return NextResponse.json({ status: "unauthorized", message: "Sign in as a parent to view portal data." }, { status: 401 });
-  const supabase = configuredOrNull();
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", profile: null, students: [], invoices: [], results: [], attendance: [], message: "Connect Supabase environment variables to load parent portal data." });
   try {
     const data = await getStudentPortalBundle(supabase, session.user.email, "PARENT");
