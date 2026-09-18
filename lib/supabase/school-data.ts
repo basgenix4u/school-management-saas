@@ -1,4 +1,5 @@
 import { createServerSupabaseClient, hasSupabaseConfig } from "@/lib/supabase/server";
+import type { AttendanceDay, ClassAttendance, FinanceSummary, InsightContext, ResultTerm, RiskRow } from "@/lib/insights/engine";
 
 export const DEFAULT_ORG_SLUG = "your-school";
 
@@ -1081,21 +1082,22 @@ export async function getCommandCenterSnapshot(client: SupabaseClient): Promise<
 
   const today = new Date().toISOString().slice(0, 10);
 
-  const [students, attendanceToday, presentToday, invoices, results] = await Promise.all([
+  const [students, attendanceToday, presentToday, invoices, resultTotal, resultPublished] = await Promise.all([
     client.from("students").select("id", { count: "exact", head: true }).eq("active", true),
-    client.from("attendance_records").select("id", { count: "exact", head: true }).eq("date", today),
-    client.from("attendance_records").select("id", { count: "exact", head: true }).eq("date", today).eq("status", "PRESENT"),
+    client.from("attendance_records").select("id", { count: "exact", head: true }).eq("attendance_date", today),
+    client.from("attendance_records").select("id", { count: "exact", head: true }).eq("attendance_date", today).eq("status", "PRESENT"),
     client.from("invoices").select("amount,amount_paid,status"),
-    client.from("results").select("published"),
+    client.from("results").select("id", { count: "exact", head: true }),
+    client.from("results").select("id", { count: "exact", head: true }).eq("status", "PUBLISHED"),
   ]);
 
   const invoiceRows = (invoices.data ?? []) as Array<{ amount: string | number; amount_paid: string | number; status: string }>;
   const outstanding = invoiceRows.reduce((total, row) => total + (Number(row.amount ?? 0) - Number(row.amount_paid ?? 0)), 0);
   const unpaidInvoices = invoiceRows.filter((row) => row.status !== "PAID").length;
 
-  const resultRows = (results.data ?? []) as Array<{ published: boolean | null }>;
-  const publishedRate = resultRows.length
-    ? Math.round((resultRows.filter((row) => row.published).length / resultRows.length) * 100)
+  const resultCount = resultTotal.count ?? 0;
+  const publishedRate = resultCount > 0
+    ? Math.round(((resultPublished.count ?? 0) / resultCount) * 100)
     : 0;
 
   const markedToday = attendanceToday.count ?? 0;
@@ -1110,5 +1112,112 @@ export async function getCommandCenterSnapshot(client: SupabaseClient): Promise<
       unpaidInvoices,
       publishedRate,
     },
+  };
+}
+
+/**
+ * Live context for the insight engine.
+ *
+ * Each query is independent, so a missing view or an empty table degrades to
+ * an empty section rather than failing the whole briefing. Row level security
+ * scopes every query to the caller's school through the request client.
+ */
+export async function getInsightContext(client: SupabaseClient): Promise<InsightContext> {
+  const empty: InsightContext = {
+    schoolName: null,
+    students: 0,
+    teachers: 0,
+    classes: 0,
+    attendanceRate: 0,
+    highRisk: 0,
+    mediumRisk: 0,
+    risks: [],
+    finance: null,
+    overdueInvoices: [],
+    attendanceDaily: [],
+    classAttendance: [],
+    resultTerms: [],
+  };
+
+  const organization = await getPrimaryOrganization(client).catch(() => null);
+  if (!organization) return empty;
+
+  const fortnightAgo = new Date(Date.now() - 14 * 24 * 60 * 60 * 1000).toISOString().slice(0, 10);
+
+  const [metrics, risks, finance, overdue, daily, recent, terms] = await Promise.all([
+    client.from("v_school_operating_metrics").select("*").eq("organization_id", organization.id).limit(1).maybeSingle().then(
+      (result) => result.data,
+      () => null,
+    ),
+    client.from("v_student_risk_scores").select("*").eq("organization_id", organization.id).order("risk_score", { ascending: false }).limit(8).then(
+      (result) => (result.data ?? []) as RiskRow[],
+      () => [] as RiskRow[],
+    ),
+    client.from("v_finance_summary").select("*").eq("organization_id", organization.id).limit(1).maybeSingle().then(
+      (result) => result.data as FinanceSummary | null,
+      () => null,
+    ),
+    client.from("invoices").select("invoice_no,title,amount,amount_paid,due_date,students(admission_no,first_name,last_name)").eq("organization_id", organization.id).neq("status", "PAID").order("due_date", { ascending: true, nullsFirst: false }).limit(10).then(
+      (result) => result.data ?? [],
+      () => [],
+    ),
+    client.from("v_attendance_daily").select("*").eq("organization_id", organization.id).order("attendance_date", { ascending: false }).limit(14).then(
+      (result) => (result.data ?? []) as AttendanceDay[],
+      () => [] as AttendanceDay[],
+    ),
+    client.from("attendance_records").select("status,classrooms(name)").eq("organization_id", organization.id).gte("attendance_date", fortnightAgo).limit(500).then(
+      (result) => result.data ?? [],
+      () => [],
+    ),
+    client.from("v_results_summary").select("*").eq("organization_id", organization.id).limit(5).then(
+      (result) => (result.data ?? []) as ResultTerm[],
+      () => [] as ResultTerm[],
+    ),
+  ]);
+
+  const byClass = new Map<string, { marked: number; present: number; absent: number }>();
+  for (const row of recent as Array<{ status: string; classrooms: { name: string } | { name: string }[] | null }>) {
+    const name = relationName(row.classrooms) ?? "Unassigned";
+    const entry = byClass.get(name) ?? { marked: 0, present: 0, absent: 0 };
+    entry.marked += 1;
+    if (row.status === "PRESENT") entry.present += 1;
+    if (row.status === "ABSENT") entry.absent += 1;
+    byClass.set(name, entry);
+  }
+  const classAttendance: ClassAttendance[] = [...byClass.entries()].map(([classroom, entry]) => ({
+    classroom,
+    marked: entry.marked,
+    present: entry.present,
+    absent: entry.absent,
+    rate: entry.marked > 0 ? Math.round((entry.present / entry.marked) * 100) : 0,
+  }));
+
+  const summary = (metrics ?? {}) as Record<string, number | string | null>;
+  const toNumber = (value: unknown) => {
+    const parsed = Number(value ?? 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  return {
+    schoolName: organization.name,
+    students: toNumber(summary.students_count),
+    teachers: toNumber(summary.teachers_count),
+    classes: toNumber(summary.classes_count),
+    attendanceRate: Math.round(toNumber(summary.attendance_rate)),
+    highRisk: toNumber(summary.high_risk_students),
+    mediumRisk: toNumber(summary.medium_risk_students),
+    risks,
+    finance,
+    overdueInvoices: (overdue as Array<{ invoice_no: string | null; title: string | null; amount: string | number; amount_paid: string | number; due_date: string | null; students: { admission_no: string; first_name: string; last_name: string } | null }>).map((row) => ({
+      invoice_no: row.invoice_no,
+      title: row.title,
+      balance: Math.max(Number(row.amount ?? 0) - Number(row.amount_paid ?? 0), 0),
+      due_date: row.due_date,
+      admission_no: row.students?.admission_no ?? null,
+      student_name: row.students ? `${row.students.first_name ?? ""} ${row.students.last_name ?? ""}`.trim() || null : null,
+    })),
+    attendanceDaily: daily,
+    classAttendance,
+    resultTerms: terms,
   };
 }
