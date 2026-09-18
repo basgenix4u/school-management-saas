@@ -1,36 +1,97 @@
-import { ArrowRight, Building2, CheckCircle2, Rocket } from "lucide-react";
-import { launchChecklist } from "@/lib/intelligence-data";
+import Link from "next/link";
+import { ArrowRight, Building2, CheckCircle2, CircleDashed, Rocket } from "lucide-react";
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { getSetupReadiness } from "@/lib/supabase/school-data";
 
-export default function OnboardingPage() {
+/**
+ * Launch readiness for the school.
+ *
+ * Every step reflects the caller's real records: a step is complete only when
+ * its rows exist. Progress here is the activation metric, so it must never be
+ * sampled or estimated.
+ */
+export const dynamic = "force-dynamic";
+
+type Readiness = {
+  organization_name?: string | null;
+  students_count?: number | string | null;
+  teachers_count?: number | string | null;
+  classes_count?: number | string | null;
+  fee_categories_count?: number | string | null;
+  academic_sessions_count?: number | string | null;
+  readiness_score?: number | string | null;
+};
+
+export default async function OnboardingPage() {
+  const supabase = await requestClientOrNull();
+  const readiness = (supabase ? await getSetupReadiness(supabase).catch(() => null) : null) as Readiness | null;
+
+  const count = (value: unknown) => {
+    const parsed = Number(value ?? 0);
+    return Number.isFinite(parsed) ? parsed : 0;
+  };
+
+  const steps = readiness
+    ? [
+        { item: "School workspace created", done: true, detail: readiness.organization_name ?? "Your school", href: "/dashboard/setup" },
+        { item: "Academic session and current term", done: count(readiness.academic_sessions_count) > 0, detail: count(readiness.academic_sessions_count) > 0 ? "Session is set" : "Set the session and term", href: "/dashboard/setup" },
+        { item: "Classes set up", done: count(readiness.classes_count) > 0, detail: count(readiness.classes_count) > 0 ? `${count(readiness.classes_count)} classes` : "Add JSS/SSS arms or primary classes", href: "/dashboard/setup" },
+        { item: "Staff records added", done: count(readiness.teachers_count) > 0, detail: count(readiness.teachers_count) > 0 ? `${count(readiness.teachers_count)} staff` : "Add teachers and the bursar", href: "/dashboard/setup" },
+        { item: "Students enrolled", done: count(readiness.students_count) > 0, detail: count(readiness.students_count) > 0 ? `${count(readiness.students_count)} students` : "Enrol students with admission numbers", href: "/dashboard/setup" },
+        { item: "Fee structure defined", done: count(readiness.fee_categories_count) > 0, detail: count(readiness.fee_categories_count) > 0 ? `${count(readiness.fee_categories_count)} fee items` : "Define term fees before billing", href: "/dashboard/setup" },
+      ]
+    : [];
+
+  const score = readiness ? Math.max(0, Math.min(100, count(readiness.readiness_score))) : 0;
+  const complete = steps.filter((step) => step.done).length;
+
   return (
     <div className="premium-dashboard">
       <section className="card-aurora intelligence-hero">
         <span className="premium-kicker"><Rocket size={14} /> Workspace Launch</span>
-        <h1>Premium onboarding for schools that want to go live fast.</h1>
-        <p>Guide a new school from setup to active operations with class setup, staff invites, student import, payment configuration and parent portal publishing.</p>
+        <h1>Get {readiness?.organization_name ?? "your school"} live.</h1>
+        <p>Work through these steps once. Each one unlocks the part of the system that depends on it.</p>
       </section>
 
-      <section className="premium-grid-2 align-start">
-        <div className="card premium-panel">
-          <span className="premium-kicker"><Building2 size={14} /> Your School</span>
-          <h2>Launch readiness</h2>
-          <div className="launch-list">
-            {launchChecklist.map((item) => (
-              <article key={item.item}>
-                <div className="launch-top"><strong>{item.item}</strong><span>{item.status}</span></div>
-                <div className="progress-track"><span style={{ width: `${item.progress}%` }} /></div>
-              </article>
-            ))}
+      {!readiness ? (
+        <div className="notice notice-info" role="status">
+          <p>Connect your database to see your school&apos;s launch progress.</p>
+        </div>
+      ) : (
+        <section className="premium-grid-2 align-start">
+          <div className="card premium-panel">
+            <span className="premium-kicker"><Building2 size={14} /> {readiness.organization_name ?? "Your School"}</span>
+            <h2>Launch readiness — {score}%</h2>
+            <div className="launch-list">
+              {steps.map((step) => (
+                <article key={step.item}>
+                  <div className="launch-top">
+                    <strong>
+                      {step.done ? <CheckCircle2 size={16} color="#05603a" aria-label="Done" /> : <CircleDashed size={16} color="#56637a" aria-label="Pending" />}{" "}
+                      {step.item}
+                    </strong>
+                    <span>{step.done ? "Done" : "Pending"}</span>
+                  </div>
+                  <p className="muted-copy">{step.detail}</p>
+                </article>
+              ))}
+            </div>
           </div>
-        </div>
 
-        <div className="card premium-panel launch-card">
-          <CheckCircle2 size={38} color="#10b981" />
-          <h2>Designed for real client onboarding</h2>
-          <p>Instead of only showing dashboards, EduManage includes a commercial SaaS onboarding concept — a major sign of product maturity.</p>
-          <a className="btn btn-primary" href="/dashboard">Return to Command Center <ArrowRight size={18} /></a>
-        </div>
-      </section>
+          <div className="card premium-panel launch-card">
+            <CheckCircle2 size={38} color="#05603a" />
+            <h2>{complete} of {steps.length} steps done</h2>
+            <p>
+              {score >= 100
+                ? "Your school is fully set up. Daily operations — registers, fees, results — are ready."
+                : "Finish the pending steps in setup and this page will confirm each one as it lands."}
+            </p>
+            <Link className="btn btn-primary" href="/dashboard/setup">
+              Continue setup <ArrowRight size={18} />
+            </Link>
+          </div>
+        </section>
+      )}
     </div>
   );
 }
