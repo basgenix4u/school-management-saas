@@ -4,7 +4,7 @@ import { NextResponse } from "next/server";
 import PDFDocument from "pdfkit";
 import path from "path";
 import fs from "fs";
-import { getLiveResultByStudent, getPrimaryOrganization } from "@/lib/supabase/school-data";
+import { getLiveResultByStudent, getPrimaryOrganization, hasPortalLink } from "@/lib/supabase/school-data";
 
 type RouteParams = { params: Promise<{ student: string }> };
 
@@ -40,10 +40,15 @@ function getLogoPath() {
   return candidates.find((candidate) => fs.existsSync(candidate));
 }
 
-export const GET = withAuth<RouteParams>("results.view", async (_request: Request, _context, { params }) => {
+export const GET = withAuth<RouteParams>("results.view", async (_request: Request, context, { params }) => {
   const { student } = await params;
   const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Database is not configured." }, { status: 503 });
+
+  // Portal accounts download only linked students; staff keep school-wide access.
+  if (!await hasPortalLink(supabase, context.user.email, context.role, student)) {
+    return NextResponse.json({ status: "error", code: "forbidden", message: "This record is not linked to your account." }, { status: 403 });
+  }
 
   try {
     const bundle = await getLiveResultByStudent(supabase, student.toUpperCase());

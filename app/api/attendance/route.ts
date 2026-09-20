@@ -2,7 +2,7 @@ import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
 import { z } from "zod";
-import { AttendanceCreateInput, createLiveAttendance, listLiveAttendance, submitAttendanceRegister } from "@/lib/supabase/school-data";
+import { AttendanceCreateInput, createLiveAttendance, filterLinkedRows, listLiveAttendance, submitAttendanceRegister } from "@/lib/supabase/school-data";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
 
 const registerSubmitBody = z.object({
@@ -15,12 +15,13 @@ const registerSubmitBody = z.object({
   })).min(1).max(500),
 });
 
-export const GET = withAuth("attendance.view", async () => {
+export const GET = withAuth("attendance.view", async (_request: NextRequest, context) => {
   const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", source: "none", register: [], message: "Connect Supabase environment variables to load attendance." });
 
   try {
-    const register = await listLiveAttendance(supabase);
+    const rows = await listLiveAttendance(supabase);
+    const register = await filterLinkedRows(supabase, context.user.email, context.role, rows);
     return NextResponse.json({ status: "ok", source: "supabase", register });
   } catch (error) {
     return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load attendance" }, { status: 500 });

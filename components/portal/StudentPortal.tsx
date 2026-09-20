@@ -1,8 +1,8 @@
 "use client";
 
 import { useEffect, useMemo, useState } from "react";
-import { Award, BookOpenCheck, CalendarCheck, GraduationCap, ListChecks, Loader2, Trophy } from "lucide-react";
-import { formatDate } from "@/lib/format";
+import { Award, BookOpenCheck, CalendarCheck, Download, GraduationCap, ListChecks, Loader2, Receipt, Trophy } from "lucide-react";
+import { formatDate, formatNairaCompact } from "@/lib/format";
 import { Alert } from "@/components/ui/Alert";
 import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
@@ -16,6 +16,7 @@ type PortalPayload = {
   invoices?: Array<Record<string, unknown>>;
   results?: Array<Record<string, unknown>>;
   attendance?: Array<Record<string, unknown>>;
+  receipts?: Array<Record<string, unknown>>;
   message?: string;
 };
 
@@ -48,7 +49,7 @@ function attendanceLabel(status: string) {
 }
 
 export function StudentPortal() {
-  const [data, setData] = useState<PortalPayload>({ status: "loading", students: [], results: [], attendance: [], invoices: [] });
+  const [data, setData] = useState<PortalPayload>({ status: "loading", students: [], results: [], attendance: [], invoices: [], receipts: [] });
   const [loading, setLoading] = useState(true);
 
   async function load() {
@@ -58,7 +59,7 @@ export function StudentPortal() {
       const payload = await response.json() as PortalPayload;
       setData(payload);
     } catch (error) {
-      setData({ status: "error", message: error instanceof Error ? error.message : "Unable to load student portal", students: [], results: [], attendance: [], invoices: [] });
+      setData({ status: "error", message: error instanceof Error ? error.message : "Unable to load student portal", students: [], results: [], attendance: [], invoices: [], receipts: [] });
     } finally {
       setLoading(false);
     }
@@ -69,7 +70,9 @@ export function StudentPortal() {
   const student = data.students?.[0];
   const results = useMemo(() => data.results ?? [], [data.results]);
   const attendance = useMemo(() => data.attendance ?? [], [data.attendance]);
+  const receipts = useMemo(() => data.receipts ?? [], [data.receipts]);
   const average = useMemo(() => scoreAverage(results), [results]);
+  const admissionNo = String(student?.admission_no ?? "");
 
   return (
     <main className="portal-shell">
@@ -118,7 +121,14 @@ export function StudentPortal() {
               ))}
             </div>
           )}
-          {student ? <Button href={`/dashboard/results/report-card/${String(student.admission_no)}`}>View Report Card</Button> : null}
+          {student && results.length > 0 ? (
+            <p style={{ display: "flex", gap: "8px", flexWrap: "wrap" }}>
+              <Button href={`/dashboard/results/report-card/${admissionNo}`}>View Report Card</Button>
+              <Button variant="secondary" href={`/api/results/${admissionNo}/pdf`}>
+                <Download size={16} /> Download PDF
+              </Button>
+            </p>
+          ) : null}
         </div>
 
         <div className="card premium-panel">
@@ -147,6 +157,35 @@ export function StudentPortal() {
             </div>
           )}
         </div>
+      </section>
+
+      <section className="card premium-panel">
+        <span className="premium-kicker"><Receipt size={14} /> Receipts</span>
+        <h2>Verified payments</h2>
+        {receipts.length === 0 ? (
+          <EmptyState
+            icon={<Receipt size={22} />}
+            title="No receipts yet"
+            body="Receipts for verified payments on your invoices will appear here."
+          />
+        ) : (
+          <div className="portal-invoice-list">
+            {receipts.map((receipt) => (
+              <article key={String(receipt.id)}>
+                <div>
+                  <strong>Receipt {String(receipt.receipt_no ?? "")}</strong>
+                  <span>{formatDate(String(receipt.issued_at ?? ""))} · {String(receipt.provider ?? "")}</span>
+                </div>
+                <div>
+                  <strong>{formatNairaCompact(receipt.amount)}</strong>
+                  <Button variant="secondary" size="sm" href={`/portal/receipts/${receipt.reference}?from=student`}>
+                    View receipt
+                  </Button>
+                </div>
+              </article>
+            ))}
+          </div>
+        )}
       </section>
     </main>
   );
