@@ -1,6 +1,6 @@
-import Link from "next/link";
 import { HelpCircle } from "lucide-react";
 import { EduCoreLogo } from "@/components/brand/EduCoreLogo";
+import { Button } from "@/components/ui/Button";
 
 const faqs = [
   ["Who is EduCore for?", "Private schools, colleges and school groups in Nigeria — from a single primary school to a multi-campus institution. If you run terms and sessions, admit students by admission number and collect fees per term, the system already speaks your language."],
@@ -15,8 +15,8 @@ const faqs = [
 export default function FAQPage() {
   return (
     <main className="public-page">
-      <div className="public-nav"><EduCoreLogo /><Link className="ds-btn ds-btn-secondary" href="/">Back home</Link></div>
-      <section className="public-hero"><span className="ds-eyebrow"><HelpCircle size={15} /> FAQ</span><h1>Answers for schools evaluating EduCore.</h1><p>What the system does, who it serves, and what getting started takes.</p></section>
+      <div className="public-nav"><EduCoreLogo /><Button variant="secondary" href="/">Back home</Button></div>
+      <section className="public-hero"><span className="ui-eyebrow"><HelpCircle size={15} /> FAQ</span><h1>Answers for schools evaluating EduCore.</h1><p>What the system does, who it serves, and what getting started takes.</p></section>
       <section className="faq-grid public-faq">{faqs.map(([q, a]) => <article key={q}><h2>{q}</h2><p>{a}</p></article>)}</section>
     </main>
   );

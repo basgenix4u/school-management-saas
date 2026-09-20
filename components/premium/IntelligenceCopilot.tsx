@@ -79,7 +79,7 @@ export function IntelligenceCopilot() {
     <section className="copilot-card" aria-label="Operations insights">
       <div className="copilot-orb"><Bot size={22} /></div>
       <div className="copilot-header">
-        <span className="premium-kicker"><Sparkles size={14} /> Insights</span>
+        <span className="ui-eyebrow ui-eyebrow-light"><Sparkles size={14} /> Insights</span>
         <h2>Operations insights</h2>
         <p>Computed from your school&apos;s live records — attendance, fees, results and risk.</p>
       </div>

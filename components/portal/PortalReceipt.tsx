@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Skeleton } from "@/components/ui/Skeleton";
 import { ReceiptCard, type ReceiptView } from "@/components/receipts/ReceiptCard";
+import { PortalTopbar } from "@/components/portal/PortalTopbar";
 
 type ReceiptPayload = { status: string; receipt?: ReceiptView; message?: string };
 
@@ -44,6 +45,7 @@ export function PortalReceipt({ reference, from }: { reference: string; from: "p
 
   return (
     <main className="portal-shell">
+      <div className="no-print"><PortalTopbar label="Payment receipt" homeHref={backHref} /></div>
       <p className="no-print"><Button variant="ghost" size="sm" href={backHref}><ArrowLeft size={16} /> {backLabel}</Button></p>
 
       {loading ? (

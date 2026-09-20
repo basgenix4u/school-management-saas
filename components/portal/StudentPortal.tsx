@@ -8,6 +8,7 @@ import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Metric, MetricGrid } from "@/components/ui/Metric";
+import { PortalTopbar } from "@/components/portal/PortalTopbar";
 
 type PortalPayload = {
   status: string;
@@ -76,9 +77,10 @@ export function StudentPortal() {
 
   return (
     <main className="portal-shell">
+      <PortalTopbar label="Student portal" homeHref="/portal/student" />
       <section className="portal-hero card-aurora">
         <div>
-          <span className="premium-kicker"><GraduationCap size={14} /> Student Portal</span>
+          <span className="ui-eyebrow ui-eyebrow-light"><GraduationCap size={14} /> Student Portal</span>
           <h1>Your learning progress in one secure place.</h1>
           <p>View your academic results, attendance activity and school updates connected to your student account.</p>
           <div className="role-metrics"><span>{String(student?.student_name ?? data.profile?.name ?? "Student account")}</span><span>{String(student?.classroom ?? "No class assigned")}</span><span>{average}% average</span></div>
@@ -100,7 +102,7 @@ export function StudentPortal() {
 
       <section className="premium-grid-2 align-start">
         <div className="card premium-panel">
-          <span className="premium-kicker"><BookOpenCheck size={14} /> Subject Progress</span>
+          <span className="ui-eyebrow"><BookOpenCheck size={14} /> Subject Progress</span>
           <h2>Current performance</h2>
           {results.length === 0 ? (
             <EmptyState
@@ -132,7 +134,7 @@ export function StudentPortal() {
         </div>
 
         <div className="card premium-panel">
-          <span className="premium-kicker"><CalendarCheck size={14} /> Attendance</span>
+          <span className="ui-eyebrow"><CalendarCheck size={14} /> Attendance</span>
           <h2>Recent attendance</h2>
           {attendance.length === 0 ? (
             <EmptyState
@@ -160,7 +162,7 @@ export function StudentPortal() {
       </section>
 
       <section className="card premium-panel">
-        <span className="premium-kicker"><Receipt size={14} /> Receipts</span>
+        <span className="ui-eyebrow"><Receipt size={14} /> Receipts</span>
         <h2>Verified payments</h2>
         {receipts.length === 0 ? (
           <EmptyState
