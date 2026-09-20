@@ -316,8 +316,8 @@ function FeeFields() {
       <TextField name="amount" label="Amount (₦)" type="number" required />
       <TextField name="billingCycle" label="Billing cycle" placeholder="termly" />
       <div>
-        <label className="ui-label" style={{ display: "flex", gap: "8px", alignItems: "center", minHeight: "44px" }}>
-          <input name="required" type="checkbox" defaultChecked style={{ width: "20px", height: "20px" }} /> Required fee
+        <label className="ui-checkbox">
+          <input name="required" type="checkbox" defaultChecked /> Required fee
         </label>
       </div>
     </>

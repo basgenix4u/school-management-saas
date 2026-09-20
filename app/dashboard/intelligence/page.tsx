@@ -1,9 +1,12 @@
 import Link from "next/link";
-import { BrainCircuit, CheckCircle2, CircleDashed, Target } from "lucide-react";
+import { BrainCircuit, CheckCircle2, CircleDashed } from "lucide-react";
 import { IntelligenceCopilot } from "@/components/premium/IntelligenceCopilot";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getInsightContext } from "@/lib/supabase/school-data";
 import { buildDecisionQueue } from "@/lib/insights/engine";
+import { Alert } from "@/components/ui/Alert";
+import { Card } from "@/components/ui/Card";
+import { EmptyState } from "@/components/ui/EmptyState";
 
 /**
  * Decision intelligence for the school.
@@ -31,32 +34,29 @@ export default async function IntelligencePage() {
     : [];
 
   return (
-    <div className="premium-dashboard">
-      <section className="card-aurora intelligence-hero">
-        <span className="premium-kicker"><BrainCircuit size={14} /> Intelligence Layer</span>
-        <h1>Decision intelligence for {context?.schoolName ?? "your school"}.</h1>
-        <p>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow"><BrainCircuit size={14} aria-hidden="true" /> Intelligence layer</p>
+        <h1 className="page-title">Decisions, backed by {context?.schoolName ?? "your school"}&apos;s records.</h1>
+        <p className="page-subtitle">
           Who needs attention, where money stands, which class is falling behind and what to say
-          to parents next — computed from live school records.
+          to parents next.
         </p>
-      </section>
+      </header>
 
       {!context ? (
-        <div className="notice notice-info" role="status">
-          <p>Connect your database to activate live intelligence for your school.</p>
-        </div>
+        <Alert tone="info"><p>Connect your database to activate live intelligence for your school.</p></Alert>
       ) : (
         <>
           <section className="premium-grid-2 align-start">
             <IntelligenceCopilot />
-            <div className="card premium-panel">
-              <span className="premium-kicker"><Target size={14} /> Decision Queue</span>
-              <h2>Prioritized next best actions</h2>
+            <Card title="Decision queue" subtitle="Prioritized next best actions.">
               {queue.length === 0 ? (
-                <div className="empty-state-card">
-                  Nothing needs urgent attention. As registers, invoices and scores arrive, the
-                  queue will order them here by severity.
-                </div>
+                <EmptyState
+                  icon={<CheckCircle2 size={22} />}
+                  title="Nothing needs urgent attention"
+                  body="As registers, invoices and scores arrive, the queue will order them here by severity."
+                />
               ) : (
                 <div className="signal-list">
                   {queue.map((signal) => (
@@ -71,12 +71,10 @@ export default async function IntelligencePage() {
                   ))}
                 </div>
               )}
-            </div>
+            </Card>
           </section>
 
-          <section className="card premium-panel">
-            <span className="premium-kicker"><CheckCircle2 size={14} /> Data Coverage</span>
-            <h2>What the analysis is working with</h2>
+          <Card title="Data coverage" subtitle="What the analysis is working with.">
             <div className="signal-list">
               {coverage.map((row) => (
                 <article className="signal-item" key={row.label}>
@@ -84,14 +82,18 @@ export default async function IntelligencePage() {
                     <strong>{row.label}</strong>
                     <p>{row.done ? `${row.value} on record` : "Not yet — add this in setup to sharpen the analysis"}</p>
                   </div>
-                  {row.done ? <CheckCircle2 size={20} color="#05603a" /> : <CircleDashed size={20} color="#56637a" />}
+                  {row.done ? (
+                    <CheckCircle2 size={20} className="ui-icon-success" aria-label="Done" />
+                  ) : (
+                    <CircleDashed size={20} className="ui-icon-muted" aria-label="Pending" />
+                  )}
                 </article>
               ))}
             </div>
             <p className="muted-copy">
               Intelligence improves as records grow. <Link href="/dashboard/setup">Continue setup</Link>
             </p>
-          </section>
+          </Card>
         </>
       )}
     </div>

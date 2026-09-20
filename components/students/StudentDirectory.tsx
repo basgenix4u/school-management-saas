@@ -156,15 +156,16 @@ export function StudentDirectory() {
   const classCount = useMemo(() => new Set(students.map((student) => student.className)).size, [students]);
 
   return (
-    <div className="student-directory">
-      <section className="card-aurora student-hero">
-        <span className="premium-kicker"><UserPlus size={14} /> Student records</span>
-        <h1>Know every learner beyond a row in a spreadsheet.</h1>
-        <p>Each record combines biodata, guardians, finance, attendance and performance signals in one place.</p>
-        <div className="hero-actions">
-          <Button onClick={() => setFormOpen(true)}><UserPlus size={18} /> Enroll Student</Button>
-        </div>
-      </section>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow">Student records</p>
+        <h1 className="page-title">Know every learner.</h1>
+        <p className="page-subtitle">Biodata, guardians, finance, attendance and performance signals in one place.</p>
+      </header>
+
+      <div className="action-row">
+        <Button onClick={() => setFormOpen(true)}><UserPlus size={18} /> Enroll Student</Button>
+      </div>
 
       <Alert tone={loading ? "info" : connected ? "success" : "warning"}>
         <p>{message}</p>

@@ -4,6 +4,7 @@ import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getReportCardBundle } from "@/lib/supabase/school-data";
 import { getGrade } from "@/lib/results/grading";
 import { Alert } from "@/components/ui/Alert";
+import { Badge } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { PrintButton } from "@/components/ui/PrintButton";
@@ -60,7 +61,7 @@ export default async function ReportCardPage({ params }: { params: Promise<{ stu
             <h1>{bundle.organizationName ?? "School Academic Report"}</h1>
             <p>Academic Report Card • {bundle.term} • {bundle.session}</p>
           </div>
-          <span className={`status ${bundle.status === "PUBLISHED" || bundle.status === "APPROVED" ? "good" : bundle.status === "REVIEW" ? "warn" : "bad"}`}>{bundle.status}</span>
+          <Badge tone={bundle.status === "PUBLISHED" || bundle.status === "APPROVED" ? "success" : bundle.status === "REVIEW" ? "warning" : "neutral"}>{bundle.status}</Badge>
         </header>
 
         <section className="report-student-grid">
@@ -72,6 +73,7 @@ export default async function ReportCardPage({ params }: { params: Promise<{ stu
           <div><span>Average</span><strong>{bundle.average}% • {grade?.grade}</strong></div>
         </section>
 
+        <div className="report-table-scroll">
         <table className="report-table">
           <thead><tr><th>Subject</th><th>CA</th><th>Exam</th><th>Total</th><th>Grade</th><th>Remark</th></tr></thead>
           <tbody>
@@ -90,6 +92,7 @@ export default async function ReportCardPage({ params }: { params: Promise<{ stu
             })}
           </tbody>
         </table>
+        </div>
 
         <section className="report-comments">
           <div><strong>Class Teacher Comment</strong><p>{bundle.teacherComment ?? "—"}</p></div>

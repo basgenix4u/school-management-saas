@@ -1,11 +1,11 @@
-import Link from "next/link";
 import { EduCoreLogo } from "@/components/brand/EduCoreLogo";
+import { Button } from "@/components/ui/Button";
 
 export default function TermsPage() {
   return (
     <main className="public-page legal-page">
-      <div className="public-nav"><EduCoreLogo /><Link className="ds-btn ds-btn-secondary" href="/">Back home</Link></div>
-      <section className="public-hero"><span className="ds-eyebrow">Terms of Service</span><h1>Terms for using EduCore.</h1><p>Last updated: May 29, 2026. These terms should be reviewed by legal counsel before commercial launch.</p></section>
+      <div className="public-nav"><EduCoreLogo /><Button variant="secondary" href="/">Back home</Button></div>
+      <section className="public-hero"><span className="ui-eyebrow">Terms of Service</span><h1>Terms for using EduCore.</h1><p>Last updated: May 29, 2026. These terms should be reviewed by legal counsel before commercial launch.</p></section>
       <section className="legal-content">
         <h2>Service scope</h2><p>EduCore provides school operations software for administration, academic records, attendance, finance, communication, portals and reporting.</p>
         <h2>Customer responsibilities</h2><p>Schools are responsible for accurate data entry, account access control, lawful processing of student/guardian data and compliance with applicable education and privacy rules.</p>

@@ -1,10 +1,13 @@
-import Link from "next/link";
 import { ClipboardCheck, FileSpreadsheet, ReceiptText } from "lucide-react";
 import { getAppSession } from "@/lib/auth/session";
 import { can } from "@/lib/rbac";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getCommandCenterSnapshot } from "@/lib/supabase/school-data";
 import { formatNaira } from "@/lib/format";
+import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
+import { Metric, MetricGrid } from "@/components/ui/Metric";
 
 /**
  * Operations overview.
@@ -15,7 +18,7 @@ import { formatNaira } from "@/lib/format";
  */
 export const dynamic = "force-dynamic";
 
-type Metric = { label: string; value: string; caption: string };
+type MetricDatum = { label: string; value: string; caption: string };
 
 function greeting(date = new Date()) {
   const hour = Number(
@@ -33,7 +36,7 @@ export default async function DashboardOverview() {
   const firstName = session.user?.name?.split(" ")[0] ?? "there";
   const role = session.user?.role ?? "SCHOOL_OWNER";
 
-  let metrics: Metric[] = [];
+  let metrics: MetricDatum[] = [];
   let schoolName: string | null = null;
   let unavailable: string | null = null;
 
@@ -73,40 +76,28 @@ export default async function DashboardOverview() {
       </header>
 
       {unavailable ? (
-        <div className="notice notice-info" role="status">
-          <p>{unavailable}</p>
-        </div>
+        <Alert tone="info"><p>{unavailable}</p></Alert>
       ) : (
-        <section aria-labelledby="today-heading">
-          <h2 id="today-heading" className="sr-only">
-            Today at a glance
-          </h2>
-          <div className="metric-grid">
+        <section aria-label="Today at a glance">
+          <MetricGrid>
             {metrics.map((metric) => (
-              <article key={metric.label} className="metric">
-                <p className="metric-label">{metric.label}</p>
-                <p className="metric-value">{metric.value}</p>
-                <p className="metric-caption">{metric.caption}</p>
-              </article>
+              <Metric key={metric.label} label={metric.label} value={metric.value} caption={metric.caption} />
             ))}
-          </div>
+          </MetricGrid>
         </section>
       )}
 
       {actions.length > 0 && (
-        <section aria-labelledby="actions-heading" className="section">
-          <h2 id="actions-heading" className="section-title">
-            Quick actions
-          </h2>
+        <Card title="Quick actions">
           <div className="action-row">
             {actions.map((action) => (
-              <Link key={action.href} href={action.href} className="action-chip">
+              <Button key={action.href} href={action.href} variant="secondary">
                 <action.icon size={18} aria-hidden="true" />
                 {action.label}
-              </Link>
+              </Button>
             ))}
           </div>
-        </section>
+        </Card>
       )}
     </div>
   );

@@ -12,9 +12,9 @@ export function RoleAccessMatrix() {
 
   return (
     <div className="access-lab">
-      <section className="role-tabs" aria-label="Role selector">
+      <section className="ui-segmented" aria-label="Role selector">
         {roleExperiences.map((item) => (
-          <button key={item.role} type="button" onClick={() => setActiveRole(item.role)} className={activeRole === item.role ? "active" : ""}>
+          <button key={item.role} type="button" onClick={() => setActiveRole(item.role)} aria-pressed={activeRole === item.role}>
             {roleLabels[item.role]}
           </button>
         ))}
@@ -22,7 +22,7 @@ export function RoleAccessMatrix() {
 
       <section className="role-preview-card">
         <div>
-          <span className="premium-kicker"><Sparkles size={14} /> {activeExperience.workspace}</span>
+          <span className="ui-eyebrow"><Sparkles size={14} /> {activeExperience.workspace}</span>
           <h2>{activeExperience.headline}</h2>
           <p>{activeExperience.description}</p>
           <div className="role-metrics">{activeExperience.metrics.map((metric) => <span key={metric}>{metric}</span>)}</div>

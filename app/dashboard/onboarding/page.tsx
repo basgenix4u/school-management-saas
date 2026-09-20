@@ -1,7 +1,9 @@
-import Link from "next/link";
-import { ArrowRight, Building2, CheckCircle2, CircleDashed, Rocket } from "lucide-react";
+import { ArrowRight, CheckCircle2, CircleDashed } from "lucide-react";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getSetupReadiness } from "@/lib/supabase/school-data";
+import { Alert } from "@/components/ui/Alert";
+import { Button } from "@/components/ui/Button";
+import { Card } from "@/components/ui/Card";
 
 /**
  * Launch readiness for the school.
@@ -46,28 +48,28 @@ export default async function OnboardingPage() {
   const complete = steps.filter((step) => step.done).length;
 
   return (
-    <div className="premium-dashboard">
-      <section className="card-aurora intelligence-hero">
-        <span className="premium-kicker"><Rocket size={14} /> Workspace Launch</span>
-        <h1>Get {readiness?.organization_name ?? "your school"} live.</h1>
-        <p>Work through these steps once. Each one unlocks the part of the system that depends on it.</p>
-      </section>
+    <div className="page">
+      <header className="page-head">
+        <p className="page-eyebrow">Workspace launch</p>
+        <h1 className="page-title">Get {readiness?.organization_name ?? "your school"} live.</h1>
+        <p className="page-subtitle">Work through these steps once. Each one unlocks the part of the system that depends on it.</p>
+      </header>
 
       {!readiness ? (
-        <div className="notice notice-info" role="status">
-          <p>Connect your database to see your school&apos;s launch progress.</p>
-        </div>
+        <Alert tone="info"><p>Connect your database to see your school&apos;s launch progress.</p></Alert>
       ) : (
         <section className="premium-grid-2 align-start">
-          <div className="card premium-panel">
-            <span className="premium-kicker"><Building2 size={14} /> {readiness.organization_name ?? "Your School"}</span>
-            <h2>Launch readiness — {score}%</h2>
+          <Card title={`Launch readiness — ${score}%`} subtitle={readiness.organization_name ?? "Your school"}>
             <div className="launch-list">
               {steps.map((step) => (
                 <article key={step.item}>
                   <div className="launch-top">
                     <strong>
-                      {step.done ? <CheckCircle2 size={16} color="#05603a" aria-label="Done" /> : <CircleDashed size={16} color="#56637a" aria-label="Pending" />}{" "}
+                      {step.done ? (
+                        <CheckCircle2 size={16} className="ui-icon-success" aria-label="Done" />
+                      ) : (
+                        <CircleDashed size={16} className="ui-icon-muted" aria-label="Pending" />
+                      )}{" "}
                       {step.item}
                     </strong>
                     <span>{step.done ? "Done" : "Pending"}</span>
@@ -76,20 +78,23 @@ export default async function OnboardingPage() {
                 </article>
               ))}
             </div>
-          </div>
+          </Card>
 
-          <div className="card premium-panel launch-card">
-            <CheckCircle2 size={38} color="#05603a" />
-            <h2>{complete} of {steps.length} steps done</h2>
+          <Card title={`${complete} of ${steps.length} steps done`}>
+            <p>
+              <CheckCircle2 size={38} className="ui-icon-success" aria-hidden="true" />
+            </p>
             <p>
               {score >= 100
                 ? "Your school is fully set up. Daily operations — registers, fees, results — are ready."
                 : "Finish the pending steps in setup and this page will confirm each one as it lands."}
             </p>
-            <Link className="btn btn-primary" href="/dashboard/setup">
-              Continue setup <ArrowRight size={18} />
-            </Link>
-          </div>
+            <p>
+              <Button href="/dashboard/setup">
+                Continue setup <ArrowRight size={18} />
+              </Button>
+            </p>
+          </Card>
         </section>
       )}
     </div>

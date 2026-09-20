@@ -175,7 +175,7 @@ export function LoginExperience() {
     <main className="login-shell">
       <section className="login-brand-panel">
         <div className="login-brand-logo"><EduCoreLogo href="" /></div>
-        <span className="premium-kicker"><ShieldCheck size={14} /> Secure School OS</span>
+        <span className="ui-eyebrow ui-eyebrow-light"><ShieldCheck size={14} /> Secure School OS</span>
         <h1>Role-aware access built for serious school operations.</h1>
         <p>EduCore is designed for owners, principals, teachers, accountants, parents and students — each with a focused workspace and permission boundary.</p>
         <div className="login-showcase">
@@ -186,7 +186,7 @@ export function LoginExperience() {
       </section>
 
       <section className="login-card">
-        <span className="premium-kicker">Secure Access</span>
+        <span className="ui-eyebrow">Secure Access</span>
         <h2>{mode === "signin" ? "Sign in to EduCore" : mode === "signup" ? "Create school owner account" : "Set a new password"}</h2>
         <p>{mode === "signin" ? "Access your school workspace." : mode === "signup" ? "Create the first account, then set up your school profile." : "Complete password recovery for your account."}</p>
 

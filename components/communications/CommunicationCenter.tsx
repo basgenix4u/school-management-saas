@@ -133,8 +133,8 @@ export function CommunicationCenter() {
             </Field>
             <Field label="Message" required>{(id) => <Textarea id={id} name="body" required rows={4} placeholder="Write the announcement..." />}</Field>
             <div>
-              <label className="ui-label" style={{ display: "flex", gap: "8px", alignItems: "center", minHeight: "44px" }}>
-                <input name="publish" type="checkbox" defaultChecked style={{ width: "20px", height: "20px" }} /> Publish immediately
+              <label className="ui-checkbox">
+                <input name="publish" type="checkbox" defaultChecked /> Publish immediately
               </label>
             </div>
             <div>

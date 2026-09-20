@@ -8,6 +8,7 @@ import { Badge, type BadgeTone } from "@/components/ui/Badge";
 import { Button } from "@/components/ui/Button";
 import { EmptyState } from "@/components/ui/EmptyState";
 import { Metric, MetricGrid } from "@/components/ui/Metric";
+import { PortalTopbar } from "@/components/portal/PortalTopbar";
 
 type PortalPayload = {
   status: string;
@@ -95,9 +96,10 @@ export function ParentPortal() {
 
   return (
     <main className="portal-shell">
+      <PortalTopbar label="Parent portal" homeHref="/portal/parent" />
       <section className="portal-hero card-aurora">
         <div>
-          <span className="premium-kicker"><GraduationCap size={14} /> Parent Portal</span>
+          <span className="ui-eyebrow ui-eyebrow-light"><GraduationCap size={14} /> Parent Portal</span>
           <h1>Stay connected to your child’s school life.</h1>
           <p>View linked children, invoices, receipts, attendance activity and report cards from one secure parent workspace.</p>
           <div className="role-metrics"><span>{data.profile?.name ?? "Parent account"}</span><span>{students.length} linked child(ren)</span><span>{formatNairaCompact(totalBalance)} balance</span></div>
@@ -119,7 +121,7 @@ export function ParentPortal() {
 
       <section className="premium-grid-2 align-start">
         <div className="card premium-panel">
-          <span className="premium-kicker"><UsersRound size={14} /> Children Overview</span>
+          <span className="ui-eyebrow"><UsersRound size={14} /> Children Overview</span>
           <h2>Linked students</h2>
           {students.length === 0 ? (
             <EmptyState
@@ -144,7 +146,7 @@ export function ParentPortal() {
         </div>
 
         <div className="card premium-panel">
-          <span className="premium-kicker"><CreditCard size={14} /> Fees</span>
+          <span className="ui-eyebrow"><CreditCard size={14} /> Fees</span>
           <h2>Invoices and receipts</h2>
           {invoices.length === 0 ? (
             <EmptyState
@@ -180,7 +182,7 @@ export function ParentPortal() {
       </section>
 
       <section className="card premium-panel">
-        <span className="premium-kicker"><Award size={14} /> Report cards</span>
+        <span className="ui-eyebrow"><Award size={14} /> Report cards</span>
         <h2>Results by child</h2>
         {students.length === 0 ? (
           <EmptyState
@@ -220,7 +222,7 @@ export function ParentPortal() {
       </section>
 
       <section className="card premium-panel">
-        <span className="premium-kicker"><Bell size={14} /> Academic activity</span>
+        <span className="ui-eyebrow"><Bell size={14} /> Academic activity</span>
         <h2>Results and attendance</h2>
         <div className="portal-activity-grid"><div><strong>{results.length}</strong><span>Result records</span></div><div><strong>{attendanceCount}</strong><span>Attendance records</span></div></div>
       </section>
