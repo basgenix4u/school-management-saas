@@ -721,7 +721,7 @@ export async function getPortalStudentsForUser(client: SupabaseClient, userEmail
 export async function getStudentPortalBundle(client: SupabaseClient, userEmail: string, relationship: "PARENT" | "STUDENT") {
   const portal = await getPortalStudentsForUser(client, userEmail, relationship);
   const studentIds = portal.students.map((student) => String(student.student_id)).filter(Boolean);
-  if (!studentIds.length) return { ...portal, invoices: [], results: [], attendance: [] };
+  if (!studentIds.length) return { ...portal, invoices: [], results: [], attendance: [], receipts: [] };
 
   const [invoicesResult, resultsResult, attendanceResult] = await Promise.all([
     client.from("invoices").select("id,invoice_no,title,amount,amount_paid,status,due_date,student_id").in("student_id", studentIds),
@@ -732,11 +732,28 @@ export async function getStudentPortalBundle(client: SupabaseClient, userEmail: 
   if (resultsResult.error) throw resultsResult.error;
   if (attendanceResult.error) throw attendanceResult.error;
 
+  const invoices = invoicesResult.data ?? [];
+  const invoiceIds = invoices.map((row) => String(row.id)).filter(Boolean);
+  const receipts = invoiceIds.length
+    ? await client
+        .from("payment_receipts")
+        .select("id,receipt_no,reference,amount,issued_at,invoice_id,payer_email,provider")
+        .in("invoice_id", invoiceIds)
+        .order("issued_at", { ascending: false })
+        .then(
+          (result) => {
+            if (result.error) throw result.error;
+            return result.data ?? [];
+          },
+        )
+    : [];
+
   return {
     ...portal,
-    invoices: invoicesResult.data ?? [],
+    invoices,
     results: resultsResult.data ?? [],
     attendance: attendanceResult.data ?? [],
+    receipts,
   };
 }
 
@@ -1652,4 +1669,65 @@ export async function getStudentProfile(client: SupabaseClient, admissionNo: str
       published: resultRows.filter((row) => row.status === "PUBLISHED").length,
     },
   };
+}
+
+/**
+ * Admission numbers linked to a portal account.
+ *
+ * Parents and students authenticate like anyone else, so row level security
+ * admits them to their school's tables — but they must only ever see their
+ * own children's rows. These helpers are the second half of that boundary:
+ * every portal-facing read filters through them.
+ */
+export async function linkedAdmissionNumbers(
+  client: SupabaseClient,
+  userEmail: string,
+  relationship: "PARENT" | "STUDENT",
+): Promise<Set<string>> {
+  const { students } = await getPortalStudentsForUser(client, userEmail, relationship);
+  return new Set(
+    students
+      .map((student) => String(student.admission_no ?? "").trim().toUpperCase())
+      .filter(Boolean),
+  );
+}
+
+/** Staff always pass; portal roles must hold a link to the student. */
+export async function hasPortalLink(
+  client: SupabaseClient,
+  userEmail: string | undefined,
+  role: string,
+  admissionNo: string,
+): Promise<boolean> {
+  if (role !== "PARENT" && role !== "STUDENT") return true;
+  if (!userEmail) return false;
+  const linked = await linkedAdmissionNumbers(client, userEmail, role);
+  return linked.has(admissionNo.trim().toUpperCase());
+}
+
+type LinkedRow = {
+  students?: { admission_no?: unknown } | Array<{ admission_no?: unknown }> | null;
+};
+
+/**
+ * Narrows joined rows to a portal account's linked students.
+ *
+ * Staff pass through untouched; parents and students keep only rows whose
+ * joined student is linked to their account. Used by list endpoints whose
+ * permission (view results, fees, attendance) portal roles legitimately
+ * hold but must never enjoy school-wide.
+ */
+export async function filterLinkedRows<T extends LinkedRow>(
+  client: SupabaseClient,
+  userEmail: string | undefined,
+  role: string,
+  rows: T[],
+): Promise<T[]> {
+  if (role !== "PARENT" && role !== "STUDENT") return rows;
+  if (!userEmail) return [];
+  const linked = await linkedAdmissionNumbers(client, userEmail, role);
+  return rows.filter((row) => {
+    const joined = Array.isArray(row.students) ? row.students[0] : row.students;
+    return linked.has(String(joined?.admission_no ?? "").trim().toUpperCase());
+  });
 }

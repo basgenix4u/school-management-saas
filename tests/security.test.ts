@@ -61,6 +61,7 @@ describe("API authorization coverage", () => {
         source.includes("withAuth(") ||
         source.includes("withAuth<") ||
         source.includes("withSession(") ||
+        source.includes("withSession<") ||
         source.includes("getAppSession");
 
       if (!guarded) unguarded.push(rel);
