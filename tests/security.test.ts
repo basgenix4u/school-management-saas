@@ -33,7 +33,6 @@ const PUBLIC_ROUTES: Record<string, string> = {
   "auth/sign-out/route.ts": "Must work even with an expired session.",
   "payments/paystack/webhook/route.ts": "Server-to-server; authenticated by HMAC signature.",
   "payments/paystack/verify/route.ts": "Payment callback verified against the provider.",
-  "payments/paystack/initialize/route.ts": "Starts a checkout for an issued invoice.",
   "invitations/accept/route.ts": "Runs before membership exists; the token is the credential.",
   "monitoring/errors/route.ts": "Client error reporting.",
   "support/tickets/route.ts": "Support intake.",

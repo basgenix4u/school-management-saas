@@ -1,4 +1,5 @@
 import { createServerSupabaseClient, hasSupabaseConfig } from "@/lib/supabase/server";
+import { normaliseNigerianPhone } from "@/lib/format";
 import type { AttendanceDay, ClassAttendance, FinanceSummary, InsightContext, ResultTerm, RiskRow } from "@/lib/insights/engine";
 
 type SupabaseClient = ReturnType<typeof createServerSupabaseClient>;
@@ -190,7 +191,7 @@ export async function createLiveStudent(client: SupabaseClient, input: StudentCr
     last_name: input.lastName,
     gender: input.gender ?? null,
     guardian_name: input.guardianName ?? null,
-    guardian_phone: input.guardianPhone ?? null,
+    guardian_phone: canonicalPhone(input.guardianPhone),
     guardian_email: cleanEmail(input.guardianEmail),
     student_email: cleanEmail(input.studentEmail),
     risk_level: input.riskLevel ?? "Low",
@@ -210,7 +211,7 @@ export async function updateLiveStudent(client: SupabaseClient, admissionNo: str
   if (changes.lastName) payload.last_name = changes.lastName;
   if (changes.gender !== undefined) payload.gender = changes.gender ?? null;
   if (changes.guardianName !== undefined) payload.guardian_name = changes.guardianName ?? null;
-  if (changes.guardianPhone !== undefined) payload.guardian_phone = changes.guardianPhone ?? null;
+  if (changes.guardianPhone !== undefined) payload.guardian_phone = canonicalPhone(changes.guardianPhone);
   if (changes.guardianEmail !== undefined) payload.guardian_email = changes.guardianEmail ?? null;
   if (changes.studentEmail !== undefined) payload.student_email = changes.studentEmail ?? null;
   if (changes.riskLevel !== undefined) payload.risk_level = changes.riskLevel ?? "Low";
@@ -295,19 +296,6 @@ export async function getLiveInvoiceById(client: SupabaseClient, id: string) {
     .maybeSingle<InvoiceRow & { students: Record<string, unknown> | null }>();
   if (error) throw error;
   return data;
-}
-
-/** All invoices carrying a number, for payer-email disambiguation at checkout. */
-export async function listLiveInvoicesByNo(client: SupabaseClient, invoiceNo: string) {
-  const { data, error } = await client
-    .from("invoices")
-    .select("id,organization_id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name,guardian_email,student_email)")
-    .eq("invoice_no", invoiceNo)
-    .order("created_at", { ascending: false })
-    .limit(10)
-    .returns<Array<InvoiceRow & { students: Record<string, unknown> | null }>>();
-  if (error) throw error;
-  return data ?? [];
 }
 
 export async function createLiveInvoice(client: SupabaseClient, input: InvoiceCreateInput, actor?: ActorInput) {
@@ -1797,6 +1785,12 @@ function cleanEmail(value: string | undefined): string | null {
   return trimmed ? trimmed : null;
 }
 
+/** Stores the canonical +234 form when the input parses; keeps the raw value otherwise. */
+function canonicalPhone(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return normaliseNigerianPhone(value) ?? value;
+}
+
 /**
  * Bulk student enrolment in a fixed handful of queries.
  *
@@ -1833,7 +1827,7 @@ export async function createLiveStudentsBulk(
     last_name: input.lastName.trim(),
     gender: input.gender ?? null,
     guardian_name: input.guardianName ?? null,
-    guardian_phone: input.guardianPhone ?? null,
+    guardian_phone: canonicalPhone(input.guardianPhone),
     guardian_email: cleanEmail(input.guardianEmail),
     student_email: cleanEmail(input.studentEmail),
     risk_level: input.riskLevel ?? "Low",

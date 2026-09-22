@@ -175,11 +175,19 @@ describe("finance constraints migration", () => {
   it("resolves payments by exact id with number fallback", () => {
     const data = read("lib/supabase/school-data.ts");
     expect(data).toContain("getLiveInvoiceById");
-    expect(data).toContain("listLiveInvoicesByNo");
+    expect(data).not.toContain("listLiveInvoicesByNo");
     expect(data).toContain("invoice_no: input.invoiceNo.trim().toUpperCase()");
-    expect(read("app/api/payments/paystack/initialize/route.ts")).toContain("listLiveInvoicesByNo");
     expect(read("app/api/payments/paystack/webhook/route.ts")).toContain("invoiceId");
     expect(read("app/api/payments/paystack/verify/route.ts")).toContain("invoiceId");
+  });
+
+  it("initializes checkout inside the payer's school", () => {
+    // Per-school numbers make cross-school lookup by number unsafe, so
+    // checkout requires a session and resolves through the payer's rows.
+    const route = read("app/api/payments/paystack/initialize/route.ts");
+    expect(route).toContain("withSession");
+    expect(route).toContain("requestClientOrNull");
+    expect(route).toContain("/portal/receipts/");
   });
 });
 
@@ -191,6 +199,12 @@ describe("bulk import and upload guards", () => {
 
   it("caps CSV uploads", () => {
     expect(read("components/setup/SetupWizard.tsx")).toContain("MAX_CSV_BYTES");
+  });
+
+  it("stores phone numbers canonically", () => {
+    const data = read("lib/supabase/school-data.ts");
+    expect(data).toContain("canonicalPhone");
+    expect(data).toContain("normaliseNigerianPhone");
   });
 });
 
