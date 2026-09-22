@@ -18,12 +18,13 @@ export const dynamic = "force-dynamic";
 
 export default async function CampaignsPage() {
   const supabase = await requestClientOrNull();
-  const [announcements, deliveries] = supabase
+  const [listed, deliveries] = supabase
     ? await Promise.all([
-        listAnnouncements(supabase).catch(() => []),
+        listAnnouncements(supabase).catch(() => null),
         listCommunicationDeliveries(supabase).catch(() => []),
       ])
-    : [[], []];
+    : [null, []];
+  const announcements = listed?.data ?? [];
 
   const stats = new Map<string, { sent: number; failed: number; queued: number }>();
   for (const delivery of deliveries as Array<{ announcement_id: string | null; status: string }>) {

@@ -18,7 +18,7 @@ export async function POST(request: NextRequest) {
     if (!invoiceNo) throw new Error("Paystack metadata is missing invoice_no.");
     const amount = Number(verification.data.amount ?? 0) / 100;
     const payerEmail = verification.data.customer?.email;
-    const record = await recordVerifiedPayment(supabase, { invoiceNo, reference: verification.data.reference, amount, provider: "paystack", payerEmail, metadata });
+    const record = await recordVerifiedPayment(supabase, { invoiceNo, invoiceId: String(metadata.invoice_id ?? "") || undefined, reference: verification.data.reference, amount, provider: "paystack", payerEmail, metadata });
     return NextResponse.json({ status: "verified", verification: verification.data, record });
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to verify payment" }, { status: 500 });

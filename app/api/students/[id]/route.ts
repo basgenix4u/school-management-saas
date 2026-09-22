@@ -1,7 +1,9 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { withAuth, type AuthedContext } from "@/lib/auth/api-guard";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
-import { getStudentByAdmission, updateLiveStudent, type StudentCreateInput } from "@/lib/supabase/school-data";
+import { getStudentByAdmission, updateLiveStudent } from "@/lib/supabase/school-data";
+import { invalidInputResponse, studentUpdateSchema } from "@/lib/validation";
+import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -32,16 +34,20 @@ export const GET = withAuth<RouteParams>("students.manage", async (_request, con
 });
 
 export const PATCH = withAuth<RouteParams>("students.manage", async (request: NextRequest, context: AuthedContext, { params }) => {
+  {
+    const throttle = checkRateLimit(rateLimitKey(request, "students-update"), { limit: 60, windowMs: 60_000 });
+    if (!throttle.allowed) return rateLimitedResponse(throttle.retryAfterMs);
+  }
+
   const { id } = await params;
   const supabase = await requestClientOrNull();
   if (!supabase) {
     return NextResponse.json({ status: "not_configured", message: NOT_CONFIGURED }, { status: 503 });
   }
 
-  const body = (await request.json().catch(() => null)) as Partial<StudentCreateInput> | null;
-  if (!body) {
-    return NextResponse.json({ status: "error", message: "Invalid JSON body." }, { status: 400 });
-  }
+  const parsed = studentUpdateSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return invalidInputResponse(parsed);
+  const body = parsed.data;
 
   const admissionNo = id.toUpperCase();
 

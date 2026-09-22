@@ -1,7 +1,6 @@
 import { createServerSupabaseClient, hasSupabaseConfig } from "@/lib/supabase/server";
+import { normaliseNigerianPhone } from "@/lib/format";
 import type { AttendanceDay, ClassAttendance, FinanceSummary, InsightContext, ResultTerm, RiskRow } from "@/lib/insights/engine";
-
-export const DEFAULT_ORG_SLUG = "your-school";
 
 type SupabaseClient = ReturnType<typeof createServerSupabaseClient>;
 
@@ -120,12 +119,6 @@ export function configuredOrNull() {
   return createServerSupabaseClient();
 }
 
-export async function getOrganization(client: SupabaseClient, slug = DEFAULT_ORG_SLUG) {
-  const { data, error } = await client.from("organizations").select("id,name,slug").eq("slug", slug).single<OrganizationRow>();
-  if (error) throw error;
-  return data;
-}
-
 export async function getClassroomByName(client: SupabaseClient, organizationId: string, className?: string) {
   if (!className) return null;
   const { data, error } = await client
@@ -149,21 +142,41 @@ export async function getStudentByAdmission(client: SupabaseClient, organization
   return data;
 }
 
-export async function listLiveStudents(client: SupabaseClient) {
-  const { data, error } = await client
-    .from("v_student_360")
-    .select("id,admission_no,student_name,classroom,guardian_name,guardian_phone,risk_level,attendance_records,invoices,balance")
-    .order("student_name", { ascending: true })
-    .returns<StudentViewRow[]>();
-  if (error) throw error;
-  const students = data ?? [];
+export type PageInput = { limit?: number; offset?: number };
+export type PageInfo = { total: number; limit: number; offset: number; hasMore: boolean };
+
+/** Clamped pagination: 200 rows default, 500 hard cap, never negative. */
+export function pageParams(input?: PageInput) {
+  const limit = Math.max(1, Math.min(Math.floor(input?.limit ?? 200), 500));
+  const offset = Math.max(0, Math.floor(input?.offset ?? 0));
+  return { limit, offset };
+}
+
+export async function listLiveStudents(client: SupabaseClient, page?: PageInput) {
+  const { limit, offset } = pageParams(page);
+  const [rows, highRisk, withBalance] = await Promise.all([
+    client
+      .from("v_student_360")
+      .select("id,admission_no,student_name,classroom,guardian_name,guardian_phone,risk_level,attendance_records,invoices,balance", { count: "exact" })
+      .order("student_name", { ascending: true })
+      .range(offset, offset + limit - 1)
+      .returns<StudentViewRow[]>(),
+    client.from("v_student_360").select("id", { count: "exact", head: true }).eq("risk_level", "High"),
+    client.from("v_student_360").select("id", { count: "exact", head: true }).gt("balance", 0),
+  ]);
+  if (rows.error) throw rows.error;
+  if (highRisk.error) throw highRisk.error;
+  if (withBalance.error) throw withBalance.error;
+  const students = rows.data ?? [];
+  const total = rows.count ?? students.length;
   return {
     summary: {
-      total: students.length,
-      highRisk: students.filter((student) => student.risk_level === "High").length,
-      withBalance: students.filter((student) => Number(student.balance ?? 0) > 0).length,
+      total,
+      highRisk: highRisk.count ?? 0,
+      withBalance: withBalance.count ?? 0,
     },
     data: students,
+    page: { total, limit, offset, hasMore: offset + students.length < total } as PageInfo,
   };
 }
 
@@ -178,9 +191,9 @@ export async function createLiveStudent(client: SupabaseClient, input: StudentCr
     last_name: input.lastName,
     gender: input.gender ?? null,
     guardian_name: input.guardianName ?? null,
-    guardian_phone: input.guardianPhone ?? null,
-    guardian_email: input.guardianEmail ?? null,
-    student_email: input.studentEmail ?? null,
+    guardian_phone: canonicalPhone(input.guardianPhone),
+    guardian_email: cleanEmail(input.guardianEmail),
+    student_email: cleanEmail(input.studentEmail),
     risk_level: input.riskLevel ?? "Low",
   };
   const { data, error } = await client.from("students").upsert(payload, { onConflict: "organization_id,admission_no" }).select("*").single<StudentRow>();
@@ -198,7 +211,7 @@ export async function updateLiveStudent(client: SupabaseClient, admissionNo: str
   if (changes.lastName) payload.last_name = changes.lastName;
   if (changes.gender !== undefined) payload.gender = changes.gender ?? null;
   if (changes.guardianName !== undefined) payload.guardian_name = changes.guardianName ?? null;
-  if (changes.guardianPhone !== undefined) payload.guardian_phone = changes.guardianPhone ?? null;
+  if (changes.guardianPhone !== undefined) payload.guardian_phone = canonicalPhone(changes.guardianPhone);
   if (changes.guardianEmail !== undefined) payload.guardian_email = changes.guardianEmail ?? null;
   if (changes.studentEmail !== undefined) payload.student_email = changes.studentEmail ?? null;
   if (changes.riskLevel !== undefined) payload.risk_level = changes.riskLevel ?? "Low";
@@ -245,14 +258,18 @@ export async function createLiveAttendance(client: SupabaseClient, input: Attend
   return data;
 }
 
-export async function listLiveInvoices(client: SupabaseClient) {
-  const { data, error } = await client
+export async function listLiveInvoices(client: SupabaseClient, page?: PageInput) {
+  const { limit, offset } = pageParams(page);
+  const { data, error, count } = await client
     .from("invoices")
-    .select("id,organization_id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name,guardian_email,student_email)")
+    .select("id,organization_id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name,guardian_email,student_email)", { count: "exact" })
     .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1)
     .returns<Array<InvoiceRow & { students: Record<string, unknown> | null }>>();
   if (error) throw error;
-  return data ?? [];
+  const rows = data ?? [];
+  const total = count ?? rows.length;
+  return { data: rows, page: { total, limit, offset, hasMore: offset + rows.length < total } as PageInfo };
 }
 
 export async function getLiveInvoice(client: SupabaseClient, invoiceNo: string) {
@@ -265,6 +282,22 @@ export async function getLiveInvoice(client: SupabaseClient, invoiceNo: string) 
   return data;
 }
 
+/**
+ * Exact invoice lookup by id.
+ *
+ * Numbers repeat across schools, so payment callbacks resolve the id stored
+ * in Paystack metadata rather than trusting the number alone.
+ */
+export async function getLiveInvoiceById(client: SupabaseClient, id: string) {
+  const { data, error } = await client
+    .from("invoices")
+    .select("id,organization_id,invoice_no,title,amount,amount_paid,status,due_date,payment_probability,student_id,students(admission_no,first_name,last_name,guardian_name,guardian_email,student_email)")
+    .eq("id", id)
+    .maybeSingle<InvoiceRow & { students: Record<string, unknown> | null }>();
+  if (error) throw error;
+  return data;
+}
+
 export async function createLiveInvoice(client: SupabaseClient, input: InvoiceCreateInput, actor?: ActorInput) {
   const organization = await getOrganizationForWrite(client);
   const student = await getStudentByAdmission(client, organization.id, input.admissionNo);
@@ -272,7 +305,7 @@ export async function createLiveInvoice(client: SupabaseClient, input: InvoiceCr
   const payload = {
     organization_id: organization.id,
     student_id: student.id,
-    invoice_no: input.invoiceNo,
+    invoice_no: input.invoiceNo.trim().toUpperCase(),
     title: input.title ?? "School Fees",
     amount: input.amount,
     amount_paid: input.amountPaid ?? 0,
@@ -305,14 +338,18 @@ export async function getOrCreateSubject(client: SupabaseClient, organizationId:
   return data;
 }
 
-export async function listLiveResults(client: SupabaseClient) {
-  const { data, error } = await client
+export async function listLiveResults(client: SupabaseClient, page?: PageInput) {
+  const { limit, offset } = pageParams(page);
+  const { data, error, count } = await client
     .from("results")
-    .select("id,student_id,subject_id,term,session,ca_score,exam_score,total_score,grade,remark,status,teacher_comment,principal_comment,students(admission_no,first_name,last_name),subjects(name)")
+    .select("id,student_id,subject_id,term,session,ca_score,exam_score,total_score,grade,remark,status,teacher_comment,principal_comment,students(admission_no,first_name,last_name),subjects(name)", { count: "exact" })
     .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1)
     .returns<Array<ResultRow & { students: Record<string, unknown> | null; subjects: Record<string, unknown> | null }>>();
   if (error) throw error;
-  return data ?? [];
+  const rows = data ?? [];
+  const total = count ?? rows.length;
+  return { data: rows, page: { total, limit, offset, hasMore: offset + rows.length < total } as PageInfo };
 }
 
 export async function getLiveResultByStudent(client: SupabaseClient, admissionNo: string) {
@@ -421,7 +458,7 @@ function relationName(value: unknown) {
 }
 
 export function slugify(value: string) {
-  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || DEFAULT_ORG_SLUG;
+  return value.toLowerCase().trim().replace(/[^a-z0-9]+/g, "-").replace(/(^-|-$)/g, "") || "school";
 }
 
 /**
@@ -550,15 +587,19 @@ export async function getAccessSummary(client: SupabaseClient) {
   return data;
 }
 
-export async function listInvitations(client: SupabaseClient) {
+export async function listInvitations(client: SupabaseClient, page?: PageInput) {
   const organization = await getOrganizationForWrite(client);
-  const { data, error } = await client
+  const { limit, offset } = pageParams(page);
+  const { data, error, count } = await client
     .from("user_invitations")
-    .select("id,organization_id,email,name,role,status,token,expires_at,created_at")
+    .select("id,organization_id,email,name,role,status,token,expires_at,created_at", { count: "exact" })
     .eq("organization_id", organization.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) throw error;
-  return data ?? [];
+  const rows = data ?? [];
+  const total = count ?? rows.length;
+  return { data: rows, page: { total, limit, offset, hasMore: offset + rows.length < total } as PageInfo };
 }
 
 export async function createInvitation(client: SupabaseClient, input: InvitationInput, actor?: ActorInput) {
@@ -759,13 +800,16 @@ export async function getStudentPortalBundle(client: SupabaseClient, userEmail: 
 
 export async function recordVerifiedPayment(client: SupabaseClient, input: {
   invoiceNo: string;
+  invoiceId?: string;
   reference: string;
   amount: number;
   provider: string;
   payerEmail?: string;
   metadata?: Record<string, unknown>;
 }) {
-  const invoice = await getLiveInvoice(client, input.invoiceNo);
+  const invoice = input.invoiceId
+    ? await getLiveInvoiceById(client, input.invoiceId)
+    : await getLiveInvoice(client, input.invoiceNo);
   if (!invoice) throw new Error("Invoice not found");
 
   const paid = Number(invoice.amount_paid ?? 0);
@@ -888,15 +932,19 @@ export type AnnouncementInput = {
   publish?: boolean;
 };
 
-export async function listAnnouncements(client: SupabaseClient) {
+export async function listAnnouncements(client: SupabaseClient, page?: PageInput) {
   const organization = await getOrganizationForWrite(client);
-  const { data, error } = await client
+  const { limit, offset } = pageParams(page);
+  const { data, error, count } = await client
     .from("announcements")
-    .select("id,organization_id,title,body,audience,published_at,created_at")
+    .select("id,organization_id,title,body,audience,published_at,created_at", { count: "exact" })
     .eq("organization_id", organization.id)
-    .order("created_at", { ascending: false });
+    .order("created_at", { ascending: false })
+    .range(offset, offset + limit - 1);
   if (error) throw error;
-  return data ?? [];
+  const rows = data ?? [];
+  const total = count ?? rows.length;
+  return { data: rows, page: { total, limit, offset, hasMore: offset + rows.length < total } as PageInfo };
 }
 
 export async function createAnnouncement(client: SupabaseClient, input: AnnouncementInput, actor?: ActorInput) {
@@ -1730,4 +1778,176 @@ export async function filterLinkedRows<T extends LinkedRow>(
     const joined = Array.isArray(row.students) ? row.students[0] : row.students;
     return linked.has(String(joined?.admission_no ?? "").trim().toUpperCase());
   });
+}
+
+function cleanEmail(value: string | undefined): string | null {
+  const trimmed = value?.trim().toLowerCase();
+  return trimmed ? trimmed : null;
+}
+
+/** Stores the canonical +234 form when the input parses; keeps the raw value otherwise. */
+function canonicalPhone(value: string | null | undefined): string | null {
+  if (!value) return null;
+  return normaliseNigerianPhone(value) ?? value;
+}
+
+/**
+ * Bulk student enrolment in a fixed handful of queries.
+ *
+ * Importing row-by-row costs a classroom lookup, an upsert, two user
+ * lookups, link writes and an audit event per student — a 500-row CSV would
+ * run thousands of sequential round trips and outlive the request. This
+ * resolves classrooms and users once each, upserts students and links in
+ * bulk, and writes one audit event for the batch.
+ */
+export async function createLiveStudentsBulk(
+  client: SupabaseClient,
+  inputs: StudentCreateInput[],
+  actor?: ActorInput,
+): Promise<{ students: StudentRow[]; linked: number }> {
+  const organization = await getOrganizationForWrite(client);
+
+  const classNames = [...new Set(inputs.map((input) => input.className?.trim()).filter(Boolean))] as string[];
+  const classroomByName = new Map<string, string>();
+  if (classNames.length) {
+    const { data, error } = await client
+      .from("classrooms")
+      .select("id,name")
+      .eq("organization_id", organization.id)
+      .in("name", classNames);
+    if (error) throw error;
+    for (const row of (data ?? []) as ClassroomRow[]) classroomByName.set(row.name, row.id);
+  }
+
+  const payloads = inputs.map((input) => ({
+    organization_id: organization.id,
+    classroom_id: input.className?.trim() ? classroomByName.get(input.className.trim()) ?? null : null,
+    admission_no: input.admissionNo.trim(),
+    first_name: input.firstName.trim(),
+    last_name: input.lastName.trim(),
+    gender: input.gender ?? null,
+    guardian_name: input.guardianName ?? null,
+    guardian_phone: canonicalPhone(input.guardianPhone),
+    guardian_email: cleanEmail(input.guardianEmail),
+    student_email: cleanEmail(input.studentEmail),
+    risk_level: input.riskLevel ?? "Low",
+  }));
+
+  const { data: students, error: studentsError } = await client
+    .from("students")
+    .upsert(payloads, { onConflict: "organization_id,admission_no" })
+    .select("*")
+    .returns<StudentRow[]>();
+  if (studentsError) throw studentsError;
+
+  const emails = [...new Set(
+    (students ?? []).flatMap((row) => [row.guardian_email, row.student_email]).filter(Boolean),
+  )] as string[];
+  const userByEmail = new Map<string, { id: string }>();
+  if (emails.length) {
+    const { data, error } = await client.from("app_users").select("id,email").in("email", emails);
+    if (error) throw error;
+    for (const row of (data ?? []) as Array<{ id: string; email: string }>) userByEmail.set(row.email.toLowerCase(), row);
+  }
+
+  const links = [];
+  for (const row of students ?? []) {
+    const parent = row.guardian_email ? userByEmail.get(row.guardian_email.toLowerCase()) : undefined;
+    if (parent) {
+      links.push({ organization_id: row.organization_id, app_user_id: parent.id, student_id: row.id, relationship: "PARENT", active: true });
+    }
+    const pupil = row.student_email ? userByEmail.get(row.student_email.toLowerCase()) : undefined;
+    if (pupil) {
+      links.push({ organization_id: row.organization_id, app_user_id: pupil.id, student_id: row.id, relationship: "STUDENT", active: true });
+    }
+  }
+  if (links.length) {
+    const { error } = await client.from("user_student_links").upsert(links, { onConflict: "app_user_id,student_id,relationship" });
+    if (error) throw error;
+  }
+
+  await writeAuditEvent(client, {
+    organizationId: organization.id,
+    ...actorFields(actor),
+    action: "students.upsert_bulk",
+    resourceType: "students",
+    riskLevel: "Medium",
+    metadata: { count: payloads.length, linked: links.length },
+  });
+
+  return { students: students ?? [], linked: links.length };
+}
+
+export type FinanceSummaryTotals = {
+  total: number;
+  paid: number;
+  outstanding: number;
+  overdue: number;
+  overdueCount: number;
+  invoiceCount: number;
+  collectionRate: number;
+};
+
+/** Workspace-wide fee totals from the finance summary view (not the page). */
+export async function getFinanceSummaryTotals(client: SupabaseClient): Promise<FinanceSummaryTotals> {
+  const { data, error } = await client
+    .from("v_finance_summary")
+    .select("total_billed,total_collected,total_outstanding,overdue_count,paid_count,invoice_count")
+    .limit(1)
+    .maybeSingle();
+  if (error) throw error;
+  const row = (data ?? {}) as Record<string, string | number | null>;
+  const total = Number(row.total_billed ?? 0);
+  const paid = Number(row.total_collected ?? 0);
+  const outstanding = Math.max(0, Number(row.total_outstanding ?? total - paid));
+  return {
+    total,
+    paid,
+    outstanding,
+    overdue: outstanding,
+    overdueCount: Number(row.overdue_count ?? 0),
+    invoiceCount: Number(row.invoice_count ?? 0),
+    collectionRate: total > 0 ? Math.round((paid / total) * 100) : 0,
+  };
+}
+
+export type ResultsSummaryTotals = {
+  records: number;
+  average: number;
+  draft: number;
+  review: number;
+  approved: number;
+  published: number;
+};
+
+/**
+ * Workspace-wide result counts from the results summary view (not the page).
+ * Reported in records rather than students: the view groups by term and
+ * session, so summing its student counts would count multi-term students
+ * twice.
+ */
+export async function getResultsSummaryTotals(client: SupabaseClient): Promise<ResultsSummaryTotals> {
+  const { data, error } = await client
+    .from("v_results_summary")
+    .select("average_score,draft_count,review_count,approved_count,published_count,subject_results")
+    .limit(20);
+  if (error) throw error;
+  const rows = (data ?? []) as Array<Record<string, string | number | null>>;
+  let weighted = 0;
+  let subjects = 0;
+  const totals = { draft: 0, review: 0, approved: 0, published: 0 };
+  for (const row of rows) {
+    const count = Number(row.subject_results ?? 0);
+    weighted += Number(row.average_score ?? 0) * count;
+    subjects += count;
+    totals.draft += Number(row.draft_count ?? 0);
+    totals.review += Number(row.review_count ?? 0);
+    totals.approved += Number(row.approved_count ?? 0);
+    totals.published += Number(row.published_count ?? 0);
+  }
+  return {
+    records: subjects,
+    average: subjects ? Math.round(weighted / subjects) : 0,
+    ...totals,
+  };
 }

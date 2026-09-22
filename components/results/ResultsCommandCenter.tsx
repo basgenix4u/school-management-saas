@@ -23,10 +23,13 @@ type ResultBoardStudent = {
 type ResultsApiResponse = {
   status: string;
   source?: "none" | "supabase";
-  summary?: Record<string, number>;
+  summary?: { records: number; average: number; draft: number; review: number; approved: number; published: number };
   data?: ResultApiRow[];
+  page?: { total: number; offset: number; hasMore: boolean };
   message?: string;
 };
+
+const emptyTotals = { records: 0, average: 0, draft: 0, review: 0, approved: 0, published: 0 };
 
 function statusTone(status: string): BadgeTone {
   if (status === "APPROVED" || status === "PUBLISHED") return "success";
@@ -67,29 +70,34 @@ function groupLiveResults(rows: ResultApiRow[]): { students: ResultBoardStudent[
 }
 
 export function ResultsCommandCenter() {
-  const [students, setStudents] = useState<ResultBoardStudent[]>([]);
-  const [subjects, setSubjects] = useState<Array<{ name: string; average: number; count: number }>>([]);
+  const [rows, setRows] = useState<ResultApiRow[]>([]);
+  const [totals, setTotals] = useState(emptyTotals);
+  const [pageInfo, setPageInfo] = useState<{ total: number; offset: number; hasMore: boolean }>({ total: 0, offset: 0, hasMore: false });
   const [connected, setConnected] = useState(false);
   const [loading, setLoading] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
   const [message, setMessage] = useState("Loading academic records...");
 
-  async function loadResults() {
-    setLoading(true);
-    setMessage("Loading academic records...");
+  async function loadResults(offset = 0, append = false) {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
+    if (!append) setMessage("Loading academic records...");
     try {
-      const response = await fetch("/api/results", { cache: "no-store" });
+      const response = await fetch(`/api/results?offset=${offset}`, { cache: "no-store" });
       const payload = await response.json() as ResultsApiResponse;
       if (!response.ok) throw new Error(payload.message ?? "Unable to load results");
       setConnected(payload.source === "supabase");
-      const grouped = payload.source === "supabase" ? groupLiveResults(payload.data ?? []) : { students: [], subjects: [] };
-      setStudents(grouped.students);
-      setSubjects(grouped.subjects);
+      const incoming = payload.source === "supabase" ? (payload.data ?? []) : [];
+      setRows((current) => (append ? [...current, ...incoming] : incoming));
+      setTotals(payload.summary ?? emptyTotals);
+      setPageInfo({ total: payload.page?.total ?? incoming.length, offset, hasMore: payload.page?.hasMore ?? false });
       setMessage(payload.source === "supabase" ? "Result records loaded." : (payload.message ?? "Connect your database to load results."));
     } catch (error) {
       setConnected(false);
       setMessage(error instanceof Error ? error.message : "Results unavailable.");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }
 
@@ -98,15 +106,10 @@ export function ResultsCommandCenter() {
     return () => window.clearTimeout(timer);
   }, []);
 
-  const summary = useMemo(() => {
-    const total = students.length;
-    const approved = students.filter((student) => student.status === "APPROVED" || student.status === "PUBLISHED").length;
-    const review = students.filter((student) => student.status === "REVIEW").length;
-    const draft = students.filter((student) => student.status === "DRAFT").length;
-    const published = students.filter((student) => student.status === "PUBLISHED").length;
-    const average = total ? Math.round(students.reduce((sum, student) => sum + student.average, 0) / total) : 0;
-    return { total, approved, review, draft, published, average };
-  }, [students]);
+  // Workspace metrics come from the API summary so they stay exact; the
+  // board groups whichever rows are loaded and converges via Load more.
+  const summary = totals;
+  const { students, subjects } = useMemo(() => groupLiveResults(rows), [rows]);
 
   const insights = useMemo(() => {
     const items: Array<{ title: string; detail: string; action: string; tone: BadgeTone }> = [];
@@ -169,17 +172,17 @@ export function ResultsCommandCenter() {
 
       <Alert tone={loading ? "info" : connected ? "success" : "warning"}>
         <p>{message}</p>
-        <p><Button variant="secondary" size="sm" onClick={loadResults} disabled={loading}>Refresh</Button></p>
+        <p><Button variant="secondary" size="sm" onClick={() => loadResults()} disabled={loading}>Refresh</Button></p>
       </Alert>
 
       <MetricGrid>
-        <Metric icon={<BookOpenCheck size={20} />} label="Students with results" value={String(summary.total)} caption={`school average ${summary.average}%`} />
+        <Metric icon={<BookOpenCheck size={20} />} label="Result records" value={String(summary.records)} caption={`school average ${summary.average}%`} />
         <Metric icon={<ShieldCheck size={20} />} label="Approved" value={String(summary.approved)} caption="ready for release" />
         <Metric icon={<ClipboardCheck size={20} />} label="In review" value={String(summary.review)} caption="principal queue" />
         <Metric icon={<Send size={20} />} label="Drafts" value={String(summary.draft)} caption="with teachers" />
       </MetricGrid>
 
-      <Card title="Student result board" subtitle={students.length ? `${students.length} students · select a row for the full report card.` : "Scores will appear here once teachers begin entry."}>
+      <Card title="Student result board" subtitle={students.length ? `${rows.length} of ${pageInfo.total} records loaded · select a row for the full report card.` : "Scores will appear here once teachers begin entry."}>
         {students.length === 0 ? (
           <EmptyState
             icon={<Award size={22} />}
@@ -204,6 +207,13 @@ export function ResultsCommandCenter() {
             </tbody>
           </Table>
         )}
+        {pageInfo.hasMore ? (
+          <p>
+            <Button variant="secondary" onClick={() => loadResults(rows.length, true)} disabled={loadingMore}>
+              {loadingMore ? "Loading…" : `Load more (${pageInfo.total - rows.length} remaining)`}
+            </Button>
+          </p>
+        ) : null}
       </Card>
 
       <div className="premium-grid-2 align-start">

@@ -1,19 +1,32 @@
 import { NextRequest, NextResponse } from "next/server";
-import { configuredOrNull, getLiveInvoice } from "@/lib/supabase/school-data";
+import { withSession } from "@/lib/auth/api-guard";
+import { requestClientOrNull } from "@/lib/supabase/request-client";
+import { getLiveInvoice } from "@/lib/supabase/school-data";
 import { generatePaymentReference, hasPaystackConfig, initializePaystackTransaction } from "@/lib/payments/paystack";
+import { invalidInputResponse, paystackInitializeSchema } from "@/lib/validation";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
 
-export async function POST(request: NextRequest) {
+/**
+ * Starts a Paystack checkout for an issued invoice.
+ *
+ * Authenticated: any signed-in member may pay, but the lookup runs through
+ * their own school's rows, so a number from another school can never
+ * resolve here — guessing across schools by email would risk charging the
+ * wrong family. After payment the payer returns to the surface they came
+ * from: portals for portal roles, finance for staff.
+ */
+export const POST = withSession(async (request: NextRequest, context) => {
   {
     const throttle = checkRateLimit(rateLimitKey(request, "paystack-initialize"), { limit: 30, windowMs: 60_000 });
     if (!throttle.allowed) return rateLimitedResponse(throttle.retryAfterMs);
   }
   if (!hasPaystackConfig()) return NextResponse.json({ status: "not_configured", message: "Paystack is not configured. Add PAYSTACK_SECRET_KEY to Vercel environment variables." }, { status: 503 });
-  const supabase = configuredOrNull();
+  const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Database is not configured." }, { status: 503 });
 
-  const body = await request.json().catch(() => null) as { invoiceNo?: string; email?: string } | null;
-  if (!body?.invoiceNo) return NextResponse.json({ status: "error", message: "invoiceNo is required." }, { status: 400 });
+  const parsed = paystackInitializeSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return invalidInputResponse(parsed);
+  const body = parsed.data;
 
   try {
     const invoice = await getLiveInvoice(supabase, body.invoiceNo.toUpperCase());
@@ -27,12 +40,16 @@ export async function POST(request: NextRequest) {
 
     const reference = generatePaymentReference(invoice.invoice_no);
     const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? request.nextUrl.origin;
-    const callbackUrl = `${appUrl}/dashboard/receipts/${reference}`;
+    const landing = context.role === "STUDENT"
+      ? `/portal/receipts/${reference}?from=student`
+      : context.role === "PARENT"
+        ? `/portal/receipts/${reference}?from=parent`
+        : `/dashboard/receipts/${reference}`;
     const paystack = await initializePaystackTransaction({
       email,
       amount: balance,
       reference,
-      callbackUrl,
+      callbackUrl: `${appUrl}${landing}`,
       metadata: {
         invoice_no: invoice.invoice_no,
         invoice_id: invoice.id,
@@ -45,4 +62,4 @@ export async function POST(request: NextRequest) {
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to initialize payment" }, { status: 500 });
   }
-}
+});

@@ -51,14 +51,15 @@ const controls = [
 
 export default async function TrustPage() {
   const supabase = await requestClientOrNull();
-  const [audit, access, invitations] = supabase
+  const [audit, access, listed] = supabase
     ? await Promise.all([
         getAuditSummary(supabase).catch(() => null),
         getAccessSummary(supabase).catch(() => null),
-        listInvitations(supabase).catch(() => []),
+        listInvitations(supabase).catch(() => null),
       ])
-    : [null, null, []];
-  const pendingInvites = (invitations as Array<{ status: string }>).filter((invite) => invite.status === "pending").length;
+    : [null, null, null];
+  const invitations = (listed?.data ?? []) as Array<{ status: string }>;
+  const pendingInvites = invitations.filter((invite) => invite.status === "pending").length;
   const members = Number((access as Record<string, unknown> | null)?.total_members ?? 0);
 
   return (
