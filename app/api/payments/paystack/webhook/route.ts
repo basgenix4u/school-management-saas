@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { configuredOrNull, recordVerifiedPayment } from "@/lib/supabase/school-data";
 import { verifyPaystackSignature } from "@/lib/payments/paystack";
 
@@ -24,6 +25,6 @@ export async function POST(request: NextRequest) {
     const record = await recordVerifiedPayment(supabase, { invoiceNo, invoiceId: String(metadata.invoice_id ?? "") || undefined, reference, amount, provider: "paystack", payerEmail, metadata });
     return NextResponse.json({ status: "recorded", record });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Webhook processing failed" }, { status: 500 });
+    return apiError("POST /api/payments/paystack/webhook", error);
   }
 }

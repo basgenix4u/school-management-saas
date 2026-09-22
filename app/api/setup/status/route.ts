@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getSetupReadiness } from "@/lib/supabase/school-data";
 
 export const GET = withAuth("workspace.manage", async () => {
@@ -10,6 +11,6 @@ export const GET = withAuth("workspace.manage", async () => {
     const readiness = await getSetupReadiness(supabase);
     return NextResponse.json({ status: "ok", readiness });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to load setup status" }, { status: 500 });
+    return apiError("GET /api/setup/status", error);
   }
 });

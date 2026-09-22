@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import PDFDocument from "pdfkit";
 import path from "path";
 import fs from "fs";
@@ -133,6 +134,6 @@ export const GET = withAuth<RouteParams>("results.view", async (_request: Reques
       },
     });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to generate PDF" }, { status: 500 });
+    return apiError("GET /api/results/[student]/pdf", error);
   }
 });

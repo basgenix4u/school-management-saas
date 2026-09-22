@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { withAuth } from "@/lib/auth/api-guard";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getClassRegister } from "@/lib/supabase/school-data";
@@ -19,6 +20,6 @@ export const GET = withAuth("attendance.view", async (request) => {
     const register = await getClassRegister(supabase, className);
     return NextResponse.json({ status: "ok", source: "supabase", ...register });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Failed to load register" }, { status: 500 });
+    return apiError("GET /api/attendance/register", error);
   }
 });

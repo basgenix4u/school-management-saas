@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getLiveInvoice } from "@/lib/supabase/school-data";
 
 type RouteParams = { params: Promise<{ invoice: string }> };
@@ -16,6 +17,6 @@ export const GET = withAuth<RouteParams>("fees.view", async (_request: Request, 
     if (!data) return NextResponse.json({ status: "error", source: "supabase", message: "Invoice not found" }, { status: 404 });
     return NextResponse.json({ status: "ok", source: "supabase", data });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load invoice" }, { status: 500 });
+    return apiError("GET /api/finance/invoices/[invoice]", error);
   }
 });

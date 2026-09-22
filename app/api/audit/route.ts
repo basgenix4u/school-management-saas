@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { withAuth } from "@/lib/auth/api-guard";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getAuditSummary, listAuditEvents } from "@/lib/supabase/school-data";
@@ -20,6 +21,6 @@ export const GET = withAuth("audit.view", async (request) => {
     const [events, summary] = await Promise.all([listAuditEvents(supabase, prefixes), getAuditSummary(supabase)]);
     return NextResponse.json({ status: "ok", source: "supabase", events, summary });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Failed to load audit trail" }, { status: 500 });
+    return apiError("GET /api/audit", error);
   }
 });

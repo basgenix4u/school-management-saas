@@ -5,6 +5,7 @@ import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getInsightContext } from "@/lib/supabase/school-data";
 import { answerInsight } from "@/lib/insights/engine";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
+import { apiError } from "@/lib/http";
 
 /**
  * Answers a plain-language question about the caller's school.
@@ -33,9 +34,6 @@ export const POST = withAuth("analytics.view", async (request) => {
     const answer = answerInsight(context, parsed.data.question);
     return NextResponse.json({ status: "ok", generatedAt: new Date().toISOString(), ...answer });
   } catch (error) {
-    return NextResponse.json(
-      { status: "error", message: error instanceof Error ? error.message : "Unable to analyse school data" },
-      { status: 500 },
-    );
+    return apiError("POST /api/insights/ask", error);
   }
 });

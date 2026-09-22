@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getOrganizationForWrite, upsertFeeCategories } from "@/lib/supabase/school-data";
 import { feesBulkSchema, invalidInputResponse } from "@/lib/validation";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
@@ -20,6 +21,6 @@ export const POST = withAuth("workspace.manage", async (request: NextRequest, co
     const fees = await upsertFeeCategories(supabase, organization.id, parsed.data.fees, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "saved", data: fees });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to save fee categories" }, { status: 500 });
+    return apiError("POST /api/setup/fees", error);
   }
 });

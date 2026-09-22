@@ -3,6 +3,7 @@ import { NextResponse } from "next/server";
 import { hasSupabaseConfig } from "@/lib/supabase/server";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import type { DatabaseHealth } from "@/lib/supabase/types";
+import { logApiError } from "@/lib/http";
 
 const tables = ["organizations", "students", "teachers", "classrooms", "invoices", "attendance_records", "results", "audit_events"];
 
@@ -42,6 +43,7 @@ export const GET = withAuth("workspace.manage", async () => {
 
     return NextResponse.json({ ...response, tables: counts });
   } catch (error) {
+    logApiError("GET /api/database/status", error);
     return NextResponse.json({ ...response, error: error instanceof Error ? error.message : "Unknown Supabase error" }, { status: 500 });
   }
 });

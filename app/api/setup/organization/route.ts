@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getAppSession } from "@/lib/auth/session";
 import { configuredOrNull, upsertOrganization } from "@/lib/supabase/school-data";
 import { invalidInputResponse, organizationSchema } from "@/lib/validation";
@@ -29,6 +30,6 @@ export async function POST(request: NextRequest) {
     }
     return NextResponse.json({ status: "saved", data: organization });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to save school profile" }, { status: 500 });
+    return apiError("POST /api/setup/organization", error);
   }
 }

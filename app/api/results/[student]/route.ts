@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getLiveResultByStudent, hasPortalLink } from "@/lib/supabase/school-data";
 
 type RouteParams = { params: Promise<{ student: string }> };
@@ -22,6 +23,6 @@ export const GET = withAuth<RouteParams>("results.view", async (_request: Reques
     if (!result) return NextResponse.json({ status: "error", source: "supabase", message: "Result not found" }, { status: 404 });
     return NextResponse.json({ status: "ok", source: "supabase", data: result });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load result" }, { status: 500 });
+    return apiError("GET /api/results/[student]", error);
   }
 });

@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { createInvitation, getAccessSummary, listInvitations } from "@/lib/supabase/school-data";
 import { invalidInputResponse, invitationSchema } from "@/lib/validation";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
@@ -13,7 +14,7 @@ export const GET = withAuth("workspace.manage", async () => {
     const [listed, summary] = await Promise.all([listInvitations(supabase), getAccessSummary(supabase)]);
     return NextResponse.json({ status: "ok", invitations: listed.data, page: listed.page, summary });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to load invitations" }, { status: 500 });
+    return apiError("GET /api/invitations", error);
   }
 });
 
@@ -30,6 +31,6 @@ export const POST = withAuth("workspace.manage", async (request: NextRequest, co
     const invitation = await createInvitation(supabase, parsed.data, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "created", invitation }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to create invitation" }, { status: 500 });
+    return apiError("POST /api/invitations", error);
   }
 });

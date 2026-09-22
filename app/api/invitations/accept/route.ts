@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getAppSession } from "@/lib/auth/session";
 import { acceptInvitation, configuredOrNull } from "@/lib/supabase/school-data";
 import { invalidInputResponse, invitationAcceptSchema } from "@/lib/validation";
@@ -19,6 +20,6 @@ export async function POST(request: NextRequest) {
     const profile = await acceptInvitation(supabase, parsed.data.token, session.user.id, session.user.email);
     return NextResponse.json({ status: "accepted", profile });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to accept invitation" }, { status: 500 });
+    return apiError("POST /api/invitations/accept", error);
   }
 }

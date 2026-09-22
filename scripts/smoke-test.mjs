@@ -31,7 +31,7 @@ const checks = [
   { path: "/api/finance/invoices", expect: [401] },
   { path: "/api/results", expect: [401] },
   { path: "/api/results/roster", expect: [401] },
-  { path: "/api/insights", expect: [401] },
+  { path: "/api/insights/ask", expect: [405] },
   { path: "/api/audit", expect: [401] },
   { path: "/api/communications", expect: [401] },
   { path: "/api/invitations", expect: [401] },

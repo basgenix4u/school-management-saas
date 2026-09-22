@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 
 export const GET = withAuth("analytics.view", async () => {
   const supabase = await requestClientOrNull();
@@ -13,6 +14,6 @@ export const GET = withAuth("analytics.view", async () => {
     if (error) throw error;
     return NextResponse.json({ status: "ok", source: "supabase-view", data });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase-view", message: error instanceof Error ? error.message : "Failed to load command center" }, { status: 500 });
+    return apiError("GET /api/live/command-center", error);
   }
 });

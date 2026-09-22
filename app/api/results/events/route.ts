@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getResultPublicationEvents } from "@/lib/supabase/school-data";
 
 export const GET = withAuth("results.view", async () => {
@@ -10,6 +11,6 @@ export const GET = withAuth("results.view", async () => {
     const events = await getResultPublicationEvents(supabase);
     return NextResponse.json({ status: "ok", events });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to load events" }, { status: 500 });
+    return apiError("GET /api/results/events", error);
   }
 });
