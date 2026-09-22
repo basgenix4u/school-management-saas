@@ -31,9 +31,13 @@ function invoiceLabel(status: string) {
   return "Pending";
 }
 
-export default async function InvoicesPage() {
+export default async function InvoicesPage({ searchParams }: { searchParams: Promise<{ offset?: string }> }) {
   const supabase = await requestClientOrNull();
-  const invoices = supabase ? await listLiveInvoices(supabase).catch(() => null) : null;
+  const { offset: offsetParam } = await searchParams;
+  const offset = Math.max(0, Number(offsetParam ?? 0) || 0);
+  const result = supabase ? await listLiveInvoices(supabase, { offset }).catch(() => null) : null;
+  const invoices = result?.data ?? null;
+  const page = result?.page ?? null;
 
   return (
     <div className="page">
@@ -41,7 +45,7 @@ export default async function InvoicesPage() {
         <p className="page-eyebrow">Finance</p>
         <h1 className="page-title">Invoice register.</h1>
         <p className="page-subtitle">
-          {invoices ? `${invoices.length} invoices · newest first.` : "Connect your database to load invoices."}
+          {invoices && page ? `${page.total} invoices · newest first.` : "Connect your database to load invoices."}
         </p>
       </header>
 
@@ -55,6 +59,7 @@ export default async function InvoicesPage() {
           action={<Button href="/dashboard/fees">Open finance desk</Button>}
         />
       ) : (
+        <>
         <Table caption="Newest invoices first">
           <thead>
             <tr><th>Invoice</th><th>Student</th><th>Guardian</th><th className="numeric">Amount</th><th className="numeric">Paid</th><th className="numeric">Balance</th><th>Status</th><th>Due</th></tr>
@@ -79,6 +84,14 @@ export default async function InvoicesPage() {
             })}
           </tbody>
         </Table>
+        {page && (page.offset > 0 || page.hasMore) ? (
+          <div className="action-row">
+            {page.offset > 0 ? <Button variant="secondary" href={`/dashboard/fees/invoices?offset=${Math.max(0, page.offset - page.limit)}`}>Previous</Button> : null}
+            {page.hasMore ? <Button variant="secondary" href={`/dashboard/fees/invoices?offset=${page.offset + page.limit}`}>Next</Button> : null}
+            <span className="ui-hint">Showing {page.offset + 1}–{page.offset + invoices.length} of {page.total}</span>
+          </div>
+        ) : null}
+        </>
       )}
     </div>
   );

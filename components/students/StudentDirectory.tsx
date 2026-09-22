@@ -32,6 +32,7 @@ type StudentApiResponse = {
   source?: "none" | "supabase";
   summary?: Record<string, number>;
   data?: Array<Record<string, unknown>>;
+  page?: { total: number; offset: number; hasMore: boolean };
   message?: string;
 };
 
@@ -85,23 +86,29 @@ export function StudentDirectory() {
   const [saving, setSaving] = useState(false);
   const [message, setMessage] = useState("Loading student records...");
   const [formOpen, setFormOpen] = useState(false);
+  const [pageInfo, setPageInfo] = useState<{ total: number; hasMore: boolean }>({ total: 0, hasMore: false });
+  const [loadingMore, setLoadingMore] = useState(false);
 
-  async function loadStudents() {
-    setLoading(true);
-    setMessage("Loading student records...");
+  async function loadStudents(offset = 0, append = false) {
+    if (append) setLoadingMore(true);
+    else setLoading(true);
+    if (!append) setMessage("Loading student records...");
     try {
-      const response = await fetch("/api/students", { cache: "no-store" });
+      const response = await fetch(`/api/students?offset=${offset}`, { cache: "no-store" });
       const payload = await response.json() as StudentApiResponse;
       if (!response.ok) throw new Error(payload.message ?? "Unable to load students");
       setConnected(payload.source === "supabase");
       setSummary(payload.summary ?? {});
-      setStudents((payload.data ?? []).map(normalizeStudent));
+      const incoming = (payload.data ?? []).map(normalizeStudent);
+      setStudents((current) => (append ? [...current, ...incoming] : incoming));
+      setPageInfo({ total: payload.page?.total ?? incoming.length, hasMore: payload.page?.hasMore ?? false });
       setMessage(payload.source === "supabase" ? "Student records loaded." : (payload.message ?? "Connect your database to load student records."));
     } catch (error) {
       setConnected(false);
       setMessage(error instanceof Error ? error.message : "Student records unavailable.");
     } finally {
       setLoading(false);
+      setLoadingMore(false);
     }
   }
 
@@ -169,7 +176,7 @@ export function StudentDirectory() {
 
       <Alert tone={loading ? "info" : connected ? "success" : "warning"}>
         <p>{message}</p>
-        <p><Button variant="secondary" size="sm" onClick={loadStudents} disabled={loading}>Refresh</Button></p>
+        <p><Button variant="secondary" size="sm" onClick={() => loadStudents()} disabled={loading}>Refresh</Button></p>
       </Alert>
 
       <Dialog
@@ -247,6 +254,13 @@ export function StudentDirectory() {
             ))}
           </div>
         )}
+        {pageInfo.hasMore ? (
+          <p>
+            <Button variant="secondary" onClick={() => loadStudents(students.length, true)} disabled={loadingMore}>
+              {loadingMore ? "Loading…" : `Load more (${pageInfo.total - students.length} remaining)`}
+            </Button>
+          </p>
+        ) : null}
       </section>
     </div>
   );

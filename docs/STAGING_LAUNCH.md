@@ -44,6 +44,8 @@ Or paste each file into the SQL editor in this exact order:
 11. `202606060009_strict_rls_and_audit.sql`
 12. `202606060010_risk_scoring_views.sql`
 13. `202606070001_monitoring_and_support.sql`
+14. `202609220001_write_policies.sql`
+15. `202609220002_finance_constraints.sql`
 
 Confirm every migration reports success; a half-applied schema is worse
 than none. If one fails, fix forward from that file — never skip.

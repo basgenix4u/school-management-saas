@@ -21,7 +21,7 @@ export async function POST(request: NextRequest) {
     const customer = data.customer as Record<string, unknown> | undefined;
     const payerEmail = customer?.email ? String(customer.email) : undefined;
     const reference = String(data.reference);
-    const record = await recordVerifiedPayment(supabase, { invoiceNo, reference, amount, provider: "paystack", payerEmail, metadata });
+    const record = await recordVerifiedPayment(supabase, { invoiceNo, invoiceId: String(metadata.invoice_id ?? "") || undefined, reference, amount, provider: "paystack", payerEmail, metadata });
     return NextResponse.json({ status: "recorded", record });
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Webhook processing failed" }, { status: 500 });

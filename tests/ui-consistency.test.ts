@@ -70,8 +70,12 @@ describe("single component system", () => {
 
 describe("token-only interface", () => {
   it("keeps literal colors out of markup", () => {
+    // global-error.tsx replaces the whole document when the layout itself
+    // fails, so stylesheets are unavailable and its token values are inline
+    // by necessity. It is the only exemption.
     const offenders: string[] = [];
     for (const file of [...tsxFiles("app"), ...tsxFiles("components")]) {
+      if (file === join("app", "global-error.tsx")) continue;
       if (/color="#|#[0-9a-fA-F]{3}\b|#[0-9a-fA-F]{6}\b/.test(read(file))) offenders.push(file);
     }
     expect(offenders).toEqual([]);

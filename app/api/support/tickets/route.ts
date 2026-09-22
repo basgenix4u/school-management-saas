@@ -1,7 +1,8 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { NextRequest, NextResponse } from "next/server";
 import { getAppSession } from "@/lib/auth/session";
-import { createSupportTicket, getSupportSummary, listSupportTickets, type SupportTicketInput } from "@/lib/supabase/school-data";
+import { createSupportTicket, getSupportSummary, listSupportTickets } from "@/lib/supabase/school-data";
+import { invalidInputResponse, supportTicketSchema } from "@/lib/validation";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
 
 export async function GET() {
@@ -23,10 +24,10 @@ export async function POST(request: NextRequest) {
   const supabase = await requestClientOrNull();
   if (!supabase) return NextResponse.json({ status: "not_configured", message: "Database is not configured." }, { status: 503 });
   const session = await getAppSession();
-  const body = await request.json().catch(() => null) as Partial<SupportTicketInput> | null;
-  if (!body?.subject || !body?.description) return NextResponse.json({ status: "error", message: "subject and description are required." }, { status: 400 });
+  const parsed = supportTicketSchema.safeParse(await request.json().catch(() => null));
+  if (!parsed.success) return invalidInputResponse(parsed);
   try {
-    const ticket = await createSupportTicket(supabase, { ...(body as SupportTicketInput), requesterEmail: body.requesterEmail ?? session.user?.email, requesterName: body.requesterName ?? session.user?.name });
+    const ticket = await createSupportTicket(supabase, { ...parsed.data, requesterEmail: parsed.data.requesterEmail ?? session.user?.email, requesterName: parsed.data.requesterName ?? session.user?.name });
     return NextResponse.json({ status: "created", ticket }, { status: 201 });
   } catch (error) {
     return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to create support ticket" }, { status: 500 });

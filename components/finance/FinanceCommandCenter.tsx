@@ -29,10 +29,13 @@ type InvoiceCard = {
 type InvoiceApiResponse = {
   status: string;
   source?: "none" | "supabase";
-  summary?: Record<string, number>;
+  summary?: { total: number; paid: number; outstanding: number; overdue: number; overdueCount: number; invoiceCount: number; collectionRate: number };
   data?: Array<Record<string, unknown>>;
+  page?: { total: number; hasMore: boolean };
   message?: string;
 };
+
+const emptyTotals = { total: 0, paid: 0, outstanding: 0, overdue: 0, overdueCount: 0, invoiceCount: 0, collectionRate: 0 };
 
 type AuditEvent = { id: string; action: string; actor_name: string | null; created_at: string; metadata: Record<string, unknown> };
 
@@ -83,15 +86,9 @@ export function FinanceCommandCenter() {
   const [saving, setSaving] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [message, setMessage] = useState("Loading invoices...");
-
-  const summary = useMemo(() => {
-    const total = invoiceRows.reduce((sum, invoice) => sum + invoice.amount, 0);
-    const paid = invoiceRows.reduce((sum, invoice) => sum + invoice.paid, 0);
-    const outstanding = Math.max(0, total - paid);
-    const overdueRows = invoiceRows.filter((invoice) => invoice.status === "OVERDUE");
-    const overdue = overdueRows.reduce((sum, invoice) => sum + invoice.amount - invoice.paid, 0);
-    return { total, paid, outstanding, overdue, overdueCount: overdueRows.length, collectionRate: total > 0 ? Math.round((paid / total) * 100) : 0 };
-  }, [invoiceRows]);
+  // Workspace totals arrive from the API's summary view so money figures stay
+  // exact no matter how many pages the register spans.
+  const [totals, setTotals] = useState(emptyTotals);
 
   const priorities = useMemo(() => {
     const open = invoiceRows
@@ -117,6 +114,7 @@ export function FinanceCommandCenter() {
       if (!response.ok) throw new Error(payload.message ?? "Unable to load invoices");
       setConnected(payload.source === "supabase");
       setInvoiceRows((payload.data ?? []).map(normalizeInvoice));
+      setTotals(payload.summary ?? emptyTotals);
       setMessage(payload.source === "supabase" ? "Invoice records loaded." : (payload.message ?? "Connect your database to load invoices."));
     } catch (error) {
       setConnected(false);
@@ -227,14 +225,14 @@ export function FinanceCommandCenter() {
       </Dialog>
 
       <MetricGrid>
-        <Metric icon={<WalletCards size={20} />} label="Collected" value={formatNairaCompact(summary.paid)} caption={`${summary.collectionRate}% of billed`} />
-        <Metric icon={<FileText size={20} />} label="Outstanding" value={formatNairaCompact(summary.outstanding)} caption={`${invoiceRows.length} invoices`} />
-        <Metric icon={<BellRing size={20} />} label="Overdue" value={formatNairaCompact(summary.overdue)} caption={`${summary.overdueCount} invoices past due`} />
-        <Metric icon={<CheckCircle2 size={20} />} label="Total billed" value={formatNairaCompact(summary.total)} caption="this workspace" />
+        <Metric icon={<WalletCards size={20} />} label="Collected" value={formatNairaCompact(totals.paid)} caption={`${totals.collectionRate}% of billed`} />
+        <Metric icon={<FileText size={20} />} label="Outstanding" value={formatNairaCompact(totals.outstanding)} caption={`${totals.invoiceCount} invoices`} />
+        <Metric icon={<BellRing size={20} />} label="Overdue" value={formatNairaCompact(totals.overdue)} caption={`${totals.overdueCount} invoices past due`} />
+        <Metric icon={<CheckCircle2 size={20} />} label="Total billed" value={formatNairaCompact(totals.total)} caption="this workspace" />
       </MetricGrid>
 
       <div className="premium-grid-2 align-start">
-        <Card title="Priority follow-ups" subtitle={priorities.length ? "Largest open balances, overdue first." : "Nothing outstanding right now."}>
+        <Card title="Priority follow-ups" subtitle={priorities.length ? "Largest open balances among recent invoices, overdue first." : "Nothing outstanding right now."}>
           {priorities.length === 0 ? (
             <EmptyState icon={<CheckCircle2 size={22} />} title="Books are clean" body="No invoice carries an outstanding balance." />
           ) : (

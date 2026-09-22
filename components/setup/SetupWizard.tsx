@@ -56,10 +56,15 @@ function parseCsv(text: string) {
     .map(parseCsvLine);
 }
 
+const MAX_CSV_BYTES = 2 * 1024 * 1024;
+
 async function fileText(form: FormData, key: string) {
   const file = form.get(key);
-  if (file instanceof File && file.size > 0) return file.text();
-  return "";
+  if (!(file instanceof File) || file.size === 0) return "";
+  if (file.size > MAX_CSV_BYTES) {
+    throw new Error("That CSV is larger than 2 MB. Split it into smaller files and import each in turn.");
+  }
+  return file.text();
 }
 
 function classesFromRows(rows: string[][]) {
