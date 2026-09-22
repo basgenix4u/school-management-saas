@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { withSession } from "@/lib/auth/api-guard";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getLiveInvoice } from "@/lib/supabase/school-data";
@@ -60,6 +61,6 @@ export const POST = withSession(async (request: NextRequest, context) => {
 
     return NextResponse.json({ status: "ok", provider: "paystack", reference, amount: balance, authorizationUrl: paystack.data?.authorization_url });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to initialize payment" }, { status: 500 });
+    return apiError("POST /api/payments/paystack/initialize", error);
   }
 });

@@ -1,5 +1,6 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getAppSession } from "@/lib/auth/session";
 import { createSupportTicket, getSupportSummary, listSupportTickets } from "@/lib/supabase/school-data";
 import { invalidInputResponse, supportTicketSchema } from "@/lib/validation";
@@ -12,7 +13,7 @@ export async function GET() {
     const [tickets, summary] = await Promise.all([listSupportTickets(supabase), getSupportSummary(supabase)]);
     return NextResponse.json({ status: "ok", tickets, summary });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to load support tickets" }, { status: 500 });
+    return apiError("GET /api/support/tickets", error);
   }
 }
 
@@ -30,6 +31,6 @@ export async function POST(request: NextRequest) {
     const ticket = await createSupportTicket(supabase, { ...parsed.data, requesterEmail: parsed.data.requesterEmail ?? session.user?.email, requesterName: parsed.data.requesterName ?? session.user?.name });
     return NextResponse.json({ status: "created", ticket }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to create support ticket" }, { status: 500 });
+    return apiError("POST /api/support/tickets", error);
   }
 }

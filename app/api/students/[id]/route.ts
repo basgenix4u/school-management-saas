@@ -4,6 +4,7 @@ import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { getStudentByAdmission, updateLiveStudent } from "@/lib/supabase/school-data";
 import { invalidInputResponse, studentUpdateSchema } from "@/lib/validation";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
+import { apiError } from "@/lib/http";
 
 type RouteParams = { params: Promise<{ id: string }> };
 
@@ -26,10 +27,7 @@ export const GET = withAuth<RouteParams>("students.manage", async (_request, con
     }
     return NextResponse.json({ status: "ok", source: "supabase", data: student });
   } catch (error) {
-    return NextResponse.json(
-      { status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load student" },
-      { status: 500 },
-    );
+    return apiError("GET /api/students/[id]", error);
   }
 });
 
@@ -61,9 +59,6 @@ export const PATCH = withAuth<RouteParams>("students.manage", async (request: Ne
     const student = await updateLiveStudent(supabase, admissionNo, body, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "updated", source: "supabase", data: student });
   } catch (error) {
-    return NextResponse.json(
-      { status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to update student" },
-      { status: 500 },
-    );
+    return apiError("PATCH /api/students/[id]", error);
   }
 });

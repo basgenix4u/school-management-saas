@@ -1,4 +1,5 @@
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { withAuth } from "@/lib/auth/api-guard";
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { listRoster } from "@/lib/supabase/school-data";
@@ -19,6 +20,6 @@ export const GET = withAuth("results.view", async (request) => {
     const students = await listRoster(supabase, className);
     return NextResponse.json({ status: "ok", source: "supabase", students });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Failed to load roster" }, { status: 500 });
+    return apiError("GET /api/results/roster", error);
   }
 });

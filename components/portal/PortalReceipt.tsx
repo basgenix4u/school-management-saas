@@ -47,7 +47,9 @@ export function PortalReceipt({ reference, from }: { reference: string; from: "p
     <main className="portal-shell">
       <div className="no-print"><PortalTopbar label="Payment receipt" homeHref={backHref} /></div>
       <p className="no-print"><Button variant="ghost" size="sm" href={backHref}><ArrowLeft size={16} /> {backLabel}</Button></p>
+      <a className="skip-link no-print" href="#portal-content">Skip to content</a>
 
+      <div id="portal-content" tabIndex={-1}>
       {loading ? (
         <div className="ui-form" aria-label="Loading receipt">
           <Skeleton height="3rem" />
@@ -73,6 +75,7 @@ export function PortalReceipt({ reference, from }: { reference: string; from: "p
           <Alert tone="success"><p>This receipt matches a verified payment in the school&apos;s records.</p></Alert>
         </>
       )}
+      </div>
     </main>
   );
 }

@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { filterLinkedRows, getResultsSummaryTotals, listLiveResults, upsertLiveResult } from "@/lib/supabase/school-data";
 import { invalidInputResponse, readPageParams, resultSchema } from "@/lib/validation";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
@@ -30,7 +31,7 @@ export const GET = withAuth("results.view", async (request: NextRequest, context
     const summary = portal ? summarizeResults(data) : await getResultsSummaryTotals(supabase);
     return NextResponse.json({ status: "ok", source: "supabase", data, page, summary });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load results" }, { status: 500 });
+    return apiError("GET /api/results", error);
   }
 });
 
@@ -49,6 +50,6 @@ export const POST = withAuth("results.manage", async (request: NextRequest, cont
     const result = await upsertLiveResult(supabase, parsed.data, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "saved", source: "supabase", data: result }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to save result" }, { status: 500 });
+    return apiError("POST /api/results", error);
   }
 });

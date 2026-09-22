@@ -97,7 +97,8 @@ export function ParentPortal() {
   return (
     <main className="portal-shell">
       <PortalTopbar label="Parent portal" homeHref="/portal/parent" />
-      <section className="portal-hero card-aurora">
+      <a className="skip-link" href="#portal-content">Skip to content</a>
+      <section className="portal-hero card-aurora" id="portal-content" tabIndex={-1}>
         <div>
           <span className="ui-eyebrow ui-eyebrow-light"><GraduationCap size={14} /> Parent Portal</span>
           <h1>Stay connected to your child’s school life.</h1>

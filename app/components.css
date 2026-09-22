@@ -823,3 +823,27 @@
     color: var(--ink-500);
   }
 }
+
+/* ---- Skip link -------------------------------------------------------- */
+@layer components {
+  .skip-link {
+    position: absolute;
+    left: var(--space-4);
+    top: calc(-1 * var(--tap-target) * 2);
+    z-index: 100;
+    display: inline-flex;
+    align-items: center;
+    min-height: var(--tap-target);
+    padding: 0 var(--space-4);
+    border-radius: var(--radius-md);
+    background: var(--surface-inverse);
+    color: var(--ink-inverse);
+    font-weight: var(--weight-semibold);
+    transition: top var(--motion-fast) var(--ease-out);
+  }
+  .skip-link:focus-visible {
+    top: var(--space-4);
+    outline: 3px solid var(--focus);
+    outline-offset: 2px;
+  }
+}

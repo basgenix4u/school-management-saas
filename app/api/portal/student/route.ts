@@ -1,5 +1,6 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getAppSession } from "@/lib/auth/session";
 import { getStudentPortalBundle } from "@/lib/supabase/school-data";
 
@@ -12,6 +13,6 @@ export async function GET() {
     const data = await getStudentPortalBundle(supabase, session.user.email, "STUDENT");
     return NextResponse.json({ status: "ok", source: "supabase", ...data });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to load student portal" }, { status: 500 });
+    return apiError("GET /api/portal/student", error);
   }
 }

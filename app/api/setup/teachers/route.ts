@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getOrganizationForWrite, upsertTeachers } from "@/lib/supabase/school-data";
 import { invalidInputResponse, teachersBulkSchema } from "@/lib/validation";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
@@ -20,6 +21,6 @@ export const POST = withAuth("teachers.manage", async (request: NextRequest, con
     const teachers = await upsertTeachers(supabase, organization.id, parsed.data.teachers, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "saved", data: teachers });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to save staff" }, { status: 500 });
+    return apiError("POST /api/setup/teachers", error);
   }
 });

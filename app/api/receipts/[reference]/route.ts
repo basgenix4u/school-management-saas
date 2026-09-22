@@ -2,6 +2,7 @@ import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withSession } from "@/lib/auth/api-guard";
 import { can } from "@/lib/rbac";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { getReceiptByReference, hasPortalLink } from "@/lib/supabase/school-data";
 
 type RouteParams = { params: Promise<{ reference: string }> };
@@ -34,6 +35,6 @@ export const GET = withSession<RouteParams>(async (_request: Request, context, {
 
     return NextResponse.json({ status: "ok", receipt });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to load receipt" }, { status: 500 });
+    return apiError("GET /api/receipts/[reference]", error);
   }
 });

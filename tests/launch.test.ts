@@ -90,7 +90,7 @@ describe("smoke test coverage", () => {
   it("expects refusal on protected APIs and covers live endpoints", () => {
     const smoke = read("scripts/smoke-test.mjs");
     expect(smoke).not.toContain("/api/launch/readiness");
-    for (const path of ["/api/audit", "/api/attendance/register", "/api/teachers", "/api/results/roster", "/api/insights", "/api/portal/parent", "/api/portal/student"]) {
+    for (const path of ["/api/audit", "/api/attendance/register", "/api/teachers", "/api/results/roster", "/api/insights/ask", "/api/portal/parent", "/api/portal/student"]) {
       expect(smoke).toContain(path);
     }
     expect(smoke).toContain("expect: [401]");

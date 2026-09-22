@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { publishOrUnlockResults } from "@/lib/supabase/school-data";
 import { invalidInputResponse, resultPublishSchema } from "@/lib/validation";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
@@ -23,6 +24,6 @@ export const POST = withAuth("results.manage", async (request: NextRequest, cont
     );
     return NextResponse.json({ status: "ok", result });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to update publishing status" }, { status: 500 });
+    return apiError("POST /api/results/publish", error);
   }
 });

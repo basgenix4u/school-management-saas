@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { createLiveAttendance, filterLinkedRows, listLiveAttendance, submitAttendanceRegister } from "@/lib/supabase/school-data";
 import { attendanceBulkSchema, attendanceSingleSchema, invalidInputResponse } from "@/lib/validation";
 import { checkRateLimit, rateLimitedResponse, rateLimitKey } from "@/lib/rate-limit";
@@ -14,7 +15,7 @@ export const GET = withAuth("attendance.view", async (_request: NextRequest, con
     const register = await filterLinkedRows(supabase, context.user.email, context.role, rows);
     return NextResponse.json({ status: "ok", source: "supabase", register });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to load attendance" }, { status: 500 });
+    return apiError("GET /api/attendance", error);
   }
 });
 
@@ -33,7 +34,7 @@ export const POST = withAuth("attendance.mark", async (request: NextRequest, con
     const record = await createLiveAttendance(supabase, parsed.data, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "saved", source: "supabase", data: record, submittedAt: new Date().toISOString() }, { status: 201 });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to save attendance" }, { status: 500 });
+    return apiError("POST /api/attendance", error);
   }
 });
 
@@ -54,6 +55,6 @@ export const PUT = withAuth("attendance.mark", async (request: NextRequest, cont
     const result = await submitAttendanceRegister(supabase, parsed.data, { email: context.user.email, role: context.role });
     return NextResponse.json({ status: "saved", source: "supabase", ...result, submittedAt: new Date().toISOString() });
   } catch (error) {
-    return NextResponse.json({ status: "error", source: "supabase", message: error instanceof Error ? error.message : "Failed to save register" }, { status: 500 });
+    return apiError("PUT /api/attendance", error);
   }
 });

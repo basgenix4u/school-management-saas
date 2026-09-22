@@ -1,5 +1,6 @@
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { createServerSupabaseClient, hasSupabaseConfig } from "@/lib/supabase/server";
 
 export const GET = withAuth("workspace.manage", async () => {
@@ -16,6 +17,6 @@ export const GET = withAuth("workspace.manage", async () => {
     if (error) throw error;
     return NextResponse.json({ status: "ok", data });
   } catch (error) {
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unknown error" }, { status: 500 });
+    return apiError("GET /api/database/command-center", error);
   }
 });

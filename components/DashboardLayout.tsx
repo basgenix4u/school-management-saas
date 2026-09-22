@@ -79,6 +79,7 @@ export function DashboardLayout({ children, user, schoolName }: { children: Reac
 
   return (
     <div className="dash-shell">
+      <a className="skip-link" href="#main-content">Skip to content</a>
       <aside className="dash-sidebar">
         <div className="dash-brand">
           <EduCoreLogo />
@@ -125,7 +126,7 @@ export function DashboardLayout({ children, user, schoolName }: { children: Reac
           </div>
         </header>
 
-        <main className="dash-content">{children}</main>
+        <main className="dash-content" id="main-content" tabIndex={-1}>{children}</main>
       </div>
     </div>
   );

@@ -1,6 +1,7 @@
 import { requestClientOrNull } from "@/lib/supabase/request-client";
 import { withAuth } from "@/lib/auth/api-guard";
 import { NextRequest, NextResponse } from "next/server";
+import { apiError } from "@/lib/http";
 import { announcementHtml, hasResendConfig, sendEmail } from "@/lib/email/resend";
 import { recordCommunicationDelivery } from "@/lib/supabase/school-data";
 import { invalidInputResponse, sendEmailSchema } from "@/lib/validation";
@@ -36,6 +37,6 @@ export const POST = withAuth("announcements.manage", async (request: NextRequest
     for (const recipient of recipients) {
       await recordCommunicationDelivery(supabase, { announcementId: body.announcementId, recipientEmail: recipient, subject: body.subject, status: "failed", provider: "resend", errorMessage: error instanceof Error ? error.message : "Email failed" }, { email: context.user.email, role: context.role }).catch(() => null);
     }
-    return NextResponse.json({ status: "error", message: error instanceof Error ? error.message : "Unable to send email" }, { status: 500 });
+    return apiError("POST /api/communications/send", error);
   }
 });

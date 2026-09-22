@@ -78,7 +78,8 @@ export function StudentPortal() {
   return (
     <main className="portal-shell">
       <PortalTopbar label="Student portal" homeHref="/portal/student" />
-      <section className="portal-hero card-aurora">
+      <a className="skip-link" href="#portal-content">Skip to content</a>
+      <section className="portal-hero card-aurora" id="portal-content" tabIndex={-1}>
         <div>
           <span className="ui-eyebrow ui-eyebrow-light"><GraduationCap size={14} /> Student Portal</span>
           <h1>Your learning progress in one secure place.</h1>
